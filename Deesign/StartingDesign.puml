@@ -1,0 +1,68 @@
+@startuml
+
+'skinparam componentStyle uml1
+'skinparam linetype polyline
+'skinparam linetype ortho
+skinparam Nodesep 45
+'skinparam Ranksep 45
+'top to bottom direction
+left to right direction
+skinparam wrapWidth 450
+Skinparam backgroundColor #EEEBDC
+skinparam class {
+ArrowColor Maroon
+BorderColor Maroon
+BackgroundColor  #fefece
+ArrowThickness 2
+}
+
+'//===========================  Layout object, invisible object to maipualte the position of other objects
+skinparam class<<Layout>> {
+  borderColor Transparent
+  backgroundColor Transparent
+  fontColor Transparent
+  stereotypeFontColor Transparent
+}
+class layouter <<Layout>>
+'//====
+
+package Presentation #ade
+{
+  class Console
+  {
+    Takes input and prints text
+
+  }
+}
+
+
+package Infrastructure #ddd 
+{
+  class FileUtils
+  {
+    Has the most basic operations to perform in file hierarchies
+  }
+}
+note as infLayerNote
+  Has the services that are requested by anyone as **interfaces** and implements them through **Dependency Inversion**
+  end note
+  infLayerNote -> Infrastructure
+
+
+package Application #d99
+{
+  class FileUseCases
+  {
+    Uses the file utils from the Infrastructure layer and performs the main operations to use the file hierarchy
+  }
+}
+package Domain #889
+{
+  class ClassObject
+  {
+    Representation of a class found in the files, which may contain other classes
+    -List<ClassObject> Classes 
+  }
+}
+
+@enduml
