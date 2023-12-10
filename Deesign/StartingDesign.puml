@@ -51,6 +51,17 @@ note as infLayerNote
 
 package Application #d99
 {
+  'TODO: Rethink if this is a good way to manipulate a **Flow** 
+  class ConvertClassObjectsToUml
+  {
+    Converts an array of class objects and outputs a string that is formatted with the pantuml class diagram for those classes
+  }
+
+  class MapDataFlowsFromClassObjects
+  {
+    Gets the classes 
+  }
+
   class FileUseCases
   {
     Uses the file utils from the Infrastructure layer and performs the main operations to use the file hierarchy
@@ -58,6 +69,12 @@ package Application #d99
 }
 package Domain #889
 {
+  'TODO: Rethink as  just **Flow** instead of this name
+  class ClassObjectsFlow
+  {
+    Provides a simpler way to represent a **Flow**, which has classes interacting with one another and may take up more stuff
+  }
+
   class ClassObject
   {
     Representation of a class found in the files, which may contain other classes
