@@ -1,0 +1,271 @@
+﻿{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "CleanArchitectureWorkshop.Presentation.Api",
+    "version": "1.0"
+  },
+  "paths": {
+    "/teams/{teamName}": {
+      "post": {
+        "tags": [
+          "TeamsEndpoints"
+        ],
+        "operationId": "PostTeam",
+        "parameters": [
+          {
+            "name": "teamName",
+            "in": "path",
+            "style": "simple",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostTeamResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "TeamsEndpoints"
+        ],
+        "operationId": "GetTeamById",
+        "parameters": [
+          {
+            "name": "teamName",
+            "in": "path",
+            "style": "simple",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTeamByIdResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/teams/{teamName}/add-player/{playerName}": {
+      "post": {
+        "tags": [
+          "TeamsEndpoints"
+        ],
+        "operationId": "AddPlayer",
+        "parameters": [
+          {
+            "name": "teamName",
+            "in": "path",
+            "style": "simple",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerName",
+            "in": "path",
+            "style": "simple",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddPlayerToTeamResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams": {
+      "get": {
+        "tags": [
+          "TeamsEndpoints"
+        ],
+        "operationId": "GetAllTeams",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllTeamsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/search/{teamName}": {
+      "get": {
+        "tags": [
+          "TeamsEndpoints"
+        ],
+        "operationId": "FindTeamsByName",
+        "parameters": [
+          {
+            "name": "teamName",
+            "in": "query",
+            "style": "form",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllTeamsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/random-data": {
+      "post": {
+        "tags": [
+          "TeamsEndpoints"
+        ],
+        "operationId": "PostRandomData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RandomDataRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddPlayerToTeamResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/TeamDto"
+          }
+        }
+      },
+      "GetAllTeamsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "teams": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/TeamDto"
+            }
+          }
+        }
+      },
+      "GetTeamByIdResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/TeamDto"
+          }
+        }
+      },
+      "PlayerDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "userName": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "PostTeamResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/TeamDto"
+          }
+        }
+      },
+      "RandomDataRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "randomDataA": {
+            "type": "string",
+            "nullable": true
+          },
+          "randomDateB": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TeamDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "teamName": {
+            "type": "string",
+            "nullable": true
+          },
+          "players": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/PlayerDto"
+            }
+          }
+        }
+      }
+    }
+  }
+}
