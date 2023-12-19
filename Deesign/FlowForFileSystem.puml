@@ -1,0 +1,189 @@
+@startuml
+skinparam MaxMessageSize 50
+'skinparam Ranksep 45
+Skinparam backgroundColor #EEEBDC
+skinparam wrapWidth 450
+skinparam activity {
+ArrowColor Maroon
+LifeLineBackgroundColor #EEEBDC
+LifeLineBorderColor Maroon
+GroupBackgroundColor #EEEBDC
+ParticipantBackgroundColor #EEEBDC
+BorderColor Maroon
+BackgroundColor  #fefece
+}
+'squence diagram skin
+
+start
+fork
+
+:Get the path to the desired directory to analyze;
+:User selected Not to analyze base path code files if any;
+:Traverse the entire Directory Tree;
+repeat
+  if (**This is a...**) is (File) then
+    #f9a:=Analyze file|
+    note left
+    Get the files contents and save the 
+    contents into somewhere FORMATTED as entities
+    end note
+
+    :Get the filename;
+    :Get the contents of the file;
+    #ddd:Save contents as an entity?;
+    note left
+    Think better how to save the class, 
+    considering how is it going to be stored 
+    and have connections to other classes
+    end note
+
+    #fdd:==PROPOSAL
+    Save the file in a Tree Data Structure, 
+    nailing the registry of the class entity AND 
+    also the **package** structure
+    <color:Blue>Remaining to nail: Call Hierarchy</color>;
+    
+    :==Method storage in class entity
+    The class entity should have a place to store **the calls he makes**
+    And another service should fill **who the receiver is**
+    (if for example the call was to an **interface**, and there was another 
+    class that **implemented the interface AND had the same EXACT function**)
+    Make a map of  Implementations and map of Calls??/
+    
+    :==Method Entity
+    A method should be recognized considering:
+    * His names
+    * His parameters and **names** of the parameters
+    * Owner of this method which is an **Implementation**
+    * Return type
+    <color:Blue>Most of the components can make the **Method Entity** be recognized 
+    <color:Blue>converting the string of the things into **Hashes**
+    <color:Blue>PROPOSAL: Use **Hash function** to recognize with more ease a method name/
+    note left
+    You could make use of the **Identifiers** 
+    that DDD offers to **recognize entities**
+    end note
+
+  else (Directory)
+    :Keep going;
+  endif
+
+
+repeat while (Untraveled directories?)
+
+:Get the u;
+
+'[//===========================  Logic for entities
+fork again
+:Callsite, which is a Class Entity containing **Methods**;
+:Faint Implementation;
+:Callsite **inherits from FaintImplementation**/
+
+''' Secondary Map
+:==FaintImplementation to Tuple<FaintImplementation, isImplementation
+This is the **First map** to be filled when reading a file **completely**, in order to know all the 
+implementations to later fill out the Main Map
+""o : A""
+""v : o""
+FaintImplementations should point to an Implementation 
+at the end, this Implementation should always be also a 
+Class Entity to be printed with plantuml
+<color:Blue>Not only variables get in here(which should lead to any constructor), methods that return a 
+<color:Blue>type ALSO get registered here thorugh the **return** keyword
+We will store only the class entity, which will have the Implementation looked 
+for in the main map, and we just match if the ID of any method in this class 
+matches with the one we have, which is the one we are looking for
+After adding the class itself and defining all its methods, 
+we make sure to look for the keys with null values, since the class we 
+just registered <color:d78>may be the missing value for the key</color> 
+When traversing this map in the second phase(getting the flow), we make 
+sure to first lookup for the implementation of the searched method 
+inside the class, if not found, we go to the faint Implementation if 
+any, if not found, we leave the main map with a null key and when we 
+<color:d78>find an implementation to that method</color> , we make 
+sure to fill it out;
+
+
+:""Program : Program""
+""o : A""
+""A : null""
+;
+
+
+''' MAIN Map
+:==Callsite:Method to Implementation 
+""MyClass:GetFoo() : foo()""
+""MyClass:foo() : bar()""
+""v.ToString() : ""
+<color:Blue>There is a distinction between Callsite and Implementation, 
+callsite is able to not be defined(and is defined elsewhere), 
+whereas Implementation MUST be defined from before, if not defined 
+when being added to the map, then look for the implementation 
+through the **FaintImplementation** other maps;
+
+:""Program:foo() : Program:foo()""
+""Program:bar(o) : Program:bar(o)""
+""o:toString() : null"";
+
+
+:=TeamAggregate;
+:===Instance : Instance
+""Team : Team(Define ALL the methods in Team class)""
+""ITeamUseCase : TeamUseCase""/'(If you see an interface or abstract class, add it here and set the value to null, after you find **a class that implements the interface**, replace the null with that class)'/
+""_players : List<Player>""
+""Players : _players""
+""player : Player""
+""playerToRemove : _players:FirstOrDefault""/'This is why we should also hard code common classes like LIST and such with their methods and return types, just in case this happens, OOORRRR just if the "_players" or any kind of list is at the right side of an "=", make the thing on the left side of type of the List'/
+/'ALSO include as part of Implementations METHODS from FaintImpl for this sort of things'/
+/'When a FaintImpl is mapped to a TRUE implementation, the end of the line, then we look in that implementation the definition we were looking for, if not we keep looking for it since we may have stumpled into a chilld class which technically is a true implementation but we can keep looking for the father'/
+""_players:FirstOrDefault : null""
+;
+
+:===List<Callsite
+Method Caller : Method Called
+The left values **we will always know**, but the right 
+values we may not know since we may haven't passed yet 
+to define it in the instances Map the **Implementation**
+""Team:AddPlayer() : _players:Exist()""
+""Team:AddPlayer() : _players.Add(player)""
+""Team:AddPlayer() : _players.FirstOrDefault()""
+""Team:AddPlayer() : player:AssignTeam(this)""/'REEMPLAZAR 'this' por la clase actual, para solucionar el problema de no saber que es 'this' '/
+;
+
+:=Bank Thread Example;
+:===Instance : Instance
+""BankAccount : BankAccount""
+""balance : int""
+""amount : int""
+""BankAccount:GetBalance() : balance(We can put the return type instantly)""
+
+""Program : Program""
+
+:=Anotherexample;
+:===Instance : Instance/Implementation
+""Home() : Home""
+""Home(Player) : Home""
+""Home:GetRoommates(Bool) : List<Person>""
+""jerry : building1:GetRoommates(false)""
+""building1:GetRoommates : Home()""
+""sam : Employee(adam)""
+;
+
+
+
+fork again
+:First go through all the file system and \nput in the RegisteredClassEntities \nall the classes we found, while \nalso defining the methods of each of them;
+:Then we don't need to go through all the \nfiles again AND we have defined all \nthe classes to be used in the system;
+:===We have...
+""Map<Instance, Instance> ClassEntity_InstancesMap""
+""List<ClassEntity> RegisteredClassEntities""
+""All the methods of our system""/
+:===Remains to do...
+""List<List<Callsites>> All possible Flows of each class""/
+:To make the Callsites, we will take all curly braces **as methods, until proven wrong**
+Because we will put them in the InstancesMap, 
+and if it was not a method, then it will just be ignored;
+
+
+
+@enduml

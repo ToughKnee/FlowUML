@@ -1,0 +1,124 @@
+@startuml
+
+'skinparam componentStyle uml1
+'skinparam linetype polyline
+'skinparam linetype ortho
+skinparam Nodesep 45
+'skinparam Ranksep 45
+'top to bottom direction
+left to right direction
+skinparam wrapWidth 450
+Skinparam backgroundColor #EEEBDC
+skinparam class {
+ArrowColor Maroon
+BorderColor Maroon
+BackgroundColor  #fefece
+ArrowThickness 2
+}
+
+'//===========================  Layout class, invisible class to maipualte the position of other objects
+skinparam package<<Layout>> {
+  borderColor Transparent
+  backgroundColor Transparent
+  fontColor Transparent
+  stereotypeFontColor Transparent
+}
+'//====
+
+package =StaticStuff #ddd {
+  class ClassEntity_InstancesMap {
+    Team : Team:true
+    PlayerFactory.Create() : 
+    player : Player
+    match : player.AssignTeam(Team)
+    ----
+  }
+  class ClassEntity_RegisteredClassEntities {
+    Team
+  }
+  class Method_OrphanMethods {
+    player.AssignTeam(Team)
+  }
+  note right
+  Every time an item is added here we know that a Flow is missing in-between steps, thus when a ClassEntity is created and has defined all its methods, then **it MUST** look for the orphan methods, take him, and since there was an orphan method here, then it must also go to the static ClassEntity_InstancesMap, and look for the right side his method that was orphan, so that he replaces that value with the true return type of the method
+  end note
+
+  package Flows<List<List<Callsite>>> #abe {
+    note as FlowsNote
+    There can be multiple flows for each branching path
+    Its static since the Flows are like timelines, where the main one is just where it all started, and branching paths are parallel timelines
+    end note
+    class Flow1_OriginalFlow {
+      We must CHANGE 'player' and 'match' by the actual instance Implementation
+      <color:Blue>And with **Events** we change 'match' to the actual ClassEntity, when the Match ClassEntity finished creating itself, optimizing steps, the events also change the InstancesMap
+      ""Team.AddPlayer(Player) : <color:Red>player.AssignTeam(this)""
+      ""Team.AddPlayer(Player) : <color:Red>match.GetResults()""
+      ""playerToRemove = <color:fa00df>_players.FirstOrDefault(p => p.Id == player)""
+
+      <color:Red>If red, then they will be changed to the correct class and method implementation after events
+      <color:fa00df>If purple, means that this will be changed with the **last event**, which is the event that happens when all the file system has been traveled, so we must make an educated guess about this type of method and guess what is returrning  
+      At the end each flow should have <color:Blue>Signatures of Concrete Methods
+      ----
+  }
+
+  }
+}
+
+
+package Team #add{
+  class Methods {
+    Team(TeamName)
+    AddPlayer(Player)
+    RemovePlayer(Player)
+  }
+
+}
+
+
+
+class start
+note left
+At the start, we must have first defined the ClassEntity with all its methods and properties, after that then...
+end note
+start --> ClassEntity_InstancesMap : 1. Fill in the shared \ninstance map with the \nvariables/props/methods return
+ClassEntity_InstancesMap --> ClassEntity_RegisteredClassEntities : 2. This is checked only if we are \ncreating our Flow, and we see that there is an \ninstance that is being assigned with a method \nreturn type, so to know what type will be this \ninstance, we ask the type to the class that \nowns the Method, if not 
+ClassEntity_RegisteredClassEntities -u--> Team : Step 3
+
+
+note as TeamCode
+1. Parameters and Properties are the easiest to get the implementation since the Type of the instance **is before them**
+2. Variables have 2 kinds of ways when trying to find the implementation, the first is through **instance aliases**, which is just variables being instances of other variables like 'bob = johny', this is easy to find since we will have to know who 'johny' is, this can lead to more instance aliases like 'johny = jimmy', or worse, the second type where johny = jimmy.GetAssistant(selectedCourse)'
+3. The second kind of instance implementation is through **methods return types**, and this is as complex as the method's signature, because we have to know 3 things: 
+*The Class type this method is from
+*The parameters of the method  
+*And the method's name
+
+And the problem is that we **need to get all those 3 points to define the implementation of those variables**
+Solution: There is no problem when all that is previously found, which happens when the ClassEntity is already processed(which also defines the method), and lastly we know the type of the variable **IF** we have not defined the entire method signature, 
+This may boil down to just the **ClassEntity raising an event** when it finishes defining himslef and its methods because he provides:
+The Class type
+The parameters type for the method
+And the methods name
+
+BUT we only need to catch that event, 
+  public class Team : AggregateRoot<TeamName>
+  {
+      public Team(TeamName name) : base(name)
+      {
+      }
+
+      public void AddPLayer(Player player)
+      {
+        var myVar = player; // Easy to solve
+        1. _players.Add(player);
+        // ???. Things
+        2. var match = player.AssignTeam(this); // El metodo debe ser algo registrado en el InstancesMap, y debe ser un valor a la IZQUIERDA, para poder encontralo inmediatamente con un haahmap
+        // ???. Things
+        3. var Results = match.GetResults();
+      }
+
+  }
+end note
+
+
+@enduml

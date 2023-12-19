@@ -31,7 +31,6 @@ package Presentation #ade
   class Console
   {
     Takes input and prints text
-
   }
 }
 
@@ -52,12 +51,12 @@ note as infLayerNote
 package Application #d99
 {
   'TODO: Rethink if this is a good way to manipulate a **Flow** 
-  class ConvertClassObjectsToUml
+  class ConvertClassEntitysToUml
   {
     Converts an array of class objects and outputs a string that is formatted with the pantuml class diagram for those classes
   }
 
-  class MapDataFlowsFromClassObjects
+  class MapDataFlowsFromClassEntities
   {
     Gets the classes 
   }
@@ -70,16 +69,123 @@ package Application #d99
 package Domain #889
 {
   'TODO: Rethink as  just **Flow** instead of this name
-  class ClassObjectsFlow
+  class ClassEntitysFlow
   {
     Provides a simpler way to represent a **Flow**, which has classes interacting with one another and may take up more stuff
   }
 
-  class ClassObject
+  class Callsite
   {
-    Representation of a class found in the files, which may contain other classes
-    -List<ClassObject> Classes 
+    Aimed to represent **one step** a sequence of the flow from **this class** to other places of the code
+    Very important to make edges from the class Entity to the callsite in plantUML
+    ""CallerMethod.Owner --> CalledMethod.Owner() : CalledMethod""
+    <color:Red>This subscribes to an event **only if** the CalledMethod is not found an instance implementation from the InstancesMap
+    <color:fa00df>This will always subscribe to an event of end of file system traveling, it desubscribes when the CalledMethod is found an
+    -===Method CallerMethod
+    -===Method? CalledMethod
+    It may be null when the method called is from a ClassEntity not defined yet, so we wait for the **Instance** that has the name of that method to receive the event that defines the method and make him fill this CalledMethod
+    -===int AssignedSequence
+    Used to know when a step is made inside a **Flow**, if the CalledMethod does not have a defined Owner(not found ClassEntity), then the Sequence stops being absolute and becomes relative, because the CalledMethod may call other methods in between that we can't know about yet, thus all subsequent steps will also be relative
+    ==Creation of a Callsite
+    The callsite will be created everytime we discover curly braces that are
+    the scope of a method from the class we are building,
+    if there is a method called from anything in here, 
+    the callsite then gets completed(CallerMethod is the current method,
+    and CalledMethod would be the method we found, while we also
+    add the sequence(number of step) this callsite will have assigned) AND WE CREATE ANOTHER Callsite
+    Because when we go to another method, the curly braces are again discovered and we repeat
+
+    =<color:Red>Useless, delete
+    -===ClassEntity ClassOwner
+    This exists if the Callsite is created, but we are not building the ClassEntity this callsite comes from, so that when we build the corresponding ClassEntity, we assign it to this ClassEntity
+    ----
   }
+
+  /'
+  Problem about methods that return a type we don't know
+  We are building class A, and we are building the Flow with the callsites
+  There is a callsite that heads into the method of class B, which we don't know yet
+  And the return type we also don't know'/
+
+  class Method
+  {
+    A method that must be identifiable with the **Method Parameters and belonging ClassEntity** 
+    -===ClassEntity? OwnerClass
+    Null if this is a lone function
+    -===string Params
+    They should have the **Types** of the params separated by comma
+    -===string? ReturnType
+    This is the Type of the return type if any, so that it is easier to check what instance would a method return(when building a Flow)
+    -===bool HasLambda
+    True if the Method takes as parameter lambda
+    ----
+    +===string Signature()
+    This returns the identifier of the Method as...
+    ""ClassEntity:MethodName(Params):HasLambda""
+  }
+
+  class ClassEntity
+  {
+    Representation of a class found in the files, used to print the plantUML diagram
+    <color:Blue>Everytime this class is created, it must fill out the InstancesMap by defining the return type of the constructors **and** the methods it has, when it finishes, it must raisse an event that lets know everyone that there are definitions in the InstancesMap if there were methods that were left behind
+    -===string Name
+    Name of the class
+    -===static List<ClassEntity> RegisteredClassEntities
+    This will have all the registered class entities found, this exists because whenever a ClassEntity is created, **it will first look in this list to see if it is already in here** or register himself if not, because the idea is that ClassEntities **add their info if another ClassEntity already knew of his existence** and went ahead to add him if he did not added himself, because in the phase of creting the Flow, there may be ClassEntities not defined but we know we go there
+    -===List<Properties> Properties
+    Simple Properties to show
+    -===List<Methods> Methods
+    List of the methods this class has defined, **useful to define Callsites**
+    -===List<List<Callsite>> Flows
+    Each list represents a **Flow**, where this class is the starting point and all the callsites are the steps to other places of the code
+    <color:Red>This should only be created for the starting class? Or we create more flows for each class we find? Because it could lead to redundancy
+    -===static Map<Instance, Instance> InstancesMap
+    <color:3c3>TODO: Move this to another Class for single responsibility
+    This will let us identify each **variable, parameter, attribute and method return variable** to its <color:Blue>**corresponding Type**</color> for both inside of this class(but we delete from here scoped instances) OR also instances out of this class(like methods or static variables)
+    *Variables are easy to find out their implementation
+    A left instance is something we found like a variable, which are on the left side of an assignment('='), and the right side Instance represents to what **Type or Alias** this instance is linked in the program, the right side of an assignment...
+    ""var bob = new Human()"" : Type mapping
+    ""var storeWorker = bob"" : Alias mapping
+    -===int SequenceSize => CalledClasses.Size
+    This represents the steps this class has in a given path, the Sequence is shared to Callsites so that they know which step they are in the sequence AND increment the sequence size 
+    ----
+  }
+
+  struct Instance
+  {
+    An instance is a variable, parameter or method return type that **has a type** which we need to know when a ClassEntity calls another Classentity
+    ====Basically a variable/parameter/property/method that has a given **Type**
+    And this lets us map any variable to a **ClassEntity** eventually
+    -===string Name
+    The name of the variable/parameter/property this is defined as in code with the given Type
+    This kind of instances go to the left of the **InstancesMap**
+    **IF** this is a method with a return type, this goes **to the right of the InstancesMap
+    <color:Blue>If when looking into the InstancesMap we don't find this method with an Implementation, its because we are either missing the ClassEntity registering all his methods in the RegisteredClassEntities, or there are parameters that don't have an Implementation, then this class should subscribe to an event that is triggered by ClassEntities, and this will tell the instance to look again for the InstancesMap to find again what was the type it was missing(""Pass this to a special class? And make both classes inherit from abstract class?"")
+    The name should look like ""ClassEntity:MethodName(Params)""
+    -===<color:Blue>Callsite? LinkedCallsite
+    This is because if the instance has the name of a method, then when it know the Implementation of this method, it should fill out the Callsite CalledMethod too 
+    -===ClassEntity? Implementation
+    This value may be null, but when it is not null, it means that we found the actual Implementation of all the other instances connected with the aliases, letting us fill the **Implementation** from all the other instances
+    <color:Blue>For variables, we define it through the right side of the '=', which eventually leads to a constructor to a ClassEntity OR return type of a Method
+    <color:Blue>For parameters or attributes, we define it through the Type before the name of th instance
+    ----
+  }
+
 }
+/'
+There must be an entity, which represents a class in the code files, and make connection to other classes
+
+'/
+
+
+
+
+'//===========================  Connections
+Instance --> Instance : References itself in the Class map but \n**with different names**(Alias)
+Instance --> ClassEntity : > Points eventually to a \ndefinition of ClassEntity
+ClassEntity "1" *-r- "N" Method : > Has
+ClassEntity "1" *-- "N" Callsite : > Has
+
+
 
 @enduml
