@@ -1,3 +1,1 @@
-﻿namespace Infrastructure
-{
-}
+﻿var i = 0;
