@@ -8,7 +8,7 @@ statement: (assignment | functionCall) ';';
 
 assignment: IDENTIFIER '=' expression;
 
-IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
+IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;3x
 
 functionCall: IDENTIFIER '(' (expression (',' expression)*)? ')';
 

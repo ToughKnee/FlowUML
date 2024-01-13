@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug ANTLR4 grammar",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "C:\\Users\\USUARIO\\Documents\\AutoHotkey\\sample.txt",
+            "grammar": "C:\\Users\\USUARIO\\Documents\\AutoHotkey\\CSharpGrammar.g4",
+            "startRule": "classDeclaration",
+            "printParseTree": true,
+            "visualParseTree": true
+        }
+    ]
+}

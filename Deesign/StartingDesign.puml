@@ -130,8 +130,6 @@ package Domain #889
     <color:Blue>Everytime this class is created, it must fill out the InstancesMap by defining the return type of the constructors **and** the methods it has, when it finishes, it must raisse an event that lets know everyone that there are definitions in the InstancesMap if there were methods that were left behind
     -===string Name
     Name of the class
-    -===static List<ClassEntity> RegisteredClassEntities
-    This will have all the registered class entities found, this exists because whenever a ClassEntity is created, **it will first look in this list to see if it is already in here** or register himself if not, because the idea is that ClassEntities **add their info if another ClassEntity already knew of his existence** and went ahead to add him if he did not added himself, because in the phase of creting the Flow, there may be ClassEntities not defined but we know we go there
     -===List<Properties> Properties
     Simple Properties to show
     -===List<Methods> Methods
@@ -158,12 +156,12 @@ package Domain #889
     And this lets us map any variable to a **ClassEntity** eventually
     -===string Name
     The name of the variable/parameter/property this is defined as in code with the given Type
-    This kind of instances go to the left of the **InstancesMap**
-    **IF** this is a method with a return type, this goes **to the right of the InstancesMap
-    <color:Blue>If when looking into the InstancesMap we don't find this method with an Implementation, its because we are either missing the ClassEntity registering all his methods in the RegisteredClassEntities, or there are parameters that don't have an Implementation, then this class should subscribe to an event that is triggered by ClassEntities, and this will tell the instance to look again for the InstancesMap to find again what was the type it was missing(""Pass this to a special class? And make both classes inherit from abstract class?"")
+    This kind of instances will usually go to the left of the **InstancesMap**
+    **IF** this is a method with a return type, this **should go to the right of the InstancesMap**
+    <color:Blue>If when looking into the InstancesMap we don't find this method with an Implementation, its because we are either missing the ClassEntity registering all his methods in the RegisteredClassEntities, or there are parameters that don't have an Implementation, then this class should subscribe to an event that is triggered by ClassEntities, and this will tell the instance to look again for the InstancesMap to find again what was the type it was missing(""Pass this to a special class? And make both classes inherit from abstract class?(One class will represent //variable/parameter/property//, and the other will represent the //method return types// which have special logic, and both will inherit from an abstract class to be referred to both classes since they are the same thing essentially""))
     The name should look like ""ClassEntity:MethodName(Params)""
     -===<color:Blue>Callsite? LinkedCallsite
-    This is because if the instance has the name of a method, then when it know the Implementation of this method, it should fill out the Callsite CalledMethod too 
+    This exists because if the instance has the name of a method, and gets defined the **Implementation of this method** from an event where a ClassEntity defined itself and this method, or it was already defined, then it should fill out the Callsite CalledMethod too, because the Callsite will not know 
     -===ClassEntity? Implementation
     This value may be null, but when it is not null, it means that we found the actual Implementation of all the other instances connected with the aliases, letting us fill the **Implementation** from all the other instances
     <color:Blue>For variables, we define it through the right side of the '=', which eventually leads to a constructor to a ClassEntity OR return type of a Method
