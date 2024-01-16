@@ -1,17 +1,14 @@
-
-i = 3;
-name = 'Johny dondonny "mcCrager" L';
-
-j = i + 1;
-
-while i < 8
+internal class TeamsUseCase : ITeamsUseCase
 {
-    Write("i is not big enough - " + i + " - so let us make it bigger!");
-    i = i + 1 * 4;
-}
-else
-{
-    Write("i was already big enough");
-}
+    string teamName;
 
-Write("i is: " + i + ".");
+    string teamName;
+    private readonly ITeamsRepository _teamsRepository;
+    private readonly ITeamsRepository _teamsRepository;
+    private readonly ITeamsRepository _teamsRepository;
+
+    string teamName(args);
+
+    int count();
+
+}
