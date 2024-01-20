@@ -1,18 +1,28 @@
 grammar CSharpGrammar;
 WS  :   [ \t\n\r]+ -> skip ;
 
+//===========================//===========================  Lexer
 //===========================  Generic grammar
 // For any kind of thing like Classes, Interfaces, Structs, Enums, Methods, Properties, Fields, Parameters, Variables
 // TODO: Check if removing the '('?'*)' would still take what we need from a thing with a type like 'List<Team?>', and check if it gets 'List<Team>' wothout the '?' sign
-IDENTIFIER 
-    : [a-zA-Z_] [a-zA-Z0-9_]*('?'?)
+
+
+// Covers optional MODIFIERS for some properties, variables, classes and such that they could have like readonly or the attributes, like [Theory] for xUnit
+MODIFIERS
+    : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
     ;
-
-// Words that may be anything like a property declaration, varaible declaration, etc, which ends with ' ; '
-
+    
+    
+ACCESS_MODIFIER
+    : 'public'
+    | 'protected'
+    | 'private'
+    | 'internal'
+    ;
+    
 // Covers types which may or may not have generic types with them
 // TODO: Add the primitive types in here
-typeName
+PRIMITIVE_TYPE_NAME
     : 'string'
     | 'char'
     | 'bool'
@@ -28,19 +38,20 @@ typeName
     | 'var'
     | 'object'
     | 'dynamic'
-    | IDENTIFIER ('<' IDENTIFIER (',' IDENTIFIER)* '>')?
     ;
 
-accessModifier
-    : 'public'
-    | 'protected'
-    | 'private'
-    | 'internal'
+userTypeName
+    : IDENTIFIER ('<' IDENTIFIER (',' IDENTIFIER)* '>')?
+    ;
+
+// Words that may be anything like a property declaration, varaible declaration, etc, which ends with ' ; '
+IDENTIFIER 
+    : [a-zA-Z_] [a-zA-Z0-9_]*('?'?)
     ;
 
 //===========================  Class grammar
 classDeclaration
-    : attributes? accessModifier? 'class' IDENTIFIER classHeritage?
+    : attributes? ACCESS_MODIFIER? 'class' IDENTIFIER classHeritage?
         classBodyContent?
     ;
 
@@ -54,18 +65,15 @@ classBodyContent
     ;
 
 classHeritage
-    : ':' typeName (',' typeName)*
+    : ':' (PRIMITIVE_TYPE_NAME | userTypeName) (',' (PRIMITIVE_TYPE_NAME | userTypeName))*
     ;
 
 //===========================  Class properties grammar
 propertyDeclaration
-    : attributes? accessModifier? modifiers? typeName IDENTIFIER '('
+    : attributes? ACCESS_MODIFIER? MODIFIERS? (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER ';'
     ;
-    //propertyDeclaration : typeName IDENTIFIER '(' ')' ';';
-// Covers optional modifiers for some properties, variables, classes and such that they could have like readonly or the attributes, like [Theory] for xUnit
-modifiers
-    : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
-    ;
+    //propertyDeclaration : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '(' ')' ';';
+
 
 attributeIdentifier
     : '[' IDENTIFIER ('(' .*? ')')? ']'
@@ -77,7 +85,7 @@ attributes
 
 //===========================  Method grammar
 methodDeclaration
-    : accessModifier? modifiers* typeName IDENTIFIER '(' parameterList? ')'
+    : ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '(' parameterList? ')'
     ;
 
 methodBodyContent
@@ -91,12 +99,12 @@ parameterList
     ;
 
 parameter
-    : typeName IDENTIFIER // IDENTIFIER is unnecesary since we only need to know the typenames
+    : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER // IDENTIFIER is unnecesary since we only need to know the (PRIMITIVE_TYPE_NAME | userTypeName)s
     ;
 
 //===========================  Local variables grammar
 // localVariable
-//     : typeName IDENTIFIER '=' expression ';'
+//     : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' expression ';'
 //     ;
 
 // expression
