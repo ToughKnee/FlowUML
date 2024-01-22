@@ -1,3 +1,4 @@
+// TODO: Cover the Constructors methods AND the 'new' keyword when called inside a methodBody
 grammar CSharpGrammar;
 WS  :   [ \t\n\r]+ -> skip ;
 
@@ -5,15 +6,14 @@ WS  :   [ \t\n\r]+ -> skip ;
 //===========================  Generic grammar
 SEMICOLON: ';';
 
+AWAIT: 'await';
+
 // Covers optional MODIFIERS for some properties, variables, classes and such that they could have like readonly or the attributes, like [Theory] for xUnit
 MODIFIERS
     : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
     ;
 
 // TODO: Implement a way to catch the parameters, TODO2: Also implement a way to catch a call inside this method call(maybe using the priority of the tokenization where we find all the Method Calls first and later we can check for them normally, AND also adding this as a new Lexer Rule: 'METHOD_CALL')
-METHOD_PARENTHESIS
-    : '(' .*? ')' 
-    ;
 
 ACCESS_MODIFIER
     : 'public'
@@ -43,9 +43,14 @@ PRIMITIVE_TYPE_NAME
     ;
 
 userTypeName
-    : IDENTIFIER ('<' IDENTIFIER (',' IDENTIFIER)* '>')?
+    : IDENTIFIER ('<' genericType (',' genericType)* '>')?
     ;
 
+genericType
+    : userTypeName
+    | genericType '<' genericType (',' genericType)* '>'
+    ;
+    
 // Words that may be anything like a property declaration, varaible declaration, etc, which ends with ' ; '
 // TODO: Check if removing the '('?'*)' would still take what we need from a thing with a type like 'List<Team?>', and check if it gets 'List<Team>' wothout the '?' sign
 IDENTIFIER
@@ -62,7 +67,7 @@ classDeclaration
 classBodyContent
     :
     '{'
-        classDeclarations*
+        classContent*
     '}'
     ;
 
@@ -71,11 +76,13 @@ classHeritage
     ;
 
 //===========================  Class properties grammar
-classDeclarations
+classContent
     // Syntax for property declaration
     : attributes? ACCESS_MODIFIER? MODIFIERS? (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER SEMICOLON
     // Syntax for method declaration
-    | attributes? ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER METHOD_PARENTHESIS
+    // TODO: Implement a way to catch the parameters, TODO2: Also implement a way to catch a call inside this method call(maybe using the priority of the tokenization where we find all the Method Calls first and later we can check for them normally, AND also adding this as a new Lexer Rule: 'METHOD_CALL')
+    | attributes? ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER 
+    '(' parameterList ')'
     methodBodyContent
     ;
 
@@ -88,16 +95,11 @@ attributes
     ;
 
 //===========================  Method grammar
-// TODO: REMOVE
-methodDeclaration
-    : ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER METHOD_PARENTHESIS
-    ;
 
 methodBodyContent
     :
     '{'
-    // TODO: Implement recognition for "Local Variables"
-    .*?
+    methodContent*
     '}'
     ;
 
@@ -110,23 +112,27 @@ parameter
     ;
 
 //===========================  Local variables grammar
-// localVariable
-//     : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' expression ';'
-//     ;
+methodContent
+    : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' expression ';'
+    | methodContentExpression ';'
+    ;
 
-// expression
-//     : methodCall
-//     | /* other expressions */
-//     ;
+methodContentExpression: expression;
 
-// methodCall
-//     : methodIdentifier '(' argumentList? ')'
-//     ;
+// Something that returns something
+expression
+    : AWAIT? methodCall
+    | /* other expressions */
+    ;
 
-// methodIdentifier
-//     : IDENTIFIER ( '.' IDENTIFIER | '.' methodCall )*
-//     ;
+methodCall
+    : methodIdentifier '(' argumentList ')'
+    ;
 
-// argumentList
-//     : expression ( ',' expression )*
-//     ;
+methodIdentifier
+    : IDENTIFIER ( '.' methodCall | '.' IDENTIFIER)*
+    ;
+
+argumentList
+    : (expression | IDENTIFIER) ( ',' (expression | IDENTIFIER) )*
+    ;

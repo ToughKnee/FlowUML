@@ -1,9 +1,15 @@
-{
-    private readonly ITeamsRepository teamsRepository;
+  public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+  {
+      var teamId = TeamName.Create(teamName);
 
-    public async Task<List> GetAllTeamsAsync(heno)
-    {
-        return await _teamsRepository.GetAllTeamsAsync();
-    }
+      var team = await _teamsRepository.GetByIdAsync(teamId);
 
-}
+      var playerId = UserName.Create(playerName);
+      var player = new Player(playerId);
+
+      team.AddPLayer(player);
+
+      await _teamsRepository.UpdateTeamAsync(team);
+
+      return team;
+  }
