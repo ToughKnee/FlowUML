@@ -1,8 +1,7 @@
-internal class TeamsUseCase : ITeamsUseCase
 {
-    private readonly ITeamsRepository _teamsRepository;
+    private readonly ITeamsRepository teamsRepository;
 
-    public async Task<List> GetAllTeamsAsync()
+    public async Task<List> GetAllTeamsAsync(heno)
     {
         return await _teamsRepository.GetAllTeamsAsync();
     }
