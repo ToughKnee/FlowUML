@@ -1,15 +1,58 @@
-  public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
-  {
-      var teamId = TeamName.Create(teamName);
+public class TeamsUseCase : ITeamsUseCase
+{
+    private readonly ITeamsRepository _teamsRepository;
 
-      var team = await _teamsRepository.GetByIdAsync(teamId);
+    public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+    {
+        var teamId = TeamName.Create(teamName);
 
-      var playerId = UserName.Create(playerName);
-      var player = new Player(playerId);
+        var team = await _teamsRepository.GetByIdAsync(teamId);
 
-      team.AddPLayer(player);
+        var playerId = UserName.Create(playerName);
+        var player = Player(playerId);
 
-      await _teamsRepository.UpdateTeamAsync(team);
+        team.AddPLayer(player);
 
-      return team;
-  }
+        await _teamsRepository.UpdateTeamAsync(team);
+
+    }
+
+    public async Task<Team> CreateTeamAsync(string teamName)
+    {
+        var teamId = TeamName.Create(teamName);
+        var team = Team(teamId);
+
+        await _teamsRepository.CreateTeamAsync(team);
+
+    }
+
+    public async Task<List<Team>> GetAllTeamsAsync()
+    {
+        await _teamsRepository.GetAllTeamsAsync();
+    }
+
+    public async Task<Team?> GetTeamByIdAsync(string teamName)
+    {
+        var teamId = TeamName.Create(teamName);
+        await _teamsRepository.GetByIdAsync(teamId);
+    }
+
+    public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
+    {
+        var teamId = TeamName.Create(teamName);
+
+        var team = await _teamsRepository.GetByIdAsync(teamId);
+
+        var playerId = UserName.Create(playerName);
+
+        team.RemovePlayer(playerId);
+
+        await _teamsRepository.UpdateTeamAsync(team);
+
+    }
+
+    public async Task<List<Team>> GetTeamsByNameAsync(string searchTerm)
+    {
+        await _teamsRepository.GetTeamsByNameAsync(searchTerm);
+    }
+}

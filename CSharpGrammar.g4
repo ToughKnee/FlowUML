@@ -42,12 +42,12 @@ PRIMITIVE_TYPE_NAME
     | 'dynamic'
     ;
 
-userTypeName
+advancedTypeName
     : IDENTIFIER ('<' genericType (',' genericType)* '>')?
     ;
 
 genericType
-    : userTypeName
+    : advancedTypeName
     | genericType '<' genericType (',' genericType)* '>'
     ;
     
@@ -72,19 +72,27 @@ classBodyContent
     ;
 
 classHeritage
-    : ':' (PRIMITIVE_TYPE_NAME | userTypeName) (',' (PRIMITIVE_TYPE_NAME | userTypeName))*
+    : ':' (PRIMITIVE_TYPE_NAME | advancedTypeName) (',' (PRIMITIVE_TYPE_NAME | advancedTypeName))*
     ;
 
 //===========================  Class properties grammar
 classContent
     // Syntax for property declaration
-    : attributes? ACCESS_MODIFIER? MODIFIERS? (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER SEMICOLON
-    // Syntax for method declaration
-    // TODO: Implement a way to catch the parameters, TODO2: Also implement a way to catch a call inside this method call(maybe using the priority of the tokenization where we find all the Method Calls first and later we can check for them normally, AND also adding this as a new Lexer Rule: 'METHOD_CALL')
-    | attributes? ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER 
-    '(' parameterList ')'
-    methodBodyContent
+    : property
+    | method
     ;
+
+    property
+        : attributes? ACCESS_MODIFIER? MODIFIERS? (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER SEMICOLON
+        ;
+
+    method
+        :    
+        // Syntax for method declaration
+        attributes? ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER 
+        '(' parameterList? ')'
+        methodBodyContent
+        ;
 
 attributeIdentifier
     : '[' IDENTIFIER ('(' .*? ')')? ']'
@@ -108,16 +116,19 @@ parameterList
     ;
 
 parameter
-    : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER // IDENTIFIER is unnecesary since we only need to know the (PRIMITIVE_TYPE_NAME | userTypeName)s
+    : (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER // IDENTIFIER is unnecesary since we only need to know the (PRIMITIVE_TYPE_NAME | advancedTypeName)s
     ;
 
 //===========================  Local variables grammar
 methodContent
-    : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' expression ';'
-    | methodContentExpression ';'
+    : localVariableDeclaration
+    | functionCall ';'
     ;
 
-methodContentExpression: expression;
+localVariableDeclaration
+    : (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER '=' expression ';'
+    ;
+functionCall: expression;
 
 // Something that returns something
 expression
