@@ -8,6 +8,10 @@ SEMICOLON: ';';
 
 AWAIT: 'await';
 
+NEW: 'new';
+
+RETURN: 'return';
+
 // Covers optional MODIFIERS for some properties, variables, classes and such that they could have like readonly or the attributes, like [Theory] for xUnit
 MODIFIERS
     : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
@@ -100,6 +104,7 @@ methodBodyContent
     :
     '{'
     methodContent*
+    returnType?
     '}'
     ;
 
@@ -113,11 +118,20 @@ parameter
 
 //===========================  Local variables grammar
 methodContent
-    : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' expression ';'
+    : constructorAssignment
     | methodContentExpression ';'
+    | (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' expression ';'
+    ;
+
+constructorAssignment
+    : (PRIMITIVE_TYPE_NAME | userTypeName) IDENTIFIER '=' NEW expression ';'
     ;
 
 methodContentExpression: expression;
+
+returnType
+    : RETURN (IDENTIFIER | expression) ';' 
+    ;
 
 // Something that returns something
 expression

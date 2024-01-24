@@ -1,15 +1,12 @@
-  public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
-  {
-      var teamId = TeamName.Create(teamName);
+{
+    public async Task<List<Team>> GetAllTeamsAsync()
+    {
+        return await _teamsRepository.GetAllTeamsAsync();
+    }
 
-      var team = await _teamsRepository.GetByIdAsync(teamId);
-
-      var playerId = UserName.Create(playerName);
-      var player = new Player(playerId);
-
-      team.AddPLayer(player);
-
-      await _teamsRepository.UpdateTeamAsync(team);
-
-      return team;
-  }
+    public async Task<Team?> GetTeamByIdAsync(string teamName)
+    {
+        var teamId = TeamName.Create(teamName);
+        return await _teamsRepository.GetByIdAsync(teamId);
+    }
+}
