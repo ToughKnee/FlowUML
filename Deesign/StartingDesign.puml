@@ -28,24 +28,37 @@ class layouter <<Layout>>
 
 package Presentation #ade
 {
-  class Console
+  class Program
   {
-    Takes input and prints text
+    Receive **a path** to a repository with code
   }
 }
 
 
 package Infrastructure #ddd 
 {
-  class FileUtils
+  class FileService
   {
-    Has the most basic operations to perform in file hierarchies
+    +===StartNavigation(string path)
+    Receives the path and starts the process of traversal
+
+  }
+
+  'Make entry point to this place
+  class ANTLRService
+  {
+    +===ProcessTextfile
   }
 }
 note as infLayerNote
   Has the services that are requested by anyone as **interfaces** and implements them through **Dependency Inversion**
   end note
   infLayerNote -> Infrastructure
+
+
+
+
+
 
 
 package Application #d99
@@ -66,6 +79,15 @@ package Application #d99
     Uses the file utils from the Infrastructure layer and performs the main operations to use the file hierarchy
   }
 }
+
+
+
+
+
+
+
+
+
 package Domain #889
 {
   'TODO: Rethink as  just **Flow** instead of this name
