@@ -4,6 +4,9 @@ using Antlr4.Runtime.Tree;
 using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
 using Infrastructure.ANTLR.CSharp;
+using System;
+using static Antlr4.Runtime.Atn.SemanticContext;
+using static Infrastructure.ANTLR.CSharp.CSharpGrammarParser;
 
 namespace Infrastructure.Antlr
 {
@@ -31,6 +34,20 @@ namespace Infrastructure.Antlr
         // The reason the variable 'childrenOffset' exists is because if there are attributes(the "[something]"
         // in the property, then this is added as another child and we must rearrange the children according to this
 
+        public int GetRuleIndexInChildren(string ruleName, IList<IParseTree> contextChildren)
+        {
+            string suffix = "Context";
+            string childRuleName = "";
+
+            // Iterates through all the children and compares if the rule of the child is equal to the ruleName
+            for (int j = 0; j < contextChildren.Count; j++)
+            {
+                childRuleName = contextChildren[j].GetType().ToString();
+                childRuleName = childRuleName.Substring(childRuleName.LastIndexOf('+') + 1);
+                if (childRuleName.Equals(ruleName + suffix, StringComparison.OrdinalIgnoreCase)) return j;
+            }
+            return -1;
+        }
 
         public override string VisitProperty([NotNull] CSharpGrammarParser.PropertyContext context)
         {
@@ -42,25 +59,29 @@ namespace Infrastructure.Antlr
         public override string VisitMethod([NotNull] CSharpGrammarParser.MethodContext context)
         {
             int childrenOffset = (context.children.Count > 8) ? (1) : (0);
+            int parameterIndex = GetRuleIndexInChildren("parameterList", context.children);
+            int methodBodyIndex = GetRuleIndexInChildren("methodBodyContent", context.children);
             // Getting the parameters and storing them into the InstancesDictionary
-            for (int j = 0; j < context.children[5 + childrenOffset].ChildCount; j += 2)
+            for (int j = 0; j < context.children[parameterIndex].ChildCount; j += 2)
             {
-                string[] parameter = Visit(context.children[5 + childrenOffset].GetChild(j)).Split("-");
+                string[] parameter = Visit(context.children[parameterIndex].GetChild(j)).Split("-");
                 // TODO: Refactor
                 InstancesDictionaryManager.instance.AddAssignation(new Instance(parameter[0]), new Instance(parameter[1]));
             }
             // Getting the variables and storing them into the InstancesDictionary
-            for (int j = 1; j < context.children[7 + childrenOffset].ChildCount-1; j++)
+            for (int j = 1; j < context.children[methodBodyIndex].ChildCount-1; j++)
             {
-                // Differentiates between "functionCall"s which just have 2 children at most
-                if(context.children[7 + childrenOffset].GetChild(j).GetChild(0).ChildCount > 2)
+                // Differentiates between "functionCall"s which just has 2 children at most
+                if(context.children[methodBodyIndex].GetChild(j).GetChild(0).ChildCount > 2)
                 {
-                    string[] parameter = Visit(context.children[7 + childrenOffset].GetChild(j).GetChild(0)).Split("-");
+                    string[] parameter = Visit(context.children[methodBodyIndex].GetChild(j).GetChild(0)).Split("-");
                     // TODO: Refactor
                     InstancesDictionaryManager.instance.AddAssignation(new Instance(parameter[0]), new Instance(parameter[1]));
                 }
             }
-            string parameters = context.children[5 + childrenOffset].GetText();
+
+            // TODO: Check what this line is doing
+            string parameters = context.children[parameterIndex].GetText();
             methods.Add((context.children[2 + childrenOffset].GetText(), context.children[3 + childrenOffset].GetText()));
             return base.VisitMethod(context);
         }
