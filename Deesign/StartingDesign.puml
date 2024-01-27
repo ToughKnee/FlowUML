@@ -98,17 +98,18 @@ package Domain #889
 
   class Callsite
   {
-    Aimed to represent **one step** a sequence of the flow from **this class** to other places of the code
+    Represents mainly a **Method**, but one that is yet to be recognized, because to define a Method we need its ClassEntity owner, Method name and parameters(the method's signature), and most likely we will only find the name when making the static analisys of the code
+    Used to make the **calls** methods will make to other methods and build the flow of them
     Very important to make edges from the class Entity to the callsite in plantUML
-    ""CallerMethod.Owner --> CalledMethod.Owner() : CalledMethod""
-    <color:Red>This subscribes to an event **only if** the CalledMethod is not found an instance implementation from the InstancesMap
+    <color:Red>This subscribes to an event **only if** the CalledMethod is not found an instance implementation from the InstancesMap and thus when the ClassEntity creates the complete Methods, it will raise events for each of those, where **this Callsite** is going to be listening and replace the **CalledMethod** with the one from the event
     <color:fa00df>This will always subscribe to an event of end of file system traveling, it desubscribes when the CalledMethod is found an
-    -===Method CallerMethod
     -===Method? CalledMethod
     It may be null when the method called is from a ClassEntity not defined yet, so we wait for the **Instance** that has the name of that method to receive the event that defines the method and make him fill this CalledMethod
-    -===int AssignedSequence
-    Used to know when a step is made inside a **Flow**, if the CalledMethod does not have a defined Owner(not found ClassEntity), then the Sequence stops being absolute and becomes relative, because the CalledMethod may call other methods in between that we can't know about yet, thus all subsequent steps will also be relative
-    ==Creation of a Callsite
+    -===bool hasCompleteMethod
+    Used to know if this callsite has the "calledMethod" with a ClassEntity, 
+    Method name and parameters(basically the Method's signature)
+
+   ==Creation of a Callsite
     The callsite will be created everytime we discover curly braces that are
     the scope of a method from the class we are building,
     if there is a method called from anything in here, 
@@ -134,16 +135,17 @@ package Domain #889
     A method that must be identifiable with the **Method Parameters and belonging ClassEntity** 
     -===ClassEntity? OwnerClass
     Null if this is a lone function
-    -===string Params
-    They should have the **Types** of the params separated by comma
+    -===List<string> parameters
+    This only stores the **Types** of the params
     -===string? ReturnType
     This is the Type of the return type if any, so that it is easier to check what instance would a method return(when building a Flow)
-    -===bool HasLambda
-    True if the Method takes as parameter lambda
+    -===List<Callsite> callsites
+    This will represent other methods or functions this method calls in its Method's Body
+    This way we will create an entire flow from a class to all other places of the code, regardless of the depth of the calls
     ----
     +===string Signature()
     This returns the identifier of the Method as...
-    ""ClassEntity:MethodName(Params):HasLambda""
+    ""ClassEntity:MethodName(parameters):HasLambda""
   }
 
   class ClassEntity
@@ -155,10 +157,7 @@ package Domain #889
     -===List<Properties> Properties
     Simple Properties to show
     -===List<Methods> Methods
-    List of the methods this class has defined, **useful to define Callsites**
-    -===List<List<Callsite>> Flows
-    Each list represents a **Flow**, where this class is the starting point and all the callsites are the steps to other places of the code
-    <color:Red>This should only be created for the starting class? Or we create more flows for each class we find? Because it could lead to redundancy
+    List of the methods this class has defined, this list also will define the **Flow** of this calss
     -===static Map<Instance, Instance> InstancesMap
     <color:3c3>TODO: Move this to another Class for single responsibility
     This will let us identify each **variable, parameter, attribute and method return variable** to its <color:Blue>**corresponding Type**</color> for both inside of this class(but we delete from here scoped instances) OR also instances out of this class(like methods or static variables)
@@ -173,15 +172,15 @@ package Domain #889
 
   struct Instance
   {
-    An instance is a variable, parameter or method return type that **has a type** which we need to know when a ClassEntity calls another Classentity
-    ====Basically a variable/parameter/property/method that has a given **Type**
+    An instance is a variable, parameter or method return type that **has a type** which we need to know when a ClassEntity calls another ClassEntity
+    ====Basically a variable/parameter/property/method that has a given **Type provided by another Instance**
     And this lets us map any variable to a **ClassEntity** eventually
     -===string Name
     The name of the variable/parameter/property this is defined as in code with the given Type
     This kind of instances will usually go to the left of the **InstancesMap**
     **IF** this is a method with a return type, this **should go to the right of the InstancesMap**
     <color:Blue>If when looking into the InstancesMap we don't find this method with an Implementation, its because we are either missing the ClassEntity registering all his methods in the RegisteredClassEntities, or there are parameters that don't have an Implementation, then this class should subscribe to an event that is triggered by ClassEntities, and this will tell the instance to look again for the InstancesMap to find again what was the type it was missing(""Pass this to a special class? And make both classes inherit from abstract class?(One class will represent //variable/parameter/property//, and the other will represent the //method return types// which have special logic, and both will inherit from an abstract class to be referred to both classes since they are the same thing essentially""))
-    The name should look like ""ClassEntity:MethodName(Params)""
+    The name should look like ""ClassEntity:MethodName(parameters)""
     -===<color:Blue>Callsite? LinkedCallsite
     This exists because if the instance has the name of a method, and gets defined the **Implementation of this method** from an event where a ClassEntity defined itself and this method, or it was already defined, then it should fill out the Callsite CalledMethod too, because the Callsite will not know 
     -===ClassEntity? Implementation

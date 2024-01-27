@@ -87,7 +87,8 @@ ClassEntity_RegisteredClassEntities -u--> Team : Step 3
 
 note as TeamCode
 1. Parameters and Properties are the easiest to get the implementation since the Type of the instance **is before them**
-2. Variables have 2 kinds of ways when trying to find the implementation, the first is through **instance aliases**, which is just variables being instances of other variables like 'bob = johny', this is easy to find since we will have to know who 'johny' is, this can lead to more instance aliases like 'johny = jimmy', or worse, the second type where johny = jimmy.GetAssistant(selectedCourse)'
+2. Variables have 2 kinds of ways when trying to find the implementation, the first is through **instance aliases**, which is just variables being instances of other variables like 'bob = johny', this is easy to find since we will have to know who 'johny' is, **BUT** this can lead to more instance aliases like 'johny = jimmy', or worse, the second type where 
+""johny = jimmy.GetAssistant(selectedCourse)""
 3. The second kind of instance implementation is through **methods return types**, and this is as complex as the method's signature, because we have to know 3 things: 
 *The Class type this method is from
 *The parameters of the method  

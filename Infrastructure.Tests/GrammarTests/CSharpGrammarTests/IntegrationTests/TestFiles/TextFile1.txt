@@ -1,4 +1,4 @@
-public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
+﻿public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
 {
     var teamId = TeamName.Create(teamName);
 
