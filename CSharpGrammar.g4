@@ -17,7 +17,7 @@ MODIFIERS
     : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
     ;
 
-// TODO: Implement a way to catch the parameters, TODO2: Also implement a way to catch a call inside this method call(maybe using the priority of the tokenization where we find all the Method Calls first and later we can check for them normally, AND also adding this as a new Lexer Rule: 'METHOD_CALL')
+modifiers: MODIFIERS;
 
 ACCESS_MODIFIER
     : 'public'
@@ -25,6 +25,8 @@ ACCESS_MODIFIER
     | 'private'
     | 'internal'
     ;
+
+accessModifier: ACCESS_MODIFIER;
 
 // Covers types which may or may not have generic types with them
 // TODO: Add the primitive types in here
@@ -46,8 +48,10 @@ PRIMITIVE_TYPE_NAME
     | 'dynamic'
     ;
 
+primitiveTypeName: PRIMITIVE_TYPE_NAME;
+
 advancedTypeName
-    : IDENTIFIER ('<' genericType (',' genericType)* '>')?
+    : identifier ('<' genericType (',' genericType)* '>')?
     ;
 
 genericType
@@ -61,9 +65,13 @@ IDENTIFIER
     : [a-zA-Z_] [a-zA-Z0-9_]*('?'?)
     ;
 
+identifier
+    : IDENTIFIER
+    ;
+
 //===========================  Class grammar
 classDeclaration
-    : attributes? ACCESS_MODIFIER? 'class' IDENTIFIER classHeritage?
+    : attributes? accessModifier? 'class' identifier classHeritage?
         classBodyContent?
     ;
 
@@ -76,35 +84,44 @@ classBodyContent
     ;
 
 classHeritage
-    : ':' (PRIMITIVE_TYPE_NAME | advancedTypeName) (',' (PRIMITIVE_TYPE_NAME | advancedTypeName))*
+    : ':' (primitiveTypeName | advancedTypeName) (',' (primitiveTypeName | advancedTypeName))*
     ;
 
 //===========================  Class properties grammar
 classContent
     // Syntax for property declaration
-    : property
+    : constructorDeclaration
+    | property
     | method
     ;
 
+    constructorDeclaration
+        : 
+        attributes? accessModifier? modifiers* identifier 
+        '(' parameterList? ')'
+        methodBodyContent
+        ;
+
     property
-        : attributes? ACCESS_MODIFIER? MODIFIERS? (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER SEMICOLON
+        : attributes? accessModifier? modifiers? (primitiveTypeName | advancedTypeName) identifier SEMICOLON
         ;
 
     method
         :    
         // Syntax for method declaration
-        attributes? ACCESS_MODIFIER? MODIFIERS* (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER 
+        attributes? accessModifier? modifiers* (primitiveTypeName | advancedTypeName) identifier 
         '(' parameterList? ')'
         methodBodyContent
         ;
 
 attributeIdentifier
-    : '[' IDENTIFIER ('(' .*? ')')? ']'
+    : '[' identifier ('(' .*? ')')? ']'
     ;
 
 attributes
     : attributeIdentifier+
     ;
+
 
 //===========================  Method grammar
 
@@ -121,7 +138,7 @@ parameterList
     ;
 
 parameter
-    : (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER // IDENTIFIER is unnecesary since we only need to know the (PRIMITIVE_TYPE_NAME | advancedTypeName)s
+    : (primitiveTypeName | advancedTypeName) identifier // identifier is unnecesary since we only need to know the (primitiveTypeName | advancedTypeName)s
     ;
 
 //===========================  Local variables grammar
@@ -132,16 +149,16 @@ methodContent
     ;
 
 constructorAssignment
-    : (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER '=' NEW expression ';'
+    : (primitiveTypeName | advancedTypeName) identifier '=' NEW expression ';'
     ;
 
 localVariableDeclaration
-    : (PRIMITIVE_TYPE_NAME | advancedTypeName) IDENTIFIER '=' expression ';'
+    : (primitiveTypeName | advancedTypeName) identifier '=' expression ';'
     ;
 functionCall: expression;
 
 returnType
-    : RETURN NEW? (IDENTIFIER | expression) ';' 
+    : RETURN NEW? (identifier | expression) ';' 
     ;
 
 // Something that returns something
@@ -155,9 +172,9 @@ methodCall
     ;
 
 methodIdentifier
-    : IDENTIFIER ( '.' methodCall | '.' IDENTIFIER)*
+    : identifier ( '.' methodCall | '.' identifier)*
     ;
 
 argumentList
-    : (expression | IDENTIFIER) ( ',' (expression | IDENTIFIER) )*
+    : (expression | identifier) ( ',' (expression | identifier) )*
     ;
