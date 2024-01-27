@@ -34,15 +34,15 @@ namespace Infrastructure.Antlr
         // The reason the variable 'childrenOffset' exists is because if there are attributes(the "[something]"
         // in the property, then this is added as another child and we must rearrange the children according to this
 
-        public int GetRuleIndexInChildren(string ruleName, IList<IParseTree> contextChildren)
+        public int GetRuleIndexInChildren(string ruleName, IParseTree parentRule)
         {
             string suffix = "Context";
             string childRuleName = "";
 
             // Iterates through all the children and compares if the rule of the child is equal to the ruleName
-            for (int j = 0; j < contextChildren.Count; j++)
+            for (int j = 0; j < parentRule.ChildCount; j++)
             {
-                childRuleName = contextChildren[j].GetType().ToString();
+                childRuleName = parentRule.GetChild(j).GetType().ToString();
                 childRuleName = childRuleName.Substring(childRuleName.LastIndexOf('+') + 1);
                 if (childRuleName.Equals(ruleName + suffix, StringComparison.OrdinalIgnoreCase)) return j;
             }
@@ -59,8 +59,8 @@ namespace Infrastructure.Antlr
         public override string VisitMethod([NotNull] CSharpGrammarParser.MethodContext context)
         {
             int childrenOffset = (context.children.Count > 8) ? (1) : (0);
-            int parameterIndex = GetRuleIndexInChildren("parameterList", context.children);
-            int methodBodyIndex = GetRuleIndexInChildren("methodBodyContent", context.children);
+            int parameterIndex = GetRuleIndexInChildren("parameterList", context);
+            int methodBodyIndex = GetRuleIndexInChildren("methodBodyContent", context);
             // Getting the parameters and storing them into the InstancesDictionary
             for (int j = 0; j < context.children[parameterIndex].ChildCount; j += 2)
             {
@@ -92,9 +92,11 @@ namespace Infrastructure.Antlr
 
         public override string VisitLocalVariableDeclaration([NotNull] CSharpGrammarParser.LocalVariableDeclarationContext context)
         {
-            int childrenOffset = (context.GetChild(3).ChildCount > 1) ? (1) : (0);
+            int expressionIndex = GetRuleIndexInChildren("expression", context);
+            int methodIndex = GetRuleIndexInChildren("methodCall", context.children[expressionIndex]);
+
             // Gets the Assignee and the Assigner and returns them
-            return context.GetChild(1).GetText() + separator + context.GetChild(3).GetChild(childrenOffset).GetText();
+            return context.GetChild(1).GetText() + separator + context.GetChild(expressionIndex).GetChild(methodIndex).GetText();
         }
     }
 }
