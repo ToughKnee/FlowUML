@@ -8,10 +8,15 @@ namespace Infrastructure.Antlr
     public class ANTLRService
     {
         private CSharpGrammarParser csharpParser;
+        private CSharpVisitor _cSharpVisitor;
         public List<(string, string)> properties;
         public List<(string, string)> methods;
 
-        public ANTLRService(string text, bool isTextPath)
+        public ANTLRService(CSharpVisitor visitor)
+        {
+            _cSharpVisitor = visitor;
+        }
+        public void InitializeAntlr(string text, bool isTextPath)
         {
             string textToAnalyze = "";
             if (isTextPath)
@@ -31,8 +36,7 @@ namespace Infrastructure.Antlr
         public void RunVisitor()
         {
             var csharpContext = csharpParser.classDeclaration();
-            var visitor = new CSharpVisitor();
-            visitor.Visit(csharpContext);
+            _cSharpVisitor.Visit(csharpContext);
         }
 
         public void RunVisitorWithSpecificStartingRule(string startingRule)
@@ -42,8 +46,7 @@ namespace Infrastructure.Antlr
             if (startingRule != null)
             {
                 var csharpContext = (IParseTree) startingRuleMethod.Invoke(csharpParser, null);
-                var visitor = new CSharpVisitor();
-                visitor.Visit(csharpContext);
+                _cSharpVisitor.Visit(csharpContext);
             }
             else
             {

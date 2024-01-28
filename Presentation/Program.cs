@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Application;
-using Application.UseCases;
+using Infrastructure;
+using Infrastructure.Antlr;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation;
 public class Program
@@ -13,22 +14,18 @@ public class Program
         // Get Services From Dependency Injection
         var services = new ServiceCollection();
         services.AddApplicationLayerServices();
+        services.AddInfrastructureLayerServices();
         services.AddPresentationLayerServices();
-
-        // Configure your services here...
-        // For example, if you have a service class named 'MyService', you can add it like this:
-
-        //===========================  ANTLR initialization
-
 
         // Build your service provider
         var serviceProvider = services.BuildServiceProvider();
 
         // Use your service
-        InjectTestt = serviceProvider.GetService<ReceiveInject>();
+        var antlrService = serviceProvider.GetService<ANTLRService>();
 
-
-        Console.WriteLine($"Inject test -> {InjectTestt.GetNumber()}");
+        //===========================  ANTLR initialization
+        antlrService.InitializeAntlr("C:\\Users\\Usuario\\source\\repos\\FlowUML\\Infrastructure\\ANTLR\\CSharp\\testFile.txt", true);
+        antlrService.RunVisitor();
 
     }
 

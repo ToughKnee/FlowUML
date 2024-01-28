@@ -1,5 +1,6 @@
 using Domain.CodeInfo.InstanceDefinitions;
 using Infrastructure.Antlr;
+using Infrastructure.Mediators;
 using Microsoft.VisualStudio.TestPlatform.Utilities;
 using Moq;
 using System;
@@ -21,7 +22,8 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         public void Analyze_BasicmethodRuleFromFile_InstancesDictHasCorrectCountOfElements()
         {
             // Arrange
-            _antlrService = new ANTLRService(currentDirectoryPath + pathToTestFile1, true);
+            _antlrService = new ANTLRService(new CSharpVisitor(new AntlrMediator()));
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFile1, true);
 
             // Act
             _antlrService.RunVisitorWithSpecificStartingRule("method");
