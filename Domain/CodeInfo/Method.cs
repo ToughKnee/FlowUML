@@ -35,6 +35,23 @@ namespace Domain.CodeInfo
         /// </summary>
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
 
+        public Method(ClassEntity owner, string retType, string name, List<string> parameters, List<Callsite> callsites)
+        {
+            this.ownerClass = owner;
+            this.name = name;
+            this.returnType = retType;
+            this.parameters = parameters;
+            this.callsites = callsites;
+        }
+        public Method(string ownerName, string retType, string name, List<string> parameters)
+        {
+
+            this.ownerClass = new ClassEntity(ownerName);
+            this.name = name;
+            this.returnType = retType;
+            this.parameters = parameters;
+            this.callsites = callsites;
+        }
         public Method(ClassEntity owner, string retType, string name, List<string> parameters)
         {
             this.ownerClass = owner;

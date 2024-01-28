@@ -1,4 +1,4 @@
-﻿using Domain.Mediators;
+﻿using Infrastructure.Mediators;
 using Infrastructure.Antlr;
 using Infrastructure.Mediators;
 using Microsoft.Extensions.DependencyInjection;

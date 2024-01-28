@@ -25,7 +25,7 @@ public class Program
 
         //===========================  ANTLR initialization
         antlrService.InitializeAntlr("C:\\Users\\Usuario\\source\\repos\\FlowUML\\Infrastructure\\ANTLR\\CSharp\\testFile.txt", true);
-        antlrService.RunVisitor();
+        antlrService.RunVisitorWithSpecificStartingRule("classDeclaration");
 
     }
 

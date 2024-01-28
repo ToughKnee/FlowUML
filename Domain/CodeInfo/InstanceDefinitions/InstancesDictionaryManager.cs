@@ -20,6 +20,11 @@
             }
         }
 
+        public void CleanInstancesDictionary()
+        {
+            _instance.instancesDictionary.Clear();
+        }
+
         /// <summary>
         /// This will make the link between variables with a name used inside methods,
         /// to a defined implementation of a method that may belong to a class and will allow

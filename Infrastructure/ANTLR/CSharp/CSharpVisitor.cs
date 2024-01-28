@@ -1,16 +1,20 @@
-﻿using Antlr4.Runtime;
-using Antlr4.Runtime.Misc;
+﻿using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
-using Domain.Mediators;
 using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
 using Infrastructure.ANTLR.CSharp;
+using Infrastructure.Builders;
 
 namespace Infrastructure.Antlr
 {
     public class CSharpVisitor : CSharpGrammarBaseVisitor<string?>
     {
-        private IMediator _mediator;
+        /// <summary>
+        /// This visitor creates a MethodBuilder and it visits a method rule,
+        /// and fills it with the information it finds to later be used by someone else
+        /// and make all the necessary information for the domain classes from the builders
+        /// </summary>
+        private List<AbstractBuilder<Method>> _methodBuilders;
         /// <summary>
         /// This is used to separate multiple children to be returned, as an example, 
         /// the method VisitProperty should return the type and the name of the property
@@ -21,18 +25,18 @@ namespace Infrastructure.Antlr
         public List<(string, string)> properties = new List<(string, string)>();
         public List<(string, string)> methods = new List<(string, string)>();
 
-        public CSharpVisitor(IMediator mediator)
+        public CSharpVisitor(List<AbstractBuilder<Method>> builders)
         {
-            _mediator = mediator;
+            _methodBuilders = builders;
         }
 
-        public int GetRuleIndexInChildren(string ruleName, IParseTree parentRule)
+        public int GetRuleIndexInChildren(string ruleName, IParseTree parentRule, int initialOffset = 0)
         {
             string suffix = "Context";
             string childRuleName = "";
 
             // Iterates through all the children and compares if the rule of the child is equal to the ruleName
-            for (int j = 0; j < parentRule.ChildCount; j++)
+            for (int j = initialOffset; j < parentRule.ChildCount; j++)
             {
                 childRuleName = parentRule.GetChild(j).GetType().ToString();
                 childRuleName = childRuleName.Substring(childRuleName.LastIndexOf('+') + 1);
@@ -48,6 +52,42 @@ namespace Infrastructure.Antlr
             return context.GetChild(3).GetText() + separator + context.GetChild(4).GetText();
         }
 
+        public override string VisitClassDeclaration([NotNull] CSharpGrammarParser.ClassDeclarationContext context)
+        {
+            int classBodyContentIndex = GetRuleIndexInChildren("classBodyContent", context);
+            int methodIndex = 0;
+            var classBodyContentNode = context.children[classBodyContentIndex];
+            IParseTree classBodyContentChild;
+  
+            // Pass through all the classContents and get the info for each content
+            for (int j = 1; j < classBodyContentNode.ChildCount - 1; j++)
+            {
+                // We want to look for the "method" rule, so we do this and later check if it is a method rule node
+                classBodyContentChild = classBodyContentNode.GetChild(j);
+                methodIndex = GetRuleIndexInChildren("method", classBodyContentChild);
+                // If this is a method rule node, we start using the builder
+                if(methodIndex > -1)
+                {
+                    // Building methods info
+                    MethodBuilder methodBuilder = new MethodBuilder();
+                    _methodBuilders.Add((AbstractBuilder<Method>) methodBuilder);
+                    int classIdentifierIndex = GetRuleIndexInChildren("identifier", context);
+                    int methodIdentifierIndex = GetRuleIndexInChildren("identifier", classBodyContentChild.GetChild(methodIndex));
+                    int returnTypeIndex = GetRuleIndexInChildren("advancedTypeName", classBodyContentChild.GetChild(methodIndex));
+                    int parameterListIndex = GetRuleIndexInChildren("parameterList", classBodyContentChild.GetChild(methodIndex));
+                    methodBuilder.SetOwnerClass(context.children[classIdentifierIndex].GetText());
+                    methodBuilder.SetName(classBodyContentChild.GetChild(methodIndex).GetChild(methodIdentifierIndex).GetText());
+                    methodBuilder.SetReturnType(classBodyContentChild.GetChild(methodIndex).GetChild(returnTypeIndex).GetText());
+                    if(parameterListIndex > -1)
+                    {
+                        methodBuilder.SetParameters(Visit(classBodyContentChild.GetChild(methodIndex).GetChild(parameterListIndex)));
+                    }
+                    Visit(classBodyContentChild.GetChild(methodIndex));
+
+                }
+            }
+            return base.VisitClassDeclaration(context);
+        }
         public override string VisitMethod([NotNull] CSharpGrammarParser.MethodContext context)
         {
             // Useful variables
@@ -55,15 +95,15 @@ namespace Infrastructure.Antlr
             int parameterIndex = GetRuleIndexInChildren("parameterList", context);
             int methodBodyIndex = GetRuleIndexInChildren("methodBodyContent", context);
 
-            // Getting the method info and sending it to the mediator
-            _mediator.ReceiveMethodInfo("a", "as", new List<string> { "asa" });
-
-            // Getting the parameters and storing them into the InstancesDictionary
-            for (int j = 0; j < context.children[parameterIndex].ChildCount; j += 2)
+            // Getting the parameters and storing them into the InstancesDictionary if any
+            if(parameterIndex > -1)
             {
-                string[] parameter = Visit(context.children[parameterIndex].GetChild(j)).Split("-");
-                // TODO: Refactor
-                InstancesDictionaryManager.instance.AddAssignation(new Instance(parameter[0]), new Instance(parameter[1]));
+                for (int j = 0; j < context.children[parameterIndex].ChildCount; j += 2)
+                {
+                    string[] parameters = Visit(context.children[parameterIndex].GetChild(j)).Split("-");
+                    // TODO: Refactor
+                    InstancesDictionaryManager.instance.AddAssignation(new Instance(parameters[0]), new Instance(parameters[1]));
+                }
             }
 
             // Getting inside the "methodBodyContent" to get the variables and storing them into the InstancesDictionary
@@ -78,11 +118,26 @@ namespace Infrastructure.Antlr
                 }
             }
 
-            // TODO: Check what this line is doing
-            string parameters = context.children[parameterIndex].GetText();
             methods.Add((context.children[2 + childrenOffset].GetText(), context.children[3 + childrenOffset].GetText()));
             return base.VisitMethod(context);
         }
+
+        public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
+        {
+            string result = "";
+            // Getting the parameters and storing them into the InstancesDictionary if any
+            if (context.ChildCount > 0)
+            {
+                for (int j = 0; j < context.ChildCount; j += 2)
+                {
+                    string[] parameters = Visit(context.GetChild(j)).Split("-");
+                    result += parameters[0] + ",";
+                }
+                result = result.Substring(0, result.Length - 1);
+            }
+            return result;
+        }
+
         public override string VisitParameter([NotNull] CSharpGrammarParser.ParameterContext context)
         {
             return context.GetChild(0).GetText() + separator + context.GetChild(1).GetText();

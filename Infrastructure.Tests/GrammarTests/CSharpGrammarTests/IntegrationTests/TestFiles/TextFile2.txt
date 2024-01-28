@@ -1,4 +1,4 @@
-public class TeamsUseCase : ITeamsUseCase
+﻿public class TeamsUseCase : ITeamsUseCase
 {
     private readonly ITeamsRepository _teamsRepository;
 
