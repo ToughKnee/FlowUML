@@ -88,23 +88,27 @@ identifier
 //===========================  File grammar
 cSharpFile
     : usingDirectives?
-    classNamespace*
+    fileNamespace*
     ;
 
 usingDirectives
     : usingDirective+
     ;
 
-usingDirective
-    : using identifier ( '.' identifier )* ';'
+namespaceIdentifier
+    : identifier ( '.' identifier )*
     ;
 
-classNamespace
-    : namespace identifier ( '.' identifier )* 
+usingDirective
+    : using namespaceIdentifier ';'
+    ;
+    
+fileNamespace
+    : namespace namespaceIdentifier 
     '{'
         classDeclarations?
     '}'
-    | namespace identifier ( '.' identifier )* ';'
+    | namespace namespaceIdentifier ';'
     classDeclarations?
     ;
 
@@ -151,7 +155,6 @@ classContent
 
     method
         :    
-        // Syntax for method declaration
         attributes? accessModifier? modifiers* (primitiveTypeName | advancedTypeName) identifier 
         '(' parameterList? ')'
         methodBodyContent
@@ -172,7 +175,6 @@ methodBodyContent
     :
     '{'
     methodContent*
-    returnType?
     '}'
     ;
 
@@ -181,7 +183,7 @@ parameterList
     ;
 
 parameter
-    : (primitiveTypeName | advancedTypeName) identifier // identifier is unnecesary since we only need to know the (primitiveTypeName | advancedTypeName)s
+    : (primitiveTypeName | advancedTypeName) identifier
     ;
 
 //===========================  Local variables grammar
@@ -189,6 +191,7 @@ methodContent
     : constructorAssignment
     | functionCall ';'
     | localVariableDeclaration
+    | returnExpression
     ;
 
 constructorAssignment
@@ -200,7 +203,7 @@ localVariableDeclaration
     ;
 functionCall: expression;
 
-returnType
+returnExpression
     : RETURN NEW? (identifier | expression) ';' 
     ;
 
