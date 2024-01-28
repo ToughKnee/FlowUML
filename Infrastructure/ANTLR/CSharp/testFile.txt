@@ -1,28 +1,27 @@
+using CleanArchitectureWorkshop.Application.Repositories;
+using CleanArchitectureWorkshop.Domain.TeamAggregate;
+
+namespace CleanArchitectureWorkshop.Application.UseCases;
+
 public class TeamsUseCase : ITeamsUseCase
 {
     private readonly ITeamsRepository _teamsRepository;
 
-    public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
-    {
-    }
-
-    public async Task<Team> CreateTeamAsync(string teamName)
-    {
-    }
-
-    public async Task<List<Team>> GetAllTeamsAsync()
-    {
-    }
-
-    public async Task<Team?> GetTeamByIdAsync(string teamName)
-    {
-    }
-
-    public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
-    {
-    }
 
     public async Task<List<Team>> GetTeamsByNameAsync(string searchTerm)
     {
+        return await _teamsRepository.GetTeamsByNameAsync(searchTerm);
+    }
+}
+
+public class hhhhash : ono
+{
+    private readonly ITeamsRepository _teamsRepository;
+    private readonly asdca _sajkl;
+    private readonly alasl llll;
+
+    public async Task<List<Team>> GetTeamsByNameAsync(string searchTerm)
+    {
+        return await _teamsRepository.GetTeamsByNameAsync(searchTerm);
     }
 }

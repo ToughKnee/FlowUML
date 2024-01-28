@@ -6,6 +6,22 @@ WS  :   [ \t\n\r]+ -> skip ;
 //===========================  Generic grammar
 SEMICOLON: ';';
 
+NAMESPACE
+    : 'namespace'
+    ;
+
+namespace
+    : NAMESPACE
+    ;
+
+USING
+    : 'using'
+    ;
+
+using
+    : USING
+    ;
+
 AWAIT: 'await';
 
 NEW: 'new';
@@ -69,7 +85,34 @@ identifier
     : IDENTIFIER
     ;
 
+//===========================  File grammar
+cSharpFile
+    : usingDirectives?
+    classNamespace*
+    ;
+
+usingDirectives
+    : usingDirective+
+    ;
+
+usingDirective
+    : using identifier ( '.' identifier )* ';'
+    ;
+
+classNamespace
+    : namespace identifier ( '.' identifier )* 
+    '{'
+        classDeclarations?
+    '}'
+    | namespace identifier ( '.' identifier )* ';'
+    classDeclarations?
+    ;
+
 //===========================  Class grammar
+classDeclarations
+    : classDeclaration+
+    ;
+
 classDeclaration
     : attributes? accessModifier? 'class' identifier classHeritage?
         classBodyContent?
