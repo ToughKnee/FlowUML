@@ -9,15 +9,19 @@ namespace Infrastructure.Builders
     public class MethodBuilder : AbstractBuilder<Method>
     {
         public string name { get; private set; }
-        public string returnType { get; private set; } = null;
         public string ownerClass { get; private set; }
+        public string? returnType { get; private set; } = null;
+        public string? belongingNamespace { get; private set; } = null;
         public List<string> parameters { get; private set; } = new List<string>();
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
 
         public Method Build()
         {
+            //===========================  TODO: USE the ClassEntity built by the ClassEntityBuilder!!!
+            //===========================  TODO: USE the ClassEntity built by the ClassEntityBuilder!!!
+            //===========================  TODO: USE the ClassEntity built by the ClassEntityBuilder!!!
             ClassEntity owner = new ClassEntity(ownerClass);
-            Method method = new Method(owner, returnType, name, parameters, callsites);
+            Method method = new Method(belongingNamespace, owner, name, parameters, returnType, callsites);
             return method;
         }
         public MethodBuilder SetName(string name)
@@ -30,6 +34,12 @@ namespace Infrastructure.Builders
             this.returnType = retType;
             return this;
         }
+        public MethodBuilder SetBelongingNamespace(string? belongingNamespace)
+        {
+            this.belongingNamespace = belongingNamespace;
+            return this;
+        }
+        // TODO: =================  DELETEME 
         public MethodBuilder SetOwnerClass(string ownerClass)
         {
             this.ownerClass = ownerClass;

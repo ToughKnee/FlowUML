@@ -9,6 +9,10 @@ namespace Domain.CodeInfo
         /// </summary>
         public string name { get; private set; }
         /// <summary>
+        /// Namespace or package in which the class was found
+        /// </summary>
+        public string classNamespace { get; private set; }
+        /// <summary>
         /// Properties of the class
         /// </summary>
         public List<Property> properties { get; private set; } = new List<Property>();
@@ -25,6 +29,22 @@ namespace Domain.CodeInfo
         public void AddMethod(Method method)
         {
             //InstancesDictionaryManager.instance.AddAssignation()
+        }
+        
+        public static bool operator ==(ClassEntity obj1, ClassEntity obj2)
+        {
+            if (obj1.name == obj2.name && obj1.classNamespace == obj2.classNamespace)
+                return true;
+
+            return false;
+        }
+
+        public static bool operator !=(ClassEntity obj1, ClassEntity obj2)
+        {
+            if (obj1.name == obj2.name && obj1.classNamespace == obj2.classNamespace)
+                return false;
+
+            return true;
         }
     }
 }

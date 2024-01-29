@@ -34,5 +34,21 @@ namespace Domain.CodeInfo
         {
             this.implementation = null;
         }
+
+        public static bool operator ==(AbstractInstance obj1, AbstractInstance obj2)
+        {
+            if (obj1.implementation == obj2.implementation || obj1.name == obj2.name)
+                return true;
+
+            return false;
+        }
+
+        public static bool operator !=(AbstractInstance obj1, AbstractInstance obj2)
+        {
+            if (obj1.implementation == obj2.implementation || obj1.name == obj2.name)
+                return false;
+
+            return true;
+        }
     }
 }

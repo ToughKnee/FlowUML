@@ -5,64 +5,92 @@ using Infrastructure.Antlr;
 using Infrastructure.Builders;
 using Infrastructure.Mediators;
 using Moq;
+using System.Collections;
 using System.Collections.Generic;
 using Xunit.Abstractions;
 
 namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 {
-    public class InstanceDictionaryAntlrTests
+    public class AntlrAnalysisTests
     {
         private static string currentDirectoryPath = "..\\..\\..\\";
         private readonly string pathToTestFiles = "GrammarTests\\CSharpGrammarTests\\IntegrationTests\\TestFiles\\";
         private ANTLRService _antlrService;
-        public InstanceDictionaryAntlrTests()
+        public AntlrAnalysisTests()
         {
             InstancesDictionaryManager.instance.CleanInstancesDictionary();
         }
 
-        [Fact]
-        public void Analyze_BasicmethodRuleFromFile_InstancesDictHasCorrectCountOfElements()
+        public static IEnumerable<object[]> TextFile1Expectations
+        {
+            get
+            {
+                yield return new object[] {
+                    new List<string> { "string", "string", "a", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase" },
+                    new List<string> { "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase" }
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(TextFile1Expectations))]
+        //===========================  TODO: COMPLETE Test
+        //===========================  TODO: COMPLETE Test
+        //===========================  TODO: COMPLETE Test
+        public void Analyze_BasicmethodRuleFromFile_InstancesDictHasCorrectCountOfElements(List<string> expectedTypes, List<string> expectedValues)
         {
             // Arrange
             var mediatorMock = new Mock<IMediator>();
             _antlrService = new ANTLRService(mediatorMock.Object);
-            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "TextFile1.txt", true);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile1.txt", true);
 
             // Act
             _antlrService.RunVisitorWithSpecificStartingRule("method");
 
             // Assert
             Assert.True(InstancesDictionaryManager.instance.instancesDictionary.Count == 5);
+
+            int i = 0;
+            foreach (KeyValuePair<AbstractInstance, AbstractInstance> assignment in InstancesDictionaryManager.instance.instancesDictionary)
+            {
+                string type = assignment.Key.name;
+                string value = assignment.Value.name;
+                Assert.True(type == expectedTypes[i]);
+                i++;
+            }
+            
         }
 
         public static IEnumerable<object[]> TextFile2Expectations
         {
             get
             {
-                yield return new object[] { 
-                    new List<string> { "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase" },
-                    new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>" },
+                yield return new object[] {
+                    "CleanArchitectureWorkshop.Application.UseCases",
+                    "TeamsUseCase",
                     new List<string> { "AddPlayerToTeamAsync", "CreateTeamAsync", "GetAllTeamsAsync", "GetTeamByIdAsync", "RemovePlayerFromTeamAsync", "GetTeamsByNameAsync" },
-                    new List<string> { "string,string", "string", "", "string", "string,string", "string" }
+                    new List<string> { "string,string", "string", "", "string", "string,string", "string" },
+                    new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>" }
                 };
             }
         }
 
         [Theory]
         [MemberData(nameof(TextFile2Expectations))]
-        public void Analyze_BasicClassDeclaration_MediatorReceivesBuilder(List<string> expOwnerName, List<string> expRetType, List<string> expName, List<string> expParameters)
+        public void Analyze_BasicClassDeclaration_MediatorReceivesMethodBuilderAndCorrectMethodsBuilt(string expBelNamespace, string expOwnerName
+            , List<string> expName, List<string> expParameters, List<string> expRetType)
         {
             // Arrange
             List<AbstractBuilder<Method>> abstractBuilders = new List<AbstractBuilder<Method>>();
             var mediatorMock = new Mock<IMediator>();
             // Capture the received parameter to check it
             mediatorMock.Setup(m => m.ReceiveMethodBuilder(It.IsAny<List<AbstractBuilder<Method>>>()))
-                .Callback< List < AbstractBuilder < Method >>> (r => abstractBuilders = r);
+                .Callback<List<AbstractBuilder<Method>>>(r => abstractBuilders = r);
             _antlrService = new ANTLRService(mediatorMock.Object);
-            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "TextFile2.txt", true);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile2.txt", true);
 
             // Act
-            _antlrService.RunVisitorWithSpecificStartingRule("classDeclaration");
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
             // Assert
             mediatorMock.Verify(m => m.ReceiveMethodBuilder(It.IsAny<List<AbstractBuilder<Method>>>()), Times.Once);
@@ -76,7 +104,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 {
                     parametersExpected = expParameters[i].Split(",").ToList();
                 }
-                Method expectedResult = new Method(expOwnerName[i], expRetType[i], expName[i], parametersExpected);
+                Method expectedResult = new Method(expBelNamespace, new ClassEntity(expOwnerName), expName[i], parametersExpected, expRetType[i]);
                 abstractBuilders[i].Build().Should().BeEquivalentTo(expectedResult);
             }
         }

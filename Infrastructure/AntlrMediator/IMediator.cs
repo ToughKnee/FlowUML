@@ -17,13 +17,13 @@ namespace Infrastructure.Mediators
         /// </summary>
         /// <param name="builder">Builder containing all the necessary info to
         /// build all the methods from a ClassEntity</param>
-        public void ReceiveMethodBuilder(List<AbstractBuilder<Method>> builder);
+        public void ReceiveMethodBuilder(List<AbstractBuilder<Method>> builders);
         /// <summary>
         /// Receive and manager the builder that contains the info to create the class
         /// if there was a class in the file analysis
         /// </summary>
         /// <param name="builder">Builder containing all the info to create a 
         /// ClassEntity if there was a class in the code analyzed</param>
-        public void ReceiveClassEntityBuilder(List<AbstractBuilder<ClassEntity>> builder);
+        public void ReceiveClassEntityBuilder(List<AbstractBuilder<ClassEntity>> builders);
     }
 }

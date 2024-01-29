@@ -1,4 +1,4 @@
-using CleanArchitectureWorkshop.Application.Repositories;
+﻿using CleanArchitectureWorkshop.Application.Repositories;
 using CleanArchitectureWorkshop.Domain.TeamAggregate;
 
 namespace CleanArchitectureWorkshop.Application.UseCases

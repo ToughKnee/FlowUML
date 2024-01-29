@@ -1,4 +1,9 @@
-﻿public class TeamsUseCase : ITeamsUseCase
+﻿using CleanArchitectureWorkshop.Application.Repositories;
+using CleanArchitectureWorkshop.Domain.TeamAggregate;
+
+namespace CleanArchitectureWorkshop.Application.UseCases;
+
+public class TeamsUseCase : ITeamsUseCase
 {
     private readonly ITeamsRepository _teamsRepository;
 

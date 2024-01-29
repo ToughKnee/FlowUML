@@ -88,7 +88,8 @@ identifier
 //===========================  File grammar
 cSharpFile
     : usingDirectives?
-    fileNamespace*
+    fileNamespaces?
+    classDeclarations?
     ;
 
 usingDirectives
@@ -103,6 +104,9 @@ usingDirective
     : using namespaceIdentifier ';'
     ;
     
+fileNamespaces
+    : fileNamespace+
+    ;
 fileNamespace
     : namespace namespaceIdentifier 
     '{'
