@@ -37,7 +37,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         //===========================  TODO: COMPLETE Test
         //===========================  TODO: COMPLETE Test
         //===========================  TODO: COMPLETE Test
-        public void Analyze_BasicmethodRuleFromFile_InstancesDictHasCorrectCountOfElements(List<string> expectedTypes, List<string> expectedValues)
+        public void AnalyzeBasicClassDeclaration_InstancesDictHasCorrectCountOfElements(List<string> expectedTypes, List<string> expectedValues)
         {
             // Arrange
             var mediatorMock = new Mock<IMediator>();
@@ -51,6 +51,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             Assert.True(InstancesDictionaryManager.instance.instancesDictionary.Count == 5);
 
             int i = 0;
+            // Checking all the regisered instances are correct
             foreach (KeyValuePair<AbstractInstance, AbstractInstance> assignment in InstancesDictionaryManager.instance.instancesDictionary)
             {
                 string type = assignment.Key.name;
@@ -77,7 +78,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
         [Theory]
         [MemberData(nameof(TextFile2Expectations))]
-        public void Analyze_BasicClassDeclaration_MediatorReceivesMethodBuilderAndCorrectMethodsBuilt(string expBelNamespace, string expOwnerName
+        public void AnalyzeBasicClassDeclaration_MediatorReceivesMethodBuilder_MethodsCorrectlyBuilt(string expBelNamespace, string expOwnerName
             , List<string> expName, List<string> expParameters, List<string> expRetType)
         {
             // Arrange
@@ -126,7 +127,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
         [Theory]
         [MemberData(nameof(TextFile3Expectations))]
-        public void Analyze_BasicClassDeclaration_MediatorReceivesClassBuilderAndCorrectClassesBuilt(string expBelNamespace, List<string> expName
+        public void AnalyzeBasicClassDeclaration_MediatorReceivesClassBuilder_CorrectClassesBuilt(string expBelNamespace, List<string> expName
             , List<List<Property>> expProperties)
         {
             // Arrange
@@ -154,5 +155,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 abstractBuilders[i].Build().properties.Should().BeEquivalentTo(expectedResult.properties);
             }
         }
+
+        // Analyze_BasicClassDeclaration_MediatorReceivesClassBuilderAndCorrectClassesBuilt
     }
 }
