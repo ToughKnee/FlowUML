@@ -98,6 +98,12 @@ namespace Domain.CodeInfo
             this.name = name;
         }
 
+        public Method SetOwnerClass(ClassEntity ownerClass)
+        {
+            this.ownerClass = ownerClass;
+            return this;
+        }
+
         public string GetIdentifier()
         {
             // TODO: Check this if it works
