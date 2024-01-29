@@ -25,5 +25,23 @@ namespace Infrastructure.Mediators
         /// <param name="builder">Builder containing all the info to create a 
         /// ClassEntity if there was a class in the code analyzed</param>
         public void ReceiveClassEntityBuilder(List<AbstractBuilder<ClassEntity>> builders);
+        /// <summary>
+        /// Receives the parameters that the ANTLR visitor found and manage them
+        /// </summary>
+        /// <param name="type">The type of the identifier</param>
+        /// <param name="identifier">The name of the idenitifier</param>
+        public void ReceiveParameters(string type, string identifier);
+        /// <summary>
+        /// Receives the local variable declaration found by an ANTLR visitor to manage them 
+        /// after the ANTLR visitor finishes analyzing the method
+        /// </summary>
+        /// <param name="assigner">The "right part" of an assignation</param>
+        /// <param name="assignee">The "left part" of an assignation</param>
+        public void ReceiveLocalVariableDeclaration(string assignee, string assigner);
+        /// <summary>
+        /// After the ANTLR visitor finishes a method analysis, then the Mediator
+        /// should start processing the parameters and local variables received
+        /// </summary>
+        public void ReceiveMethodAnalysisEnd();
     }
 }

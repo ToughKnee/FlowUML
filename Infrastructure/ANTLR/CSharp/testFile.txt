@@ -1,59 +1,14 @@
-using CleanArchitectureWorkshop.Application.Repositories;
-using CleanArchitectureWorkshop.Domain.TeamAggregate;
-
-namespace CleanArchitectureWorkshop.Application.UseCases
+public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
 {
-    public class TeamsUseCase : ITeamsUseCase
-    {
-        private readonly ITeamsRepository _teamsRepository;
+    var teamId = TeamName.Create(teamName);
 
-        public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
-        {
-        }
+    var team = await _teamsRepository.GetByIdAsync(teamId);
 
-        public async Task<Team> CreateTeamAsync(string teamName)
-        {
-        }
+    var playerId = UserName.Create(playerName);
 
-        public async Task<List<Team>> GetAllTeamsAsync()
-        {
-        }
+    team.RemovePlayer(playerId);
 
-        public async Task<Team?> GetTeamByIdAsync(string teamName)
-        {
-        }
+    await _teamsRepository.UpdateTeamAsync(team);
 
-        public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
-        {
-        }
-
-        public async Task<List<Team>> GetTeamsByNameAsync(string searchTerm)
-        {
-        }
-    }
-
-    public class Team : AggregateRoot<TeamName>
-    {
-        private readonly List<Player> _players;
-        public IReadOnlyCollection<Player> Players;
-
-        protected Team()
-        {
-        }
-
-        public void AddPLayer(Player player)
-        {
-            _players.Add(player);
-            player.AssignTeam(this);
-        }
-
-        public void RemovePlayer(UserName player)
-        {
-            var playerToRemove = _players.FirstOrDefault();
-
-            _players.Remove(playerToRemove);
-            playerToRemove.UnassignTeam();
-        }
-    }
+    return team;
 }
-

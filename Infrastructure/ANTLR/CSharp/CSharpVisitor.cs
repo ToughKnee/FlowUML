@@ -43,8 +43,6 @@ namespace Infrastructure.Antlr
         /// "public string name"
         /// </summary>
         private readonly string separator = "-";
-        public List<(string, string)> properties = new List<(string, string)>();
-        public List<(string, string)> methods = new List<(string, string)>();
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -203,30 +201,28 @@ namespace Infrastructure.Antlr
             var parameterNode = GetRuleNodeInChildren("parameterList", context);
             var methodBodyNode = GetRuleNodeInChildren("methodBodyContent", context);
 
-            // Getting the parameters and storing them into the InstancesDictionary if any
+            // Getting the parameters and passing them to the mediator
             if(parameterNode != null)
             {
                 for (int j = 0; j < parameterNode.ChildCount; j += 2)
                 {
                     string[] parameters = Visit(parameterNode.GetChild(j)).Split("-");
-                    // TODO: Refactor
-                    InstancesDictionaryManager.instance.AddAssignation(new Instance(parameters[1]), new Instance(parameters[0]));
+                    _mediator.ReceiveParameters(parameters[0], parameters[1]);
                 }
             }
 
-            // Getting inside the "methodBodyContent" to get the variables and storing them into the InstancesDictionary
+            // Getting inside the "methodBodyContent" to get the variables and pass them to the mediator
             for (int j = 1; j < methodBodyNode.ChildCount-1; j++)
             {
-                // Differentiates between "functionCall"s which just has 2 children at most
-                if(methodBodyNode.GetChild(j).GetChild(0).ChildCount > 2)
+                // Get the local variable rule if there is
+                if(ChildRuleNameIs("localVariableDeclaration", methodBodyNode.GetChild(j), 0))
                 {
                     string[] parameter = Visit(methodBodyNode.GetChild(j).GetChild(0)).Split("-");
-                    // TODO: Refactor
-                    InstancesDictionaryManager.instance.AddAssignation(new Instance(parameter[0]), new Instance(parameter[1]));
+                    _mediator.ReceiveLocalVariableDeclaration(parameter[0], parameter[1]);
                 }
             }
             // TODO: Make the Callsites
-            methods.Add((context.children[2 + childrenOffset].GetText(), context.children[3 + childrenOffset].GetText()));
+            _mediator.ReceiveMethodAnalysisEnd();
             return base.VisitMethod(context);
         }
 

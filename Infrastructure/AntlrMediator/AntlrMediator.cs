@@ -10,7 +10,22 @@ namespace Infrastructure.Mediators
             throw new NotImplementedException();
         }
 
+
+
         public void ReceiveMethodBuilder(List<AbstractBuilder<Method>> builders)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReceiveParameters(string type, string identifier)
+        {
+            throw new NotImplementedException();
+        }
+        public void ReceiveLocalVariableDeclaration(string assignee, string assigner)
+        {
+            throw new NotImplementedException();
+        }
+        public void ReceiveMethodAnalysisEnd()
         {
             throw new NotImplementedException();
         }
