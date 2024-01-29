@@ -146,17 +146,9 @@ classHeritage
 //===========================  Class properties grammar
 classContent
     // Syntax for property declaration
-    : constructorDeclaration
-    | property
+    : property
     | method
     ;
-
-    constructorDeclaration
-        : 
-        attributes? accessModifier? modifiers* identifier 
-        '(' parameterList? ')'
-        methodBodyContent
-        ;
 
     property
         : attributes? accessModifier? modifiers? type identifier SEMICOLON
@@ -164,9 +156,16 @@ classContent
 
     method
         :    
+        // Normal method syntax
         attributes? accessModifier? modifiers* type identifier 
         '(' parameterList? ')'
         methodBodyContent
+        |
+        // Constructor syntax
+        attributes? accessModifier? modifiers* identifier 
+        '(' parameterList? ')'
+        methodBodyContent
+
         ;
 
 attributeIdentifier
