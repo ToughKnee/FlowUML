@@ -40,19 +40,17 @@ namespace Infrastructure.Antlr
 
         public void RunVisitorWithSpecificStartingRule(string startingRule)
         {
-            // Instantiate a builder for the methods and classes
-            var methodBuilders = new List<AbstractBuilder<Method>>();
-
             var parserType = typeof(CSharpGrammarParser);
             MethodInfo startingRuleMethod = parserType.GetMethod(startingRule);
             if (startingRule != null)
             {
                 var csharpContext = (IParseTree) startingRuleMethod.Invoke(csharpParser, null);
-                var cSharpVisitor = new CSharpVisitor(methodBuilders);
+                var cSharpVisitor = new CSharpVisitor(_mediator);
                 cSharpVisitor.Visit(csharpContext);
 
                 // After the visitor finished analyzing the file, pass the builder to the mediator
-                _mediator.ReceiveMethodBuilder(methodBuilders);
+                _mediator.ReceiveMethodBuilder(cSharpVisitor.GetMethodBuilders());
+                _mediator.ReceiveClassEntityBuilder(cSharpVisitor.GetClassBuilders());
             }
             else
             {

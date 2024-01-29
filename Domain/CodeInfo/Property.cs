@@ -12,11 +12,18 @@ namespace Domain.CodeInfo
         /// </summary>
         public string type { get; set; }
         /// <summary>
-        /// The class that has this method's definition, if null then this is just a function
+        /// Name of the property
         /// </summary>
-        public ClassEntity? ownerClass { get; set; }
-        public Property()
+        public string name{ get; set; }
+        public Property(string type, string name)
         {
+            this.type = type;
+            this.name = name;
+        }
+
+        public override string ToString()
+        {
+            return type + " " + name;
         }
     }
 }

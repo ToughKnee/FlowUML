@@ -85,6 +85,10 @@ identifier
     : IDENTIFIER
     ;
 
+type
+    : (primitiveTypeName | advancedTypeName)
+    ;
+
 //===========================  File grammar
 cSharpFile
     : usingDirectives?
@@ -136,7 +140,7 @@ classBodyContent
     ;
 
 classHeritage
-    : ':' (primitiveTypeName | advancedTypeName) (',' (primitiveTypeName | advancedTypeName))*
+    : ':' type (',' type)*
     ;
 
 //===========================  Class properties grammar
@@ -155,12 +159,12 @@ classContent
         ;
 
     property
-        : attributes? accessModifier? modifiers? (primitiveTypeName | advancedTypeName) identifier SEMICOLON
+        : attributes? accessModifier? modifiers? type identifier SEMICOLON
         ;
 
     method
         :    
-        attributes? accessModifier? modifiers* (primitiveTypeName | advancedTypeName) identifier 
+        attributes? accessModifier? modifiers* type identifier 
         '(' parameterList? ')'
         methodBodyContent
         ;
@@ -188,7 +192,7 @@ parameterList
     ;
 
 parameter
-    : (primitiveTypeName | advancedTypeName) identifier
+    : type identifier
     ;
 
 //===========================  Local variables grammar
@@ -200,11 +204,11 @@ methodContent
     ;
 
 constructorAssignment
-    : (primitiveTypeName | advancedTypeName) identifier '=' NEW expression ';'
+    : type identifier '=' NEW expression ';'
     ;
 
 localVariableDeclaration
-    : (primitiveTypeName | advancedTypeName) identifier '=' expression ';'
+    : type identifier '=' expression ';'
     ;
 functionCall: expression;
 

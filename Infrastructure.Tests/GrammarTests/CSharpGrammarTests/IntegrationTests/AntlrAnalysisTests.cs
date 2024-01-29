@@ -108,5 +108,51 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 abstractBuilders[i].Build().Should().BeEquivalentTo(expectedResult);
             }
         }
+
+        public static IEnumerable<object[]> TextFile3Expectations
+        {
+            get
+            {
+                yield return new object[] {
+                    "CleanArchitectureWorkshop.Application.UseCases",
+                    new List<string> { "TeamsUseCase", "Team"},
+                    new List<List<Property>> { 
+                        new List<Property> { new Property("ITeamsRepository", "_teamsRepository") },
+                        new List<Property> { new Property("List<Player>", "_players"), new Property("IReadOnlyCollection<Player>", "Players") }
+                    }
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(TextFile3Expectations))]
+        public void Analyze_BasicClassDeclaration_MediatorReceivesClassBuilderAndCorrectClassesBuilt(string expBelNamespace, List<string> expName
+            , List<List<Property>> expProperties)
+        {
+            // Arrange
+            List<AbstractBuilder<ClassEntity>> abstractBuilders = new List<AbstractBuilder<ClassEntity>>();
+            var mediatorMock = new Mock<IMediator>();
+            // Capture the received parameter to check it
+            mediatorMock.Setup(m => m.ReceiveClassEntityBuilder(It.IsAny<List<AbstractBuilder<ClassEntity>>>()))
+                .Callback<List<AbstractBuilder<ClassEntity>>>(r => abstractBuilders = r);
+            _antlrService = new ANTLRService(mediatorMock.Object);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile3.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            mediatorMock.Verify(m => m.ReceiveMethodBuilder(It.IsAny<List<AbstractBuilder<Method>>>()), Times.Once);
+
+            // Verify each class has been correctly identified
+            Assert.True(abstractBuilders.Count == 2);
+            for (int i = 0; i < abstractBuilders.Count; i++)
+            {
+                ClassEntity expectedResult = new ClassEntity(expName[i], expBelNamespace, expProperties[i]);
+                abstractBuilders[i].Build().name.Should().BeEquivalentTo(expectedResult.name);
+                abstractBuilders[i].Build().classNamespace.Should().BeEquivalentTo(expectedResult.classNamespace);
+                abstractBuilders[i].Build().properties.Should().BeEquivalentTo(expectedResult.properties);
+            }
+        }
     }
 }

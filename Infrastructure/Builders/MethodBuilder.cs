@@ -15,11 +15,13 @@ namespace Infrastructure.Builders
         public List<string> parameters { get; private set; } = new List<string>();
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
 
+        /// <summary>
+        /// This Build method must NOT be used because this is called when the ClassEntityBuilder Build method is called
+        /// This can only be called if the method is a lone method, does not have a class owner
+        /// </summary>
+        /// <returns></returns>
         public Method Build()
         {
-            //===========================  TODO: USE the ClassEntity built by the ClassEntityBuilder!!!
-            //===========================  TODO: USE the ClassEntity built by the ClassEntityBuilder!!!
-            //===========================  TODO: USE the ClassEntity built by the ClassEntityBuilder!!!
             ClassEntity owner = new ClassEntity(ownerClass);
             Method method = new Method(belongingNamespace, owner, name, parameters, returnType, callsites);
             return method;

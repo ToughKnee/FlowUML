@@ -4,24 +4,34 @@ using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
 using Infrastructure.ANTLR.CSharp;
 using Infrastructure.Builders;
+using Infrastructure.Mediators;
 
 namespace Infrastructure.Antlr
 {
     public class CSharpVisitor : CSharpGrammarBaseVisitor<string?>
     {
         /// <summary>
-        /// This visitor creates a MethodBuilder and it visits a method rule,
-        /// and fills it with the information it finds to later be used by someone else
-        /// and make all the necessary information for the domain classes from the builders
+        /// Mediator that receives the data from the localVariables and such to manage them
+        /// and define the Domain classes
         /// </summary>
-        private List<AbstractBuilder<Method>> _abstractMethodBuilders;
-        // TODO: Make a method that converts this list into the abstract list which other classes need
+        private IMediator _mediator;
+        /// <summary>
+        /// Method builders that are added up according to the method declarations in this file
+        /// </summary>
         private List<MethodBuilder> _methodBuilders = new();
+        /// <summary>
+        /// Class builders that are added up according to the class declarations in this file
+        /// </summary>
+        private List<ClassEntityBuilder> _classBuilders = new();
         /// <summary>
         /// This lets other methods access the current built method, which is 
         /// created by the "csharpFile" rule
         /// </summary>
         private MethodBuilder _currentMethodBuilder;
+        /// <summary>
+        /// The current class builder for other methods to fill in with class info
+        /// </summary>
+        private ClassEntityBuilder _currentClassBuilder;
         /// <summary>
         /// Everytime we visit a namespace, this is filled with the namespace if there was any
         /// </summary>
@@ -36,17 +46,36 @@ namespace Infrastructure.Antlr
         public List<(string, string)> properties = new List<(string, string)>();
         public List<(string, string)> methods = new List<(string, string)>();
 
-        public CSharpVisitor(List<AbstractBuilder<Method>> builders)
+        public CSharpVisitor(IMediator mediator)
         {
-            _abstractMethodBuilders = builders;
+            _mediator = mediator;
         }
 
-        private void FillAbstractBuilders()
+        public List<AbstractBuilder<Method>> GetMethodBuilders()
         {
-            foreach(var builder in _methodBuilders)
+            List<AbstractBuilder<Method>> abstractMethodBuilders = new();
+            foreach (var builder in _methodBuilders)
             {
-                _abstractMethodBuilders.Add(builder);
+                abstractMethodBuilders.Add(builder);
             }
+            return abstractMethodBuilders;
+        }
+        public List<AbstractBuilder<ClassEntity>> GetClassBuilders()
+        {
+            List<AbstractBuilder<ClassEntity>> abstractClassEntityBuilders = new();
+            foreach (var builder in _classBuilders)
+            {
+                abstractClassEntityBuilders.Add(builder);
+            }
+            return abstractClassEntityBuilders;
+        }
+        public bool ChildRuleNameIs(string ruleNameToCheck, IParseTree parentRule, int childIndex)
+        {
+            string suffix = "Context";
+            string childRuleName = parentRule.GetChild(childIndex).GetType().ToString();
+            childRuleName = childRuleName.Substring(childRuleName.LastIndexOf('+') + 1);
+            if (childRuleName.Equals(ruleNameToCheck + suffix, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
         public IParseTree? GetRuleNodeInChildren(string ruleName, IParseTree parentRule, int initialOffset = 0)
         {
@@ -65,9 +94,10 @@ namespace Infrastructure.Antlr
 
         public override string VisitProperty([NotNull] CSharpGrammarParser.PropertyContext context)
         {
-            int childrenOffset = (context.children.Count > 5) ? (1) : (0);
-            properties.Add((context.children[2 + childrenOffset].GetText(), context.children[3 + childrenOffset].GetText()));
-            return context.GetChild(3).GetText() + separator + context.GetChild(4).GetText();
+            var identifierNode = GetRuleNodeInChildren("identifier", context);
+            var typeNode = GetRuleNodeInChildren("type", context);
+            _currentClassBuilder.AddProperty(typeNode.GetText(), identifierNode.GetText());
+            return typeNode.GetText() + separator + identifierNode.GetText();
         }
 
         // Main rule that represents the root of all the code in the current file,
@@ -99,18 +129,16 @@ namespace Infrastructure.Antlr
                     classDeclarationsNode = GetRuleNodeInChildren("classDeclarations", context);
                 }
 
-                // TODO: Make a ClassEntityBuilder and after this loop finishes, add the current class being built to all the MethodBuilders
-
                 // Navigate through the classes in this namespace or file
-                int classDeclarationsCount = (classDeclarationsNode != null) ? (fileNamespacesNode.ChildCount) : (0);
+                int classDeclarationsCount = (classDeclarationsNode != null) ? (classDeclarationsNode.ChildCount) : (0);
                 for (int i = 0; i < classDeclarationsCount; i++)
                 {
-                    // TODO: Make a ClassEntityBuilder and after this loop finishes, add the current class being built to all the MethodBuilders
+                    _currentClassBuilder = new ClassEntityBuilder();
+                    _classBuilders.Add(_currentClassBuilder);
+                    _currentClassBuilder.SetNamespace(_currentNamespace);
                     Visit(GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i));
                 }
             }
-
-            FillAbstractBuilders();
             return base.VisitCSharpFile(context);
         }
         public override string VisitFileNamespace([NotNull] CSharpGrammarParser.FileNamespaceContext context)
@@ -125,27 +153,34 @@ namespace Infrastructure.Antlr
         public override string VisitClassDeclaration([NotNull] CSharpGrammarParser.ClassDeclarationContext context)
         {
             var classBodyContentNode = GetRuleNodeInChildren("classBodyContent", context);
-            IParseTree classBodyContentChild;
+            IParseTree classContentNode;
             // TODO: Fill in info for the ClassEntityBuilder
-  
+            var classIdentifierNode = GetRuleNodeInChildren("identifier", context);
+            _currentClassBuilder.SetName(classIdentifierNode.GetText());
+
             // Pass through all the classContents and get the info for each content
-            if(classBodyContentNode != null)
+            if (classBodyContentNode != null)
             {
                 for (int j = 1; j < classBodyContentNode.ChildCount - 1; j++)
                 {
-                    // We want to look for the "method" rule, so we do this and later check if it is a method rule node
-                    classBodyContentChild = classBodyContentNode.GetChild(j);
-                    var methodNode = GetRuleNodeInChildren("method", classBodyContentChild);
+                    classContentNode = classBodyContentNode.GetChild(j);
+                    var classContentChild = classContentNode.GetChild(0);
                     // If this is a method rule node, we start using the builder
-                    if(methodNode != null)
+                    if (ChildRuleNameIs("property", classContentNode, 0))
+                    {
+                        // TODO: Call the mediator to make him receive the results of visiting the parameters
+                        // and make him add to the instancesDicionary the parameters
+                        Visit(classContentChild);
+                    }
+                    else if (ChildRuleNameIs("method", classContentNode, 0))
                     {
                         // Building methods info
                         _currentMethodBuilder = new MethodBuilder();
                         _methodBuilders.Add(_currentMethodBuilder);
-                        var classIdentifierNode = GetRuleNodeInChildren("identifier", context);
-                        var methodIdentifierNode = GetRuleNodeInChildren("identifier", methodNode);
-                        var returnTypeNode = GetRuleNodeInChildren("advancedTypeName", methodNode);
-                        var parameterListNode = GetRuleNodeInChildren("parameterList", methodNode);
+                        _currentClassBuilder.AddMethod(_currentMethodBuilder);
+                        var methodIdentifierNode = GetRuleNodeInChildren("identifier", classContentChild);
+                        var returnTypeNode = GetRuleNodeInChildren("type", classContentChild);
+                        var parameterListNode = GetRuleNodeInChildren("parameterList", classContentChild);
                         _currentMethodBuilder.SetOwnerClass(classIdentifierNode.GetText());
                         _currentMethodBuilder.SetName(methodIdentifierNode.GetText());
                         _currentMethodBuilder.SetReturnType(returnTypeNode.GetText());
@@ -155,11 +190,11 @@ namespace Infrastructure.Antlr
                             _currentMethodBuilder.SetParameters(Visit(parameterListNode));
                         }
                         // And after filling the available info at this Node, we go to another Node to get more info for the current Method
-                        Visit(methodNode);
+                        Visit(classContentChild);
                     }
                 }
             }
-            return base.VisitClassDeclaration(context);
+            return "";
         }
         public override string VisitMethod([NotNull] CSharpGrammarParser.MethodContext context)
         {
