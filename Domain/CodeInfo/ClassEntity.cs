@@ -41,7 +41,8 @@ namespace Domain.CodeInfo
 
         public void AddMethod(Method method)
         {
-            //InstancesDictionaryManager.instance.AddAssignation()
+            this.methods.Add(method);
+            method.SetOwnerClass(this);
         }
         
         public static bool operator ==(ClassEntity obj1, ClassEntity obj2)

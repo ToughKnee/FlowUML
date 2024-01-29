@@ -20,10 +20,10 @@ namespace Infrastructure.Builders
         public ClassEntity Build()
         {
             var methods = new List<Method>();
-            ClassEntity builtClass = new ClassEntity(name, belongingNamespace, properties, methods);
-            foreach (var builder in methodBuilders)
+            ClassEntity builtClass = new ClassEntity(name, belongingNamespace, properties);
+            foreach (var methoBbuilder in methodBuilders)
             {
-                methods.Add(builder.Build().SetOwnerClass(builtClass));
+                builtClass.AddMethod(methoBbuilder.Build());
             }
             return builtClass;
         }

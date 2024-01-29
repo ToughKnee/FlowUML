@@ -133,7 +133,8 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                     new List<List<Property>> { 
                         new List<Property> { new Property("ITeamsRepository", "_teamsRepository") },
                         new List<Property> { new Property("List<Player>", "_players"), new Property("IReadOnlyCollection<Player>", "Players") }
-                    }
+                    },
+                    new List<int> { 6, 3 }
                 };
             }
         }
@@ -141,7 +142,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         [Theory]
         [MemberData(nameof(TextFile3Expectations))]
         public void AnalyzeBasicClassDeclaration_MediatorReceivesClassBuilder_CorrectClassesBuilt(string expBelNamespace, List<string> expName
-            , List<List<Property>> expProperties)
+            , List<List<Property>> expProperties, List<int> expMethodCount)
         {
             // Arrange
             List<AbstractBuilder<ClassEntity>> abstractBuilders = new List<AbstractBuilder<ClassEntity>>();
@@ -162,10 +163,12 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             Assert.True(abstractBuilders.Count == 2);
             for (int i = 0; i < abstractBuilders.Count; i++)
             {
+                ClassEntity builtClass = abstractBuilders[i].Build();
                 ClassEntity expectedResult = new ClassEntity(expName[i], expBelNamespace, expProperties[i]);
-                abstractBuilders[i].Build().name.Should().BeEquivalentTo(expectedResult.name);
-                abstractBuilders[i].Build().classNamespace.Should().BeEquivalentTo(expectedResult.classNamespace);
-                abstractBuilders[i].Build().properties.Should().BeEquivalentTo(expectedResult.properties);
+                builtClass.name.Should().BeEquivalentTo(expectedResult.name);
+                builtClass.classNamespace.Should().BeEquivalentTo(expectedResult.classNamespace);
+                builtClass.properties.Should().BeEquivalentTo(expectedResult.properties);
+                builtClass.methods.Count.Should().Be(expMethodCount[i], because: "The constructor also count as a method so it should be recognized as one for the second class");
             }
         }
 

@@ -163,13 +163,14 @@ namespace Infrastructure.Antlr
                 {
                     classContentNode = classBodyContentNode.GetChild(j);
                     var classContentChild = classContentNode.GetChild(0);
-                    // If this is a method rule node, we start using the builder
+                    // If this is a property rule, we visit the node
                     if (ChildRuleNameIs("property", classContentNode, 0))
                     {
                         // TODO: Call the mediator to make him receive the results of visiting the parameters
                         // and make him add to the instancesDicionary the parameters
                         Visit(classContentChild);
                     }
+                    // If this is a method rule node, we create a methodBuilder and start building the method
                     else if (ChildRuleNameIs("method", classContentNode, 0))
                     {
                         // Building methods info
@@ -179,14 +180,12 @@ namespace Infrastructure.Antlr
                         var methodIdentifierNode = GetRuleNodeInChildren("identifier", classContentChild);
                         var returnTypeNode = GetRuleNodeInChildren("type", classContentChild);
                         var parameterListNode = GetRuleNodeInChildren("parameterList", classContentChild);
+                        _currentMethodBuilder.SetBelongingNamespace(_currentNamespace);
                         _currentMethodBuilder.SetOwnerClass(classIdentifierNode.GetText());
                         _currentMethodBuilder.SetName(methodIdentifierNode.GetText());
-                        _currentMethodBuilder.SetReturnType(returnTypeNode.GetText());
-                        _currentMethodBuilder.SetBelongingNamespace(_currentNamespace);
-                        if(parameterListNode != null)
-                        {
-                            _currentMethodBuilder.SetParameters(Visit(parameterListNode));
-                        }
+                        // Used ternary operator as an if in one line
+                        var ignoreMe = (returnTypeNode == null) ? (null) : (_currentMethodBuilder.SetReturnType(returnTypeNode.GetText()));
+                        ignoreMe = (parameterListNode == null) ? (null) : (_currentMethodBuilder.SetParameters(Visit(parameterListNode)));
                         // And after filling the available info at this Node, we go to another Node to get more info for the current Method
                         Visit(classContentChild);
                     }
