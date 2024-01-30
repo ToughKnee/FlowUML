@@ -1,4 +1,4 @@
-using CleanArchitectureWorkshop.Application.Repositories;
+﻿using CleanArchitectureWorkshop.Application.Repositories;
 using CleanArchitectureWorkshop.Domain.TeamAggregate;
 
 namespace CleanArchitectureWorkshop.Application.UseCases
@@ -37,7 +37,7 @@ namespace CleanArchitectureWorkshop.Application.UseCases
     }
 }
 
-namespace CleanArchitectureWorkshop.Application.UseCases
+namespace com.packages.TeamUtils
 {
     public class TeamManager
     {

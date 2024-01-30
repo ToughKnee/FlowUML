@@ -171,23 +171,160 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 builtClass.methods.Count.Should().Be(expMethodCount[i], because: "The constructor also count as a method so it should be recognized as one for the second class");
             }
         }
-        
-        public void AnalyzeBasicClassDeclaration_InstancesDictionaryReceivesInstances_InstancesRecognizedCorrectly()
-        {
-            // Arrange
-            // instancesManager should receive the local variables, parameters and properties from the classes there are, AND assign them special identifiers, since there are going to be varibles from other methods and classes that could have the same name
-                // The way is should give the identifiers should be in such a way that the local variables and parameters(from methods) can be recognized with the ClassEntity(namespace and name, which could be with a hash) and also the Method(methods signature), like tagging them from where they came from
-                // As for properties, they just need to be tagged with the ClassEntity
-            // AFTER all the classes have been analyzed, the InstanceManager clean all the MethodInstances it has by resolving resloving the aliases every Instance has,
-            // Then get after we are able to identify
-            // should receive the methods implementations and then map all the instances to the implmenetations to know the TYPE of all teh localVariables, give them their types AND AFTER THAT(or while doing that) define the Callsites
-            // OK, the thing should be like this, after the analysis of all the classes, we will have MethodInstances that are subscribed to a method from the instancesMAnager which provides the Method definition that they need, and so it will first clean the instaces aliases to rename easy things like parameters and properties, and it will enter in a loop where it passes to all the subscribed MethodInstances the Method there are defined, and after a MethodInstance receives the Method it will check if the Method matches it, and after that it will clean itself using the instancesDictionary to look for the aliases that remain unknown to identify this method
-            
 
+        public static IEnumerable<object[]> TextFile3ExpectationsForNamespaceInfo
+        {
+            get
+            {
+                yield return new object[] {
+                    "CleanArchitectureWorkshop.Application.UseCases",
+                    new List<string> { "TeamsUseCase", "Team"},
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(TextFile3ExpectationsForNamespaceInfo))]
+
+        public void AnalyzeBasicClassDeclaration_MediatorReceivesNamespaceAndClassNames_CorrectInfoReceivedAtTheCorrectTime(string expNamespace, List<string> expClassNames)
+        {
+            // The correct time refers to having received the namespaces and className before the method "ReceiveMethodAnalysisEnd"
+            // from the IMediator is received, since the mediator should work with that info AFTER the visitor finishes creeating a method
+
+            // Arrange
+            var mediatorMock = new Mock<IMediator>();
+
+            // Create a collection to store the captured parameters
+            string receivedNamespace = "";
+            List<string> receivedClassNames = new List<string>();
+            List<(string, string)> receivedParameters = new List<(string, string)>();
+            List<(string, string)> receivedLocalVariables = new List<(string, string)>();
+
+            //===========================  Capturing the received info from the antlr visitor
+            mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
+                .Callback<string>((param1) => receivedNamespace = param1);
+            mediatorMock.Setup(x => x.ReceiveClassName(It.IsAny<string>()))
+                .Callback<string>((param1) =>
+                {
+                    receivedClassNames.Add(param1);
+                });
+
+            mediatorMock.Setup(x => x.ReceiveMethodAnalysisEnd())
+                .Callback(() =>
+                {
+                    receivedClassNames.Count.Should().NotBe(0);
+                    // Check the info from namespace and className is the expected info at this moment
+                    if (receivedClassNames.Count == 1)
+                    {
+                        receivedNamespace.Should().Be(expNamespace);
+                        receivedClassNames[0].Should().Be(expClassNames[0]);
+                    }
+                    else if (receivedClassNames.Count == 2)
+                    {
+                        mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.AtLeast(6));
+                        receivedNamespace.Should().Be(expNamespace);
+                        receivedClassNames[1].Should().Be(expClassNames[1]);
+                    }
+                    else { Assert.True(false); }
+                });
+
+            // Creating the antlr visitor
+            _antlrService = new ANTLRService(mediatorMock.Object);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile3.txt", true);
 
             // Act
-            // Assert
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
+            // Assert
+            mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.Exactly(9));
         }
+        public static IEnumerable<object[]> TextFile3ExpectationsForNamespaceInfo2
+        {
+            get
+            {
+                yield return new object[] {
+                    new List<string> { "CleanArchitectureWorkshop.Application.UseCases", "com.packages.TeamUtils"},
+                    new List<string> { "TeamsUseCase", "Team", "TeamManager", "Director", "Player"}
+                };
+            }
+        }
+        [Theory]
+        [MemberData(nameof(TextFile3ExpectationsForNamespaceInfo2))]
+
+        public void AnalyzeBasicClassDeclaration_MediatorReceivesNamespaceAndClassNames_CorrectInfoReceivedAtTheCorrectTime2(List<string> expNamespaces, List<string> expClassNames)
+        {
+            // The correct time refers to having received the namespaces and className before the method "ReceiveMethodAnalysisEnd"
+            // from the IMediator is received, since the mediator should work with that info AFTER the visitor finishes creeating a method
+
+            // Arrange
+            var mediatorMock = new Mock<IMediator>();
+
+            // Create a collection to store the captured parameters
+            List<string> receivedNamespaces = new List<string>();
+            List<string> receivedClassNames = new List<string>();
+            List<(string, string)> receivedParameters = new List<(string, string)>();
+            List<(string, string)> receivedLocalVariables = new List<(string, string)>();
+
+            //===========================  Capturing the received info from the antlr visitor
+            mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
+                .Callback<string>((param1) =>
+                {
+                    receivedNamespaces.Add(param1);
+                });
+            mediatorMock.Setup(x => x.ReceiveClassName(It.IsAny<string>()))
+                .Callback<string>((param1) =>
+                {
+                    receivedClassNames.Add(param1);
+                });
+
+            mediatorMock.Setup(x => x.ReceiveMethodAnalysisEnd())
+                .Callback(() =>
+                {
+                    receivedClassNames.Count.Should().NotBe(0);
+                    // Check the info from namespace and className is the expected info at this moment
+                    if (receivedClassNames.Count == 1)
+                    {
+                        receivedNamespaces[0].Should().Be(expNamespaces[0]);
+                        receivedClassNames[0].Should().Be(expClassNames[0]);
+                    }
+                    else if (receivedClassNames.Count == 2)
+                    {
+                        mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.AtLeast(1));
+                        receivedNamespaces[0].Should().Be(expNamespaces[0]);
+                        receivedClassNames[1].Should().Be(expClassNames[1]);
+                    }
+                    else if (receivedClassNames.Count == 3)
+                    {
+                        mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.AtLeast(4));
+                        receivedNamespaces[1].Should().Be(expNamespaces[1]);
+                        receivedClassNames[2].Should().Be(expClassNames[2]);
+                    }
+                    else if (receivedClassNames.Count == 4)
+                    {
+                        mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.AtLeast(7));
+                        receivedNamespaces[1].Should().Be(expNamespaces[1]);
+                        receivedClassNames[3].Should().Be(expClassNames[3]);
+                    }
+                    else if (receivedClassNames.Count == 5)
+                    {
+                        mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.AtLeast(8));
+                        receivedNamespaces[1].Should().Be(expNamespaces[1]);
+                        receivedClassNames[4].Should().Be(expClassNames[4]);
+                    }
+                    else { Assert.True(false); }
+                });
+
+            // Creating the antlr visitor
+            _antlrService = new ANTLRService(mediatorMock.Object);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile4.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.Exactly(9));
+        }
+
+        // AnalyzeBasicClassDeclaration_InstancesDictionaryReceivesInstances_InstancesRecognizedCorrectly
     }
 }

@@ -22,9 +22,24 @@ namespace Infrastructure.Mediators
         /// Receive and manager the builder that contains the info to create the class
         /// if there was a class in the file analysis
         /// </summary>
-        /// <param name="builder">Builder containing all the info to create a 
+        /// <param name="builders">Builder containing all the info to create a 
         /// ClassEntity if there was a class in the code analyzed</param>
         public void ReceiveClassEntityBuilder(List<AbstractBuilder<ClassEntity>> builders);
+
+        /// <summary>
+        /// Receives the namespace from which the instances to be received are going to be 
+        /// defined within, to help identify them between different files, classes and different methods
+        /// </summary>
+        /// <param name="belongingNamespace">Namespace which all the instances to be received 
+        /// are going to be identified with</param>
+        public void ReceiveNamespace(string? belongingNamespace);
+        /// <summary>
+        /// Receive the class name from which the instances to be recieved are going to be identified with
+        /// using also the naemspace
+        /// </summary>
+        /// <param name="className">Class' name which all the instances to be received 
+        /// are going to be identified with</param>
+        public void ReceiveClassName(string className);
         /// <summary>
         /// Receives the parameters that the ANTLR visitor found and manage them
         /// </summary>

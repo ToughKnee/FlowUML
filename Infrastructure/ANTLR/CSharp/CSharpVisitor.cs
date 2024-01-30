@@ -116,10 +116,11 @@ namespace Infrastructure.Antlr
             IParseTree classDeclarationsNode;
             for (int j = namespaceAbscenseTrigger; j < namespacesCount; j++)
             {
-                // Set the namespace we are in currently if we there is one
+                // Set the namespace we are in currently if there is one
                 if (j != -1)
                 {
                     _currentNamespace = Visit(fileNamespacesNode.GetChild(j));
+                    _mediator.ReceiveNamespace(_currentNamespace);
                     classDeclarationsNode = GetRuleNodeInChildren("classDeclarations", fileNamespacesNode.GetChild(j));
                 }
                 else
@@ -134,7 +135,9 @@ namespace Infrastructure.Antlr
                     _currentClassBuilder = new ClassEntityBuilder();
                     _classBuilders.Add(_currentClassBuilder);
                     _currentClassBuilder.SetNamespace(_currentNamespace);
-                    Visit(GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i));
+                    var classDeclarationNode = GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i);
+                    _mediator.ReceiveClassName(GetRuleNodeInChildren("identifier", classDeclarationNode).GetText());
+                    Visit(classDeclarationNode);
                 }
             }
             return base.VisitCSharpFile(context);

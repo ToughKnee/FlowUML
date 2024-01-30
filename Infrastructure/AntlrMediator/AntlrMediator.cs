@@ -9,14 +9,19 @@ namespace Infrastructure.Mediators
         {
             throw new NotImplementedException();
         }
-
-
-
         public void ReceiveMethodBuilder(List<AbstractBuilder<Method>> builders)
         {
             throw new NotImplementedException();
         }
 
+        public void ReceiveNamespace(string? belongingNamespace)
+        {
+            throw new NotImplementedException();
+        }
+        public void ReceiveClassName(string className)
+        {
+            throw new NotImplementedException();
+        }
         public void ReceiveParameters(string type, string identifier)
         {
             throw new NotImplementedException();
