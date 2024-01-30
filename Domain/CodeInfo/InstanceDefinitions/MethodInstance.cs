@@ -10,6 +10,10 @@
     /// </summary>
     public class MethodInstance : AbstractInstance
     {
+
+        // TODO: Make a List of strings which has the namespaces where this callsite was called, to help identify from which namespace came this method if there are multiple classes with the same name
+        // TODO: Make this class subscribe to a method which receives a Method, and this will be called everytime a Method instance is built, to fill, BUT we also need to have the instancesDictionary clean this class to be able to compare the received Method first
+
         public override string name => linkedCallsite.calledMethod.name;
         /// <summary>
         /// This makes this MethodInstance know which Callsite it is linked to,

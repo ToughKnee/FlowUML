@@ -14,7 +14,6 @@
         /// This method is considered as complete when we know its 'returnType'
         /// </summary>
         public Method calledMethod;
-
         public Callsite(Method called)
         {
             calledMethod = called;

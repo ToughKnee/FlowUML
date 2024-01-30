@@ -171,7 +171,23 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 builtClass.methods.Count.Should().Be(expMethodCount[i], because: "The constructor also count as a method so it should be recognized as one for the second class");
             }
         }
+        
+        public void AnalyzeBasicClassDeclaration_InstancesDictionaryReceivesInstances_InstancesRecognizedCorrectly()
+        {
+            // Arrange
+            // instancesManager should receive the local variables, parameters and properties from the classes there are, AND assign them special identifiers, since there are going to be varibles from other methods and classes that could have the same name
+                // The way is should give the identifiers should be in such a way that the local variables and parameters(from methods) can be recognized with the ClassEntity(namespace and name, which could be with a hash) and also the Method(methods signature), like tagging them from where they came from
+                // As for properties, they just need to be tagged with the ClassEntity
+            // AFTER all the classes have been analyzed, the InstanceManager clean all the MethodInstances it has by resolving resloving the aliases every Instance has,
+            // Then get after we are able to identify
+            // should receive the methods implementations and then map all the instances to the implmenetations to know the TYPE of all teh localVariables, give them their types AND AFTER THAT(or while doing that) define the Callsites
+            // OK, the thing should be like this, after the analysis of all the classes, we will have MethodInstances that are subscribed to a method from the instancesMAnager which provides the Method definition that they need, and so it will first clean the instaces aliases to rename easy things like parameters and properties, and it will enter in a loop where it passes to all the subscribed MethodInstances the Method there are defined, and after a MethodInstance receives the Method it will check if the Method matches it, and after that it will clean itself using the instancesDictionary to look for the aliases that remain unknown to identify this method
+            
 
-        // Analyze_BasicClassDeclaration_MediatorReceivesClassBuilderAndCorrectClassesBuilt
+
+            // Act
+            // Assert
+
+        }
     }
 }
