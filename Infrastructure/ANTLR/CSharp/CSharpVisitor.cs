@@ -128,7 +128,7 @@ namespace Infrastructure.Antlr
                     classDeclarationsNode = GetRuleNodeInChildren("classDeclarations", context);
                 }
 
-                // Navigate through the classes in this namespace or file
+                // Navigate through the classes available in this namespace or file
                 int classDeclarationsCount = (classDeclarationsNode != null) ? (classDeclarationsNode.ChildCount) : (0);
                 for (int i = 0; i < classDeclarationsCount; i++)
                 {
@@ -137,6 +137,7 @@ namespace Infrastructure.Antlr
                     _currentClassBuilder.SetNamespace(_currentNamespace);
                     var classDeclarationNode = GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i);
                     _mediator.ReceiveClassName(GetRuleNodeInChildren("identifier", classDeclarationNode).GetText());
+                    // Visit the "classDeclaration" 
                     Visit(classDeclarationNode);
                 }
             }
@@ -151,6 +152,16 @@ namespace Infrastructure.Antlr
             }
             return null;
         }
+        /// <summary>
+        /// This handles things like "methods, properties, constructors" and all the things that a class may have
+        /// At this point we have defined the namespace(if there was one), and we need to gather data like className, 
+        /// properties, methods
+        /// At an even deeper level(which will be covered by other visit methods) we will cover the callsites, 
+        /// instance declarations and their types to be stored at the instancesDictionary and such
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns>This returns null because there are no other points of interest 
+        /// further down the tree that we have not exlpored after finishing this node</returns>
         public override string VisitClassDeclaration([NotNull] CSharpGrammarParser.ClassDeclarationContext context)
         {
             var classBodyContentNode = GetRuleNodeInChildren("classBodyContent", context);

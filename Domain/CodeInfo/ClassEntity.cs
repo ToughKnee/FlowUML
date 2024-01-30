@@ -4,6 +4,21 @@ namespace Domain.CodeInfo
 {
     public class ClassEntity
     {
+
+        // TODO: =================  MOVE this ClassEntity management into an interface  to be able to have multiple implementations more easily
+        /// <summary>
+        /// Creates a new ClassEntity with the given parameters only if there 
+        /// wasn't a ClassEntity with that same identfiier
+        /// Mainly used by the instancesManager or Instances to check get the ClassEntity 
+        /// the know exists but don't know if has been already defined 
+        /// </summary>
+        /// <param name="belongingNamepsace"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        public static ClassEntity GetAlreadyRegisteredClassIfAny(string belongingNamepsace, string identifier)
+        {
+
+        }
         /// <summary>
         /// Name of the class
         /// </summary>
@@ -20,6 +35,10 @@ namespace Domain.CodeInfo
         /// Methods of the class
         /// </summary>
         public List<Method> methods { get; private set; } = new List<Method>();
+        /// <summary>
+        /// Contatins all the class entities that 
+        /// </summary>
+        public static List<ClassEntity> registeredClassEntities { get; private set; } = new List<ClassEntity>();
 
         public ClassEntity(string name, string belongingNamepsace, List<Property> properties, List<Method> methods)
         {

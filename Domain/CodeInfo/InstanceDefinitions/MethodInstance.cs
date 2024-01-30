@@ -1,7 +1,7 @@
 ﻿namespace Domain.CodeInfo.InstanceDefinitions
 {
     /// <summary>
-    /// Special class for the instances that as return types from methods
+    /// Special class for the instances that are return types from methods
     /// At first it will store the parts of a method(owner class, name and parameters) and 
     /// mark the 'methodIsUnknown' bool as true, thus 
     /// When 'methodIsUnknown' is false, then it means that the owner class of this method defined it
@@ -23,7 +23,7 @@
         /// This helps in traversing all the MehtodInstances which don't know the 
         /// return type of the method they hold
         /// </summary>
-        public static List<MethodInstance> unknownMethodInstances = new List<MethodInstance>();
+        public static List<MethodInstance> methodInstancesWithUndefinedCallsite = new List<MethodInstance>();
 
         public override string name => linkedCallsite.calledMethod.name;
         /// <summary>
@@ -41,7 +41,7 @@
         /// <summary>
         /// Alias of the name the class is known by its alias
         /// </summary>
-        public string? aliasName;
+        public string? aliasClassName;
         /// <summary>
         /// The parameters of the method used in the call known by their aliases
         /// </summary>
@@ -59,12 +59,13 @@
         }
         public static void RegisterToTheMethodInstancesList(MethodInstance methodInstance)
         {
-            MethodInstance.unknownMethodInstances.Add(methodInstance);
+            MethodInstance.methodInstancesWithUndefinedCallsite.Add(methodInstance);
         }
 
         /// <summary>
         /// This method checks the instancesDIctionary looking for the implementation of the aliases found and 
-        /// defined when analysing the code files
+        /// defined when analysing the code files, in order to be complete and add itself to the methodInstancesWithUndefinedCallsite
+        /// so that it is candidate to receive the method definition through subcribing to the instancesManager and finally be complete
         /// Called after the analysis is finished and the instancesManager cleaned the instancesDictionary
         /// </summary>
         public void CheckTypesIninstancesDictionary()
