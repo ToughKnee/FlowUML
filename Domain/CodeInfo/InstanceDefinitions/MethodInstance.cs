@@ -14,6 +14,17 @@
         // TODO: Make a List of strings which has the namespaces where this callsite was called, to help identify from which namespace came this method if there are multiple classes with the same name
         // TODO: Make this class subscribe to a method which receives a Method, and this will be called everytime a Method instance is built, to fill, BUT we also need to have the instancesDictionary clean this class to be able to compare the received Method first
 
+        /// <summary>
+        /// This helps in identifying the namespaces under which this method was called, if 
+        /// there are 2 classes with the same name in the entire code but different namespaces
+        /// </summary>
+        public List<string> candidateNamespaces= new List<string>();
+        /// <summary>
+        /// This helps in traversing all the MehtodInstances which don't know the 
+        /// return type of the method they hold
+        /// </summary>
+        public static List<MethodInstance> unknownMethodInstances = new List<MethodInstance>();
+
         public override string name => linkedCallsite.calledMethod.name;
         /// <summary>
         /// This makes this MethodInstance know which Callsite it is linked to,
@@ -27,15 +38,38 @@
         /// of a Method that came from a ClassEntity being defined
         /// </summary>
         public bool methodIsUnknown { get; private set; } = true;
+        /// <summary>
+        /// Alias of the name the class is known by its alias
+        /// </summary>
+        public string? aliasName;
+        /// <summary>
+        /// The parameters of the method used in the call known by their aliases
+        /// </summary>
+        public List<string>? aliasParameters { get; private set; } = new List<string>();
         public MethodInstance(Callsite callsite)
         {
             this.linkedCallsite = callsite;
+            RegisterToTheMethodInstancesList(this);
         }
         public MethodInstance(Method method)
         {
             this.linkedCallsite = new Callsite(method);
             methodIsUnknown = false;
+            RegisterToTheMethodInstancesList(this);
+        }
+        public static void RegisterToTheMethodInstancesList(MethodInstance methodInstance)
+        {
+            MethodInstance.unknownMethodInstances.Add(methodInstance);
         }
 
+        /// <summary>
+        /// This method checks the instancesDIctionary looking for the implementation of the aliases found and 
+        /// defined when analysing the code files
+        /// Called after the analysis is finished and the instancesManager cleaned the instancesDictionary
+        /// </summary>
+        public void CheckTypesIninstancesDictionary()
+        {
+
+        }
     }
 }
