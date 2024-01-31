@@ -13,6 +13,11 @@ namespace Infrastructure.Mediators
         {
             throw new NotImplementedException();
         }
+        
+        public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name, string parametersType, string returnType)
+        {
+            throw new NotImplementedException();
+        }
 
         public void ReceiveNamespace(string? belongingNamespace)
         {

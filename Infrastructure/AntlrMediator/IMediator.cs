@@ -26,6 +26,11 @@ namespace Infrastructure.Mediators
         /// ClassEntity if there was a class in the code analyzed</param>
         public void ReceiveClassEntityBuilder(List<AbstractBuilder<ClassEntity>> builders);
 
+        //===========================  Managing the KNWON methods, like the method Declarations
+        public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name
+            , string parametersType, string returnType);
+
+        //===========================  Managing the unknown methods, like callsites to other methods
         /// <summary>
         /// Receives the namespace from which the instances to be received are going to be 
         /// defined within, to help identify them between different files, classes and different methods

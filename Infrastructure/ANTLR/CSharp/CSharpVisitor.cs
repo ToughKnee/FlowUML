@@ -191,15 +191,27 @@ namespace Infrastructure.Antlr
                         _currentMethodBuilder = new MethodBuilder();
                         _methodBuilders.Add(_currentMethodBuilder);
                         _currentClassBuilder.AddMethod(_currentMethodBuilder);
-                        var methodIdentifierNode = GetRuleNodeInChildren("identifier", classContentChild);
+                        string methodIdentifierText = GetRuleNodeInChildren("identifier", classContentChild).GetText();
+                        string ownerClassText = classIdentifierNode.GetText();
+                        string returnTypeText = "";
+                        string parameters = "";
                         var returnTypeNode = GetRuleNodeInChildren("type", classContentChild);
                         var parameterListNode = GetRuleNodeInChildren("parameterList", classContentChild);
                         _currentMethodBuilder.SetBelongingNamespace(_currentNamespace);
-                        _currentMethodBuilder.SetOwnerClass(classIdentifierNode.GetText());
-                        _currentMethodBuilder.SetName(methodIdentifierNode.GetText());
-                        // Used ternary operator as an if in one line
-                        var ignoreMe = (returnTypeNode == null) ? (null) : (_currentMethodBuilder.SetReturnType(returnTypeNode.GetText()));
-                        ignoreMe = (parameterListNode == null) ? (null) : (_currentMethodBuilder.SetParameters(Visit(parameterListNode)));
+                        _currentMethodBuilder.SetOwnerClass(ownerClassText);
+                        _currentMethodBuilder.SetName(methodIdentifierText);
+                        if (returnTypeNode != null)
+                        {
+                            returnTypeText = returnTypeNode.GetText();
+                            _currentMethodBuilder.SetReturnType(returnTypeText);
+                        }
+                        if (parameterListNode != null)
+                        {
+                            parameters = Visit(parameterListNode);
+                            _currentMethodBuilder.SetParameters(parameters);
+                        }
+                        // Send to the mediator the method declaration to put that in the isntancesDictionary
+                        _mediator.ReceiveMethodDeclaration(_currentNamespace, ownerClassText, methodIdentifierText, parameters, returnTypeText);
                         // And after filling the available info at this Node, we go to another Node to get more info for the current Method
                         Visit(classContentChild);
                     }
@@ -230,11 +242,11 @@ namespace Infrastructure.Antlr
                 // Get the local variable rule if there is
                 if(ChildRuleNameIs("localVariableDeclaration", methodBodyNode.GetChild(j), 0))
                 {
+                    // TODO: Make the MethodInstances WTIH their linked Callsites, ALSO, when making the callsites or MEthodInstances also STORE the usings that were used in this file to be able to disambiaguate between classes with the same name
                     string[] parameter = Visit(methodBodyNode.GetChild(j).GetChild(0)).Split("-");
                     _mediator.ReceiveLocalVariableDeclaration(parameter[0], parameter[1]);
                 }
             }
-            // TODO: Make the MethodInstances WTIH their linked Callsites, ALSO, when making the callsites or MEthodInstances also STORE the usings that were used in this file
             _mediator.ReceiveMethodAnalysisEnd();
             return base.VisitMethod(context);
         }
@@ -242,7 +254,7 @@ namespace Infrastructure.Antlr
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
         {
             string result = "";
-            // Getting the parameters and storing them into the InstancesDictionary if any
+            // Getting the parameters type and returning them separated by comma
             if (context.ChildCount > 0)
             {
                 for (int j = 0; j < context.ChildCount; j += 2)

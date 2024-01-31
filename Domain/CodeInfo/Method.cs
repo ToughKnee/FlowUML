@@ -106,7 +106,7 @@ namespace Domain.CodeInfo
 
         public string GetIdentifier()
         {
-            // TODO: Check this if it works
+            // TODO: Check if this works
             // We need to provide the namespace of the class this belongs as well as the class name,
             // if we are not able to dissambiguate between 2 classes with the same name
             return (belongingNamespace == null) ? ("") : (belongingNamespace + ".") + 
