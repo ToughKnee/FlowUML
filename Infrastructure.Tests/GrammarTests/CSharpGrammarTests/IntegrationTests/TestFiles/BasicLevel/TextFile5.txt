@@ -20,7 +20,7 @@ public class TeamsUseCase : ITeamsUseCase
         var playerId = UserName.Create(playerName);
         var player = new Player(playerId);
 
-        team.AddPLayer(player);
+        team.AddPlayer(player);
 
         await _teamsRepository.UpdateTeamAsync(team);
 

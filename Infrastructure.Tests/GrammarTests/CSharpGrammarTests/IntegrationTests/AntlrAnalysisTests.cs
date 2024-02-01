@@ -81,7 +81,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             {
                 yield return new object[] {
                     "CleanArchitectureWorkshop.Application.UseCases",
-                    "TeamsUseCase",
                     new List<string> { "AddPlayerToTeamAsync", "CreateTeamAsync", "GetAllTeamsAsync", "GetTeamByIdAsync", "RemovePlayerFromTeamAsync", "GetTeamsByNameAsync" },
                     new List<string> { "string,string", "string", "", "string", "string,string", "string" },
                     new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>" }
@@ -91,7 +90,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
         [Theory]
         [MemberData(nameof(TextFile2Expectations))]
-        public void AnalyzeBasicClassDeclaration_MediatorReceivesMethodBuilder_MethodsCorrectlyBuilt(string expBelNamespace, string expOwnerName
+        public void AnalyzeBasicClassDeclaration_MediatorReceivesMethodBuilder_MethodsCorrectlyBuilt(string expBelNamespace
             , List<string> expName, List<string> expParameters, List<string> expRetType)
         {
             // Arrange
@@ -118,8 +117,9 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 {
                     parametersExpected = expParameters[i].Split(",").ToList();
                 }
-                Method expectedResult = new Method(expBelNamespace, new ClassEntity(expOwnerName), expName[i], parametersExpected, expRetType[i]);
-                abstractBuilders[i].Build().Should().BeEquivalentTo(expectedResult);
+                Method expectedResult = new Method(expBelNamespace, null, expName[i], parametersExpected, expRetType[i]);
+                Method receivedResult = abstractBuilders[i].Build();
+                receivedResult.Should().BeEquivalentTo(expectedResult);
             }
         }
 
@@ -387,15 +387,30 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             get
             {
                 yield return new object[] {
-                    new List<string> { "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "_teamsRepository" },
-                    new List<string> { "Create", "GetByIdAsync", "Create", "Player", "_teamsRepository", "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "_teamsRepository" },
-                    new List<string> { "AddPlayerToTeamAsync", "CreateTeamAsync", "GetAllTeamsAsync", "GetTeamByIdAsync", "RemovePlayerFromTeamAsync",   "GetTeamsByNameAsync"},
-                    new List<string> { "string,string", "string", "", "string", "string,string", "string" },
-                    new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>"},
+                    new List<string> { "TeamName", "_teamsRepository", "UserName", "", "team", "_teamsRepository", "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "_teamsRepository" },
+                    new List<string> { "Create", "GetByIdAsync", "Create", "Player", "AddPlayer", "UpdateTeamAsync", "Create", "GetByIdAsync", "Create", "RemovePlayer", "UpdateTeamAsync", "GetTeamsByNameAsync" },
+                    new List<List<string>> { 
+                        new List<string> { "teamName" },
+                        new List<string> { "teamId" },  
+                        new List<string> { "playerName" },  
+                        new List<string> { "playerId" },  
+                        new List<string> { "player" },  
+                        new List<string> { "team" },  
+                        new List<string> { "teamName" },  
+                        new List<string> { "teamId" },  
+                        new List<string> { "playerName" },  
+                        new List<string> { "playerId" },  
+                        new List<string> { "team" },  
+                        new List<string> { "searchTerm" }
+                    },
+                    new List<string> { "AddPlayerToTeamAsync", "AddPlayerToTeamAsync", "AddPlayerToTeamAsync", "AddPlayerToTeamAsync", "AddPlayerToTeamAsync", "AddPlayerToTeamAsync", "RemovePlayerFromTeamAsync", "RemovePlayerFromTeamAsync", "RemovePlayerFromTeamAsync", "RemovePlayerFromTeamAsync", "RemovePlayerFromTeamAsync", "GetTeamsByNameAsync" }
                 };
             }
         }
-        public void AnalyzeBasicClassDeclaration_MediatorMethodReceivesAnalysisEnd_CallsiteInfoReceivedAtTheCorrectTime(List<string> expClassNames, List<string> expMethodNames, List<List<string>> expParameters, List<string> exp, List<string> expBuilderMethodsNames)
+
+        [Theory]
+        [MemberData(nameof(MediatorCallsiteIfnoExpectations))]
+        public void AnalyzeBasicClassDeclaration_MediatorMethodReceivesAnalysisEnd_CallsiteInfoReceivedAtTheCorrectTime(List<string> expClassNames, List<string> expMethodNames, List<List<string>> expParameters, List<string> expBuilderMethodsNames)
         {
             // Arrange
             var mediatorMock = new Mock<IMediator>();
@@ -418,20 +433,22 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
             // Creating the antlr visitor
             _antlrService = new ANTLRService(mediatorMock.Object);
-            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile2.txt", true);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile5.txt", true);
 
             // Act
             _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
             // Assert
-            mediatorMock.Verify(m => m.ReceiveMethodDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(6));
+            mediatorMock.Verify(m => m.ReceiveMethodCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<MethodBuilder>()), Times.Exactly(12));
 
             // Verify each class has been correctly identified
-            receivedNamespace.Should().BeEquivalentTo(expNamespace);
-            receivedOwnerClass.Should().BeEquivalentTo(expOwnerClass);
-            receivedMethodName.Should().BeEquivalentTo(expMethodName);
+            receivedClassNames.Should().BeEquivalentTo(expClassNames);
+            receivedMethodNames.Should().BeEquivalentTo(expMethodNames);
             receivedParameters.Should().BeEquivalentTo(expParameters);
-            receivedReturnType.Should().BeEquivalentTo(expReturnType);
+            for (int i = 0; i < expBuilderMethodsNames.Count; i++)
+            {
+                receivedMethodBuilders[i].name.Should().BeEquivalentTo(expBuilderMethodsNames[i]);
+            }
         }
 
     }

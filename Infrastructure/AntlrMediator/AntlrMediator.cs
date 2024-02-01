@@ -39,5 +39,10 @@ namespace Infrastructure.Mediators
         {
             throw new NotImplementedException();
         }
+
+        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder)
+        {
+            throw new NotImplementedException();
+        }
     }
 }   

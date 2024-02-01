@@ -198,7 +198,6 @@ namespace Infrastructure.Antlr
                         var returnTypeNode = GetRuleNodeInChildren("type", classContentChild);
                         var parameterListNode = GetRuleNodeInChildren("parameterList", classContentChild);
                         _currentMethodBuilder.SetBelongingNamespace(_currentNamespace);
-                        _currentMethodBuilder.SetOwnerClass(ownerClassText);
                         _currentMethodBuilder.SetName(methodIdentifierText);
                         if (returnTypeNode != null)
                         {
@@ -246,11 +245,14 @@ namespace Infrastructure.Antlr
                     string[] parameter = Visit(methodBodyNode.GetChild(j).GetChild(0)).Split("-");
                     _mediator.ReceiveLocalVariableDeclaration(parameter[0], parameter[1]);
                 }
-                // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively before the default implementation
-                Visit(methodBodyNode.GetChild(j).GetChild(0));
+                else
+                {
+                    // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively before the default implementation
+                    Visit(methodBodyNode.GetChild(j).GetChild(0));
+                }
             }
             _mediator.ReceiveMethodAnalysisEnd();
-            return base.VisitMethod(context);
+            return "";
         }
 
         /// <summary>
@@ -273,7 +275,7 @@ namespace Infrastructure.Antlr
             var closeParenIndex = methodName.IndexOf(')');
             var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
             List<string> parameterList = null;
-            if (String.IsNullOrEmpty(parameters[0]))
+            if (!String.IsNullOrEmpty(parameters[0]))
             {
                 parameterList = new List<string>(parameters);
             }
@@ -282,9 +284,7 @@ namespace Infrastructure.Antlr
             // Passing the info to the mediator
             _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder);
 
-            Visit(context.GetChild(0));
-
-            return base.VisitMethodCall(context);
+            return functionSignature;
         }
 
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
@@ -308,17 +308,38 @@ namespace Infrastructure.Antlr
             return context.GetChild(0).GetText() + separator + context.GetChild(1).GetText();
         }
 
+        /// <summary>
+        /// This method is important to know the Callsites ANd also the Instances inside a method, which will identify the callsites
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override string VisitLocalVariableDeclaration([NotNull] CSharpGrammarParser.LocalVariableDeclarationContext context)
         {
-            // Send the info to the mediator that an "expression" has been spotted and manage it
             var expressionNode = GetRuleNodeInChildren("expression", context);
-            // TODO: Make a way to use the "Visit" method to make the things that are expressions like
-            // "methodCall" return the function that was called as the string that appears in code
-            var methodNode = GetRuleNodeInChildren("methodCall", expressionNode);
-            string methodCallString = methodNode.GetText();
 
+            // "Left side" of an assignment
+            var identifierNode = GetRuleNodeInChildren("identifier", context);
+
+            var methodNode = GetRuleNodeInChildren("methodCall", expressionNode);
+            // "Right side" of the assignment
+            string assignerExpression = Visit(expressionNode);
             // Gets the Assignee and the Assigner and returns them
-            return context.GetChild(1).GetText() + separator + methodCallString;
+            return identifierNode.GetText() + separator + assignerExpression;
+        }
+        /// <summary>
+        /// This gets the "right side" of an assignment, which is something that gives an implementation of something to a variable
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override string VisitExpression([NotNull] CSharpGrammarParser.ExpressionContext context)
+        {
+            string assignmentText = "";
+            var methodNode = GetRuleNodeInChildren("methodCall", context);
+            if(methodNode != null)
+            {
+                assignmentText = Visit(methodNode) + separator;
+            }
+            return assignmentText;
         }
     }
 }
