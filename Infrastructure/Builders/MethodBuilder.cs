@@ -9,7 +9,6 @@ namespace Infrastructure.Builders
     public class MethodBuilder : AbstractBuilder<Method>
     {
         public string name { get; private set; }
-        public string ownerClass { get; private set; }
         public string? returnType { get; private set; } = null;
         public string? belongingNamespace { get; private set; } = null;
         public List<string> parameters { get; private set; } = new List<string>();
@@ -22,8 +21,7 @@ namespace Infrastructure.Builders
         /// <returns></returns>
         public Method Build()
         {
-            ClassEntity owner = new ClassEntity(ownerClass);
-            Method method = new Method(belongingNamespace, owner, name, parameters, returnType, callsites);
+            Method method = new Method(belongingNamespace, name, parameters, returnType, callsites);
             return method;
         }
         public MethodBuilder SetName(string name)
@@ -39,12 +37,6 @@ namespace Infrastructure.Builders
         public MethodBuilder SetBelongingNamespace(string? belongingNamespace)
         {
             this.belongingNamespace = belongingNamespace;
-            return this;
-        }
-        // TODO: =================  DELETEME 
-        public MethodBuilder SetOwnerClass(string ownerClass)
-        {
-            this.ownerClass = ownerClass;
             return this;
         }
         public MethodBuilder SetParameters(string parameters)

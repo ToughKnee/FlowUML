@@ -4,21 +4,6 @@ namespace Domain.CodeInfo
 {
     public class ClassEntity
     {
-
-        // TODO: =================  MOVE this ClassEntity management into an interface  to be able to have multiple implementations more easily
-        /// <summary>
-        /// Creates a new ClassEntity with the given parameters only if there 
-        /// wasn't a ClassEntity with that same identfiier
-        /// Mainly used by the instancesManager or Instances to check get the ClassEntity 
-        /// the know exists but don't know if has been already defined 
-        /// </summary>
-        /// <param name="belongingNamepsace"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public static ClassEntity GetAlreadyRegisteredClassIfAny(string belongingNamepsace, string identifier)
-        {
-
-        }
         /// <summary>
         /// Name of the class
         /// </summary>
@@ -46,16 +31,19 @@ namespace Domain.CodeInfo
             this.classNamespace = belongingNamepsace;
             this.properties = properties;
             this.methods = methods;
+            ClassEntityManager.instance.ReceiveNewClassEntityInstance(this);
         }
         public ClassEntity(string name, string belongingNamepsace, List<Property> properties)
         {
             this.name = name;
             this.classNamespace = belongingNamepsace;
             this.properties = properties;
+            ClassEntityManager.instance.ReceiveNewClassEntityInstance(this);
         }
         public ClassEntity(string name)
         {
             this.name = name;
+            ClassEntityManager.instance.ReceiveNewClassEntityInstance(this);
         }
 
         public void AddMethod(Method method)
@@ -63,7 +51,7 @@ namespace Domain.CodeInfo
             this.methods.Add(method);
             method.SetOwnerClass(this);
         }
-        
+
         public static bool operator ==(ClassEntity obj1, ClassEntity obj2)
         {
             if (obj1.name == obj2.name && obj1.classNamespace == obj2.classNamespace)

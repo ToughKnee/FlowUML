@@ -5,7 +5,6 @@
         private static InstancesDictionaryManager _instance;
         private InstancesDictionaryManager()
         {
-
         }
 
         public static InstancesDictionaryManager instance

@@ -15,7 +15,7 @@ namespace Infrastructure.Mediators
         /// The builder contains all the info necessary to build
         /// all the methods found for a single class and just get the result
         /// </summary>
-        /// <param name="builder">Builder containing all the necessary info to
+        /// <param name="builder">Builder containing all the necessary info toa
         /// build all the methods from a ClassEntity</param>
         public void ReceiveMethodBuilder(List<AbstractBuilder<Method>> builders);
         /// <summary>

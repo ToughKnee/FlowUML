@@ -195,7 +195,6 @@ namespace Infrastructure.Antlr
                         var returnTypeNode = GetRuleNodeInChildren("type", classContentChild);
                         var parameterListNode = GetRuleNodeInChildren("parameterList", classContentChild);
                         _currentMethodBuilder.SetBelongingNamespace(_currentNamespace);
-                        _currentMethodBuilder.SetOwnerClass(classIdentifierNode.GetText());
                         _currentMethodBuilder.SetName(methodIdentifierNode.GetText());
                         // Used ternary operator as an if in one line
                         var ignoreMe = (returnTypeNode == null) ? (null) : (_currentMethodBuilder.SetReturnType(returnTypeNode.GetText()));

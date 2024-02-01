@@ -185,7 +185,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
         [Theory]
         [MemberData(nameof(TextFile3ExpectationsForNamespaceInfo))]
-
         public void AnalyzeBasicClassDeclaration_MediatorReceivesNamespaceAndClassNames_CorrectInfoReceivedAtTheCorrectTime(string expNamespace, List<string> expClassNames)
         {
             // The correct time refers to having received the namespaces and className before the method "ReceiveMethodAnalysisEnd"

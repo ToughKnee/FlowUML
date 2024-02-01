@@ -41,10 +41,9 @@ namespace Domain.CodeInfo
         /// </summary>
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
 
-        public Method(string belongingNamespace, ClassEntity owner, string name, List<string> parameters, string retType, List<Callsite> callsites)
+        public Method(string belongingNamespace, string name, List<string> parameters, string retType, List<Callsite> callsites)
         {
             this.belongingNamespace = belongingNamespace;
-            this.ownerClass = owner;
             this.name = name;
             this.parameters = parameters;
             this.returnType = retType;
@@ -57,45 +56,6 @@ namespace Domain.CodeInfo
             this.name = name;
             this.parameters = parameters;
             this.returnType = retType;
-        }
-        public Method(ClassEntity owner, string name, List<string> parameters, List<Callsite> callsites,  string retType)
-        {
-            this.ownerClass = owner;
-            this.name = name;
-            this.returnType = retType;
-            this.parameters = parameters;
-            this.callsites = callsites;
-        }
-        public Method(string ownerName, string name, List<string> parameters,  string retType)
-        {
-
-            this.ownerClass = new ClassEntity(ownerName);
-            this.name = name;
-            this.returnType = retType;
-            this.parameters = parameters;
-            this.callsites = callsites;
-        }
-        public Method(ClassEntity owner, string name, List<string> parameters,  string retType)
-        {
-            this.ownerClass = owner;
-            this.name = name;
-            this.returnType = retType;
-            this.parameters = parameters;
-        }
-        public Method(ClassEntity owner, string name, List<string> parameters)
-        {
-            this.ownerClass = owner;
-            this.name = name;
-            this.parameters = parameters;
-        }
-        public Method(ClassEntity owner, string name)
-        {
-            this.ownerClass = owner;
-            this.name = name;
-        }
-        public Method(string name)
-        {
-            this.name = name;
         }
 
         public Method SetOwnerClass(ClassEntity ownerClass)
