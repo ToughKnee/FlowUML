@@ -343,9 +343,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         [MemberData(nameof(MediatorMethodDeclaraationExpectations))]
         public void AnalyzeBasicClassDeclaration_MediatorReceivesMethodDeclaration_CorrectInfoReceived(List<string> expNamespace, List<string> expOwnerClass, List<string> expMethodName, List<string> expParameters, List<string> expReturnType)
         {
-            // The correct time refers to having received the namespaces and className before the method "ReceiveMethodAnalysisEnd"
-            // from the IMediator is received, since the mediator should work with that info AFTER the visitor finishes creeating a method
-
             // Arrange
             var mediatorMock = new Mock<IMediator>();
 
@@ -365,6 +362,58 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                     receivedMethodName.Add(param3);
                     receivedParameters.Add(param4);
                     receivedReturnType.Add(param5);
+                });
+
+            // Creating the antlr visitor
+            _antlrService = new ANTLRService(mediatorMock.Object);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile2.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            mediatorMock.Verify(m => m.ReceiveMethodDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(6));
+
+            // Verify each class has been correctly identified
+            receivedNamespace.Should().BeEquivalentTo(expNamespace);
+            receivedOwnerClass.Should().BeEquivalentTo(expOwnerClass);
+            receivedMethodName.Should().BeEquivalentTo(expMethodName);
+            receivedParameters.Should().BeEquivalentTo(expParameters);
+            receivedReturnType.Should().BeEquivalentTo(expReturnType);
+        }
+
+        public static IEnumerable<object[]> MediatorCallsiteIfnoExpectations
+        {
+            get
+            {
+                yield return new object[] {
+                    new List<string> { "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "_teamsRepository" },
+                    new List<string> { "Create", "GetByIdAsync", "Create", "Player", "_teamsRepository", "TeamName", "_teamsRepository", "UserName", "team", "_teamsRepository", "_teamsRepository" },
+                    new List<string> { "AddPlayerToTeamAsync", "CreateTeamAsync", "GetAllTeamsAsync", "GetTeamByIdAsync", "RemovePlayerFromTeamAsync",   "GetTeamsByNameAsync"},
+                    new List<string> { "string,string", "string", "", "string", "string,string", "string" },
+                    new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>"},
+                };
+            }
+        }
+        public void AnalyzeBasicClassDeclaration_MediatorMethodReceivesAnalysisEnd_CallsiteInfoReceivedAtTheCorrectTime(List<string> expClassNames, List<string> expMethodNames, List<List<string>> expParameters, List<string> exp, List<string> expBuilderMethodsNames)
+        {
+            // Arrange
+            var mediatorMock = new Mock<IMediator>();
+
+            // Create a collection to store the captured parameters
+            List<string> receivedClassNames = new List<string>();
+            List<string> receivedMethodNames = new List<string>();
+            List<List<string>> receivedParameters = new List<List<string>>();
+            List<MethodBuilder> receivedMethodBuilders= new List<MethodBuilder>();
+
+            //===========================  Capturing the received info from the antlr visitor
+            mediatorMock.Setup(x => x.ReceiveMethodCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<MethodBuilder>()))
+                .Callback<string, string, List<string>, MethodBuilder>((param1, param2, param3, param4) =>
+                {
+                    receivedClassNames.Add(param1);
+                    receivedMethodNames.Add(param2);
+                    receivedParameters.Add(param3);
+                    receivedMethodBuilders.Add(param4);
                 });
 
             // Creating the antlr visitor

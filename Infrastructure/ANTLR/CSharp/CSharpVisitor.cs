@@ -246,9 +246,45 @@ namespace Infrastructure.Antlr
                     string[] parameter = Visit(methodBodyNode.GetChild(j).GetChild(0)).Split("-");
                     _mediator.ReceiveLocalVariableDeclaration(parameter[0], parameter[1]);
                 }
+                // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively before the default implementation
+                Visit(methodBodyNode.GetChild(j).GetChild(0));
             }
             _mediator.ReceiveMethodAnalysisEnd();
             return base.VisitMethod(context);
+        }
+
+        /// <summary>
+        /// Gets the info to later create the callsites made inside a method 
+        /// and sends this info to the mediators
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override string VisitMethodCall([NotNull] CSharpGrammarParser.MethodCallContext context)
+        {
+            //===========================  Getting the components of the method called
+            string functionSignature = context.GetText();
+            var lastPeriodIndex = functionSignature.LastIndexOf('.');
+            Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
+            var methodName = functionSignature.Substring(
+                (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
+                );
+            var namespaceAndClass = (lastPeriodIndex != -1) ? (functionSignature.Substring(0, lastPeriodIndex)) : ("");
+            var openParenIndex = methodName.IndexOf('(');
+            var closeParenIndex = methodName.IndexOf(')');
+            var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
+            List<string> parameterList = null;
+            if (String.IsNullOrEmpty(parameters[0]))
+            {
+                parameterList = new List<string>(parameters);
+            }
+            methodName = methodName.Substring(0, openParenIndex);
+
+            // Passing the info to the mediator
+            _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder);
+
+            Visit(context.GetChild(0));
+
+            return base.VisitMethodCall(context);
         }
 
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)

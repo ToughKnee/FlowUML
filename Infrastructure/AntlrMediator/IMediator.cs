@@ -30,7 +30,7 @@ namespace Infrastructure.Mediators
         public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name
             , string parametersType, string returnType);
 
-        //===========================  Managing the unknown methods, like callsites to other methods
+        //===========================  Managing the instances within methods
         /// <summary>
         /// Receives the namespace from which the instances to be received are going to be 
         /// defined within, to help identify them between different files, classes and different methods
@@ -55,13 +55,22 @@ namespace Infrastructure.Mediators
         /// Receives the local variable declaration found by an ANTLR visitor to manage them 
         /// after the ANTLR visitor finishes analyzing the method
         /// </summary>
-        /// <param name="assigner">The "right part" of an assignation</param>
-        /// <param name="assignee">The "left part" of an assignation</param>
+        /// <param name="assigner">The "right part" of an assignment</param>
+        /// <param name="assignee">The "left part" of an assignment</param>
         public void ReceiveLocalVariableDeclaration(string assignee, string assigner);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
         /// should start processing the parameters and local variables received
         /// </summary>
         public void ReceiveMethodAnalysisEnd();
+        /// <summary>
+        /// This will receive the info for the callsites a method made, and be able to create the callsite alongside the MethodInstance, 
+        /// which must be connected, and send each class to their correspondent classes
+        /// </summary>
+        /// <param name="calledClassName">Name of the called class if any</param>
+        /// <param name="calledMethodName">Name of the method called</param>
+        /// <param name="calledParameters">List of parametrs from the calld method</param>
+        /// <param name="linkedMethodBuilder">The linked method builder which has the info for the method that made this callsite, to be able to set the callsite generated and let the builder be able to add this callsite to the Method class to be built</param>
+        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder);
     }
 }
