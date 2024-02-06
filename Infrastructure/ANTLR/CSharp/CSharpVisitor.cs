@@ -137,11 +137,12 @@ namespace Infrastructure.Antlr
                     _currentClassBuilder.SetNamespace(_currentNamespace);
                     var classDeclarationNode = GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i);
                     _mediator.ReceiveClassName(GetRuleNodeInChildren("identifier", classDeclarationNode).GetText());
-                    // Visit the "classDeclaration" 
+                    // Visit the "classDeclaration"
                     Visit(classDeclarationNode);
                 }
             }
-            return base.VisitCSharpFile(context);
+            // There is no need to explore the tree again since we did that already
+            return "";
         }
         public override string VisitFileNamespace([NotNull] CSharpGrammarParser.FileNamespaceContext context)
         {
@@ -255,38 +256,6 @@ namespace Infrastructure.Antlr
             return "";
         }
 
-        /// <summary>
-        /// Gets the info to later create the callsites made inside a method 
-        /// and sends this info to the mediators
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public override string VisitMethodCall([NotNull] CSharpGrammarParser.MethodCallContext context)
-        {
-            //===========================  Getting the components of the method called
-            string functionSignature = context.GetText();
-            var lastPeriodIndex = functionSignature.LastIndexOf('.');
-            Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
-            var methodName = functionSignature.Substring(
-                (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
-                );
-            var namespaceAndClass = (lastPeriodIndex != -1) ? (functionSignature.Substring(0, lastPeriodIndex)) : ("");
-            var openParenIndex = methodName.IndexOf('(');
-            var closeParenIndex = methodName.IndexOf(')');
-            var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
-            List<string> parameterList = null;
-            if (!String.IsNullOrEmpty(parameters[0]))
-            {
-                parameterList = new List<string>(parameters);
-            }
-            methodName = methodName.Substring(0, openParenIndex);
-
-            // Passing the info to the mediator
-            _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder);
-
-            return functionSignature;
-        }
-
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
         {
             string result = "";
@@ -320,7 +289,7 @@ namespace Infrastructure.Antlr
             // "Left side" of an assignment
             var identifierNode = GetRuleNodeInChildren("identifier", context);
 
-            var methodNode = GetRuleNodeInChildren("methodCall", expressionNode);
+            var methodCallNode = GetRuleNodeInChildren("methodCall", expressionNode);
             // "Right side" of the assignment
             string assignerExpression = Visit(expressionNode);
             // Gets the Assignee and the Assigner and returns them
@@ -334,12 +303,44 @@ namespace Infrastructure.Antlr
         public override string VisitExpression([NotNull] CSharpGrammarParser.ExpressionContext context)
         {
             string assignmentText = "";
-            var methodNode = GetRuleNodeInChildren("methodCall", context);
-            if(methodNode != null)
+            var methodCallNode = GetRuleNodeInChildren("methodCall", context);
+            if(methodCallNode != null)
             {
-                assignmentText = Visit(methodNode) + separator;
+                assignmentText = Visit(methodCallNode) + separator;
             }
             return assignmentText;
+        }
+        /// <summary>
+        /// Gets the info of this methodCall like the method's signature to later
+        /// create the callsites made inside the method that made this methodCall 
+        /// and send this info to the mediator
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override string VisitMethodCall([NotNull] CSharpGrammarParser.MethodCallContext context)
+        {
+            //===========================  Getting the components of the method called
+            string functionSignature = context.GetText();
+            var lastPeriodIndex = functionSignature.LastIndexOf('.');
+            Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
+            var methodName = functionSignature.Substring(
+                (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
+                );
+            var namespaceAndClass = (lastPeriodIndex != -1) ? (functionSignature.Substring(0, lastPeriodIndex)) : ("");
+            var openParenIndex = methodName.IndexOf('(');
+            var closeParenIndex = methodName.IndexOf(')');
+            var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
+            List<string> parameterList = null;
+            if (!String.IsNullOrEmpty(parameters[0]))
+            {
+                parameterList = new List<string>(parameters);
+            }
+            methodName = methodName.Substring(0, openParenIndex);
+
+            // Passing the info to the mediator
+            _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder);
+
+            return functionSignature;
         }
     }
 }

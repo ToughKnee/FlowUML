@@ -196,18 +196,14 @@ parameter
 
 //===========================  Local variables grammar
 methodContent
-    : constructorAssignment
-    | functionCall ';'
+    : functionCall ';'
     | localVariableDeclaration
     | returnExpression
     ;
 
-constructorAssignment
-    : type identifier '=' NEW expression ';'
-    ;
-
 localVariableDeclaration
     : type identifier '=' expression ';'
+    | type identifier '=' NEW expression ';'
     ;
 functionCall: expression;
 

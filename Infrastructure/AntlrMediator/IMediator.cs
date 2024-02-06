@@ -15,7 +15,7 @@ namespace Infrastructure.Mediators
         /// The builder contains all the info necessary to build
         /// all the methods found for a single class and just get the result
         /// </summary>
-        /// <param name="builder">Builder containing all the necessary info toa
+        /// <param name="builders">Builder containing all the necessary info to
         /// build all the methods from a ClassEntity</param>
         public void ReceiveMethodBuilder(List<AbstractBuilder<Method>> builders);
         /// <summary>
@@ -25,6 +25,15 @@ namespace Infrastructure.Mediators
         /// <param name="builders">Builder containing all the info to create a 
         /// ClassEntity if there was a class in the code analyzed</param>
         public void ReceiveClassEntityBuilder(List<AbstractBuilder<ClassEntity>> builders);
+        /// <summary>
+        /// This will receive the info for the callsites a method made, and be able to create the callsite alongside the MethodInstance, 
+        /// which must be connected, and send each class to their correspondent classes
+        /// </summary>
+        /// <param name="calledClassName">Name of the called class if any</param>
+        /// <param name="calledMethodName">Name of the method called</param>
+        /// <param name="calledParameters">List of parametrs from the calld method</param>
+        /// <param name="linkedMethodBuilder">The linked method builder which has the info for the method that made this callsite, to be able to set the callsite generated and let the builder be able to add this callsite to the Method class to be built</param>
+        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder);
 
         //===========================  Managing the KNWON methods, like the method Declarations
         public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name
@@ -63,14 +72,5 @@ namespace Infrastructure.Mediators
         /// should start processing the parameters and local variables received
         /// </summary>
         public void ReceiveMethodAnalysisEnd();
-        /// <summary>
-        /// This will receive the info for the callsites a method made, and be able to create the callsite alongside the MethodInstance, 
-        /// which must be connected, and send each class to their correspondent classes
-        /// </summary>
-        /// <param name="calledClassName">Name of the called class if any</param>
-        /// <param name="calledMethodName">Name of the method called</param>
-        /// <param name="calledParameters">List of parametrs from the calld method</param>
-        /// <param name="linkedMethodBuilder">The linked method builder which has the info for the method that made this callsite, to be able to set the callsite generated and let the builder be able to add this callsite to the Method class to be built</param>
-        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder);
     }
 }
