@@ -44,5 +44,10 @@ namespace Infrastructure.Mediators
         {
             throw new NotImplementedException();
         }
+
+        public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
+        {
+            throw new NotImplementedException();
+        }
     }
 }   

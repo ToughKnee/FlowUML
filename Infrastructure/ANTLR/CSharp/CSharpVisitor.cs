@@ -97,11 +97,35 @@ namespace Infrastructure.Antlr
             _currentClassBuilder.AddProperty(typeNode.GetText(), identifierNode.GetText());
             return typeNode.GetText() + separator + identifierNode.GetText();
         }
+        /// <summary>
+        /// Returns the identifiers of all the namespaces in a string separated by hyphens
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override string VisitUsingDirectives([NotNull] CSharpGrammarParser.UsingDirectivesContext context)
+        {
+            string usedNamespaces = "";
+            for (int j = 0; j < context.ChildCount; j++)
+            {
+                var namespaceIdentifierNode = GetRuleNodeInChildren("namespaceIdentifier", context.GetChild(0), j);
+                usedNamespaces += namespaceIdentifierNode.GetText() + "-";
+            }
+            usedNamespaces = usedNamespaces.Substring(0, usedNamespaces.Length - 1);
+            return usedNamespaces;
+        }
 
         // Main rule that represents the root of all the code in the current file,
         // to ensure we are always starting somewhere
         public override string VisitCSharpFile([NotNull] CSharpGrammarParser.CSharpFileContext context)
         {
+            // Fill the _currentlyUsedNamespaces list
+            var usingDirectivesNode = GetRuleNodeInChildren("usingDirectives", context);
+            if(usingDirectivesNode != null)
+            {
+                List<string> usedNamespaces = Visit(usingDirectivesNode).Split("-").ToList();
+                _mediator.ReceiveUsedNamespaces(usedNamespaces);
+            }
+
             //===========================  Get the current namespace if there is any to add it to the classes and methods present in this file
             var fileNamespacesNode = GetRuleNodeInChildren("fileNamespaces", context);
             int namespaceAbscenseTrigger = 0;
@@ -243,8 +267,13 @@ namespace Infrastructure.Antlr
                 if(ChildRuleNameIs("localVariableDeclaration", methodBodyNode.GetChild(j), 0))
                 {
                     // TODO: Make the MethodInstances WTIH their linked Callsites, ALSO, when making the callsites or MEthodInstances also STORE the usings that were used in this file to be able to disambiaguate between classes with the same name
-                    string[] parameter = Visit(methodBodyNode.GetChild(j).GetChild(0)).Split("-");
-                    _mediator.ReceiveLocalVariableDeclaration(parameter[0], parameter[1]);
+                    string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0));
+                    // If the localVariableDeclaration contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
+                    if(localVariableText.Contains('-'))
+                    {
+                        string[] assignmentValues = localVariableText.Split("-");
+                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1]);
+                    }
                 }
                 else
                 {
@@ -289,14 +318,22 @@ namespace Infrastructure.Antlr
             // "Left side" of an assignment
             var identifierNode = GetRuleNodeInChildren("identifier", context);
 
+            string assignerExpression = "";
             var methodCallNode = GetRuleNodeInChildren("methodCall", expressionNode);
-            // "Right side" of the assignment
-            string assignerExpression = Visit(expressionNode);
-            // Gets the Assignee and the Assigner and returns them
-            return identifierNode.GetText() + separator + assignerExpression;
+            // If the expression is a methodCall...
+            if (methodCallNode != null)
+            {
+                // "Right side" of the assignment
+                assignerExpression = Visit(expressionNode);
+             
+                // Gets the Assignee and the Assigner and returns them
+                return identifierNode.GetText() + separator + assignerExpression;
+            }
+            return assignerExpression;
         }
         /// <summary>
-        /// This gets the "right side" of an assignment, which is something that gives an implementation of something to a variable
+        /// Represents the logic that results in a given value of any type, like a methodCall or a simple math procedure
+        /// This normally gets the "right side" of an assignment, which is something that gives an implementation of something to a variable
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
@@ -308,6 +345,7 @@ namespace Infrastructure.Antlr
             {
                 assignmentText = Visit(methodCallNode) + separator;
             }
+            assignmentText = assignmentText.Substring(0, assignmentText.Length - 1);
             return assignmentText;
         }
         /// <summary>

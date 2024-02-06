@@ -34,6 +34,11 @@ namespace Infrastructure.Mediators
         /// <param name="calledParameters">List of parametrs from the calld method</param>
         /// <param name="linkedMethodBuilder">The linked method builder which has the info for the method that made this callsite, to be able to set the callsite generated and let the builder be able to add this callsite to the Method class to be built</param>
         public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder);
+        /// <summary>
+        /// Receive the usedNamespaces to be able to disambiguate between classes with the same name
+        /// </summary>
+        /// <param name="usedNamespaces"></param>
+        public void ReceiveUsedNamespaces(List<string>? usedNamespaces);
 
         //===========================  Managing the KNWON methods, like the method Declarations
         public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name

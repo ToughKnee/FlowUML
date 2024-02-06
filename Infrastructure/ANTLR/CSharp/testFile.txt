@@ -1,5 +1,32 @@
-class TeamsUseCase
+using CleanArchitectureWorkshop.Application.Repositories;
+using CleanArchitectureWorkshop.Domain.TeamAggregate;
+
+namespace CleanArchitectureWorkshop.Application.UseCases;
+
+public class TeamsUseCase : ITeamsUseCase
 {
+    private readonly ITeamsRepository _teamsRepository;
+
+    public TeamsUseCase(ITeamsRepository teamsRepository)
+    {
+    }
+
+    public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+    {
+        var teamId = TeamName.Create(teamName);
+
+        var team = await _teamsRepository.GetByIdAsync(teamId);
+
+        var playerId = UserName.Create(playerName);
+        var player = new Player(playerId);
+
+        team.AddPlayer(player);
+
+        await _teamsRepository.UpdateTeamAsync(team);
+
+        return team;
+    }
+
     public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
     {
         var teamId = TeamName.Create(teamName);
@@ -13,5 +40,10 @@ class TeamsUseCase
         await _teamsRepository.UpdateTeamAsync(team);
 
         return team;
+    }
+
+    public async Task<List<Team>> GetTeamsByNameAsync(string searchTerm)
+    {
+        return await _teamsRepository.GetTeamsByNameAsync(searchTerm);
     }
 }
