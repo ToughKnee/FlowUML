@@ -25,6 +25,7 @@
         /// </summary>
         public static List<MethodInstance> methodInstancesWithUndefinedCallsite = new List<MethodInstance>();
 
+        // TODO: Add the correct method identifier used(the method signature/)
         public override string name => linkedCallsite.calledMethod.name;
         /// <summary>
         /// This makes this MethodInstance know which Callsite it is linked to,
@@ -46,6 +47,7 @@
         /// The parameters of the method used in the call known by their aliases
         /// </summary>
         public List<string>? aliasParameters { get; private set; } = new List<string>();
+        
         public MethodInstance(Callsite callsite)
         {
             this.linkedCallsite = callsite;
