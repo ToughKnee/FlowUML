@@ -24,7 +24,7 @@ namespace Domain.Tests
         //     var callsite1 = new Callsite(method1);
         //     var instancer = new MethodInstance(callsite1);
         //     // var name1 = myInstance.GetName();
-        //     InstancesDictionaryManager.instance.AddAssignation(instance1, instancer);
+        //     InstancesDictionaryManager.instance.AddAssignment(instance1, instancer);
 
         //     // Act
 

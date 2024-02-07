@@ -18,7 +18,7 @@
         /// This helps in identifying the namespaces under which this method was called, if 
         /// there are 2 classes with the same name in the entire code but different namespaces
         /// </summary>
-        public List<string> candidateNamespaces= new List<string>();
+        public List<string> candidateNamespaces = new List<string>();
         /// <summary>
         /// This helps in traversing all the MehtodInstances which don't know the 
         /// return type of the method they hold
@@ -63,7 +63,7 @@
         }
 
         /// <summary>
-        /// This method checks the instancesDIctionary looking for the implementation of the aliases found and 
+        /// This method checks the instancesDIctionary looking for the type of the aliases found and 
         /// defined when analysing the code files, in order to be complete and add itself to the methodInstancesWithUndefinedCallsite
         /// so that it is candidate to receive the method definition through subcribing to the instancesManager and finally be complete
         /// Called after the analysis is finished and the instancesManager cleaned the instancesDictionary

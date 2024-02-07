@@ -49,8 +49,8 @@ namespace Infrastructure.Antlr
                 cSharpVisitor.Visit(csharpContext);
 
                 // After the visitor finished analyzing the file, pass the builder to the mediator
-                _mediator.ReceiveMethodBuilder(cSharpVisitor.GetMethodBuilders());
-                _mediator.ReceiveClassEntityBuilder(cSharpVisitor.GetClassBuilders());
+                _mediator.ReceiveMethodBuilders(cSharpVisitor.GetMethodBuilders());
+                _mediator.ReceiveClassEntityBuilders(cSharpVisitor.GetClassBuilders());
             }
             else
             {

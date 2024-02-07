@@ -205,7 +205,7 @@ namespace Infrastructure.Antlr
                     // If this is a property rule, we visit the node
                     if (ChildRuleNameIs("property", classContentNode, 0))
                     {
-                        // TODO: Call the mediator to make him receive the results of visiting the parameters
+                        // aa   TODO: Call the mediator to make him receive the results of visiting the parameters
                         // and make him add to the instancesDicionary the parameters
                         Visit(classContentChild);
                     }
@@ -277,7 +277,7 @@ namespace Infrastructure.Antlr
                 }
                 else
                 {
-                    // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively before the default implementation
+                    // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively before the default type
                     Visit(methodBodyNode.GetChild(j).GetChild(0));
                 }
             }
@@ -333,7 +333,7 @@ namespace Infrastructure.Antlr
         }
         /// <summary>
         /// Represents the logic that results in a given value of any type, like a methodCall or a simple math procedure
-        /// This normally gets the "right side" of an assignment, which is something that gives an implementation of something to a variable
+        /// This normally gets the "right side" of an assignment, which is something that gives an type of something to a variable
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>

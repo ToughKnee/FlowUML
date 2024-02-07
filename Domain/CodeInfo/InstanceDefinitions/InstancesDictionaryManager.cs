@@ -1,7 +1,18 @@
-﻿namespace Domain.CodeInfo.InstanceDefinitions
+﻿using System;
+
+namespace Domain.CodeInfo.InstanceDefinitions
 {
     public class InstancesDictionaryManager
     {
+        /// <summary>
+        /// This will make the link between variables with a name used inside methods,
+        /// to a defined type of a method that may belong to a class and will allow
+        /// to make the link between ClassEntitites calling other ClassEntities
+        /// If the value of a key is "null", then this means that the key has the 
+        /// type defined and the search to know the type of an instance is over
+        /// </summary>
+        public Dictionary<AbstractInstance, AbstractInstance?> instancesDictionary { get; private set; } = new Dictionary<AbstractInstance, AbstractInstance>();
+
         private static InstancesDictionaryManager _instance;
         private InstancesDictionaryManager()
         {
@@ -25,33 +36,34 @@
         }
 
         /// <summary>
-        /// This will make the link between variables with a name used inside methods,
-        /// to a defined implementation of a method that may belong to a class and will allow
-        /// to make the link between ClassEntitites calling other ClassEntities
+        /// Add an assignment of a variable or parameter to the Dictionary 
         /// </summary>
-        public Dictionary<AbstractInstance, AbstractInstance> instancesDictionary { get; private set; } = new Dictionary<AbstractInstance, AbstractInstance>();
-
-
-        /// <summary>
-        /// Add an assignment to the Dictionary, this applies when an assignment happens in code
-        /// </summary>
-        /// <param name="instanceAssignee"></param>
-        /// <param name="instanceAssigner"></param>
-        public void AddAssignation(AbstractInstance instanceAssignee, AbstractInstance instanceAssigner)
+        /// <param name="instanceAssigneeName"></param>
+        /// <param name="instanceAssignerName"></param>
+        public void AddAssignment(string instanceAssigneeName, string instanceAssignerName, bool hasType)
         {
-            instancesDictionary.Add(instanceAssignee, instanceAssigner);
+            Instance instanceAssignee;
+            if (hasType)
+            {
+                instanceAssignee = new Instance(instanceAssigneeName, instanceAssignerName);
+                instancesDictionary.Add(instanceAssignee, null);
+            }
+            else
+            {
+                instanceAssignee = new Instance(instanceAssigneeName);
+                var instanceAssigner = new Instance(instanceAssignerName);
+                instancesDictionary.Add(instanceAssignee, instanceAssigner);
+            }
         }
         /// <summary>
-        /// Adds the definition of a method which is called when a ClassEntity is being defined also,
+        /// Adds the definition of a method which is called when a ClassEntity is being defined too,
         /// if it comes from a ClassEntity
-        /// This add the method itseld to the instancesDictionary as a key, and as a value will 
+        /// This adds the method itself to the instancesDictionary as a key, and as a value will 
         /// be the return type of this method
         /// </summary>
         /// <param name="method">Method from a ClassEntity definition or just a lone function definition</param>
-        public void ManageNewMethodDefinition(Method method)
+        public void AddMethodAssignment(string instanceAssigneeName, string methodCallAssigner)
         {
-            var callsite = new Callsite(method);
-
         }
     }
 }

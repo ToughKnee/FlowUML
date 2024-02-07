@@ -20,10 +20,6 @@ namespace Domain.CodeInfo
         /// Methods of the class
         /// </summary>
         public List<Method> methods { get; private set; } = new List<Method>();
-        /// <summary>
-        /// Contatins all the class entities that 
-        /// </summary>
-        public static List<ClassEntity> registeredClassEntities { get; private set; } = new List<ClassEntity>();
 
         public ClassEntity(string name, string belongingNamepsace, List<Property> properties, List<Method> methods)
         {

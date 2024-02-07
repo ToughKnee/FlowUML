@@ -28,7 +28,7 @@ namespace Domain.CodeInfo
 
         private List<ClassEntity> _classEntities = new List<ClassEntity>();
         public IReadOnlyCollection<ClassEntity> classEntities => _classEntities.AsReadOnly();
-        public ClassEntity GetExistingOrCreateClassEntity(string belongingNamepsace, string identifier)
+        public ClassEntity? GetExistingClassEntity(string belongingNamepsace, string identifier)
         {
             throw new NotImplementedException();
         }

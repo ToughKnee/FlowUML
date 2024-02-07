@@ -97,7 +97,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             List<AbstractBuilder<Method>> abstractBuilders = new List<AbstractBuilder<Method>>();
             var mediatorMock = new Mock<IMediator>();
             // Capture the received parameter to check it
-            mediatorMock.Setup(m => m.ReceiveMethodBuilder(It.IsAny<List<AbstractBuilder<Method>>>()))
+            mediatorMock.Setup(m => m.ReceiveMethodBuilders(It.IsAny<List<AbstractBuilder<Method>>>()))
                 .Callback<List<AbstractBuilder<Method>>>(r => abstractBuilders = r);
             _antlrService = new ANTLRService(mediatorMock.Object);
             _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile2.txt", true);
@@ -106,7 +106,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
             // Assert
-            mediatorMock.Verify(m => m.ReceiveMethodBuilder(It.IsAny<List<AbstractBuilder<Method>>>()), Times.Once);
+            mediatorMock.Verify(m => m.ReceiveMethodBuilders(It.IsAny<List<AbstractBuilder<Method>>>()), Times.Once);
 
             // Verify each class has been correctly identified
             Assert.True(abstractBuilders.Count == 6);
@@ -148,7 +148,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             List<AbstractBuilder<ClassEntity>> abstractBuilders = new List<AbstractBuilder<ClassEntity>>();
             var mediatorMock = new Mock<IMediator>();
             // Capture the received parameter to check it
-            mediatorMock.Setup(m => m.ReceiveClassEntityBuilder(It.IsAny<List<AbstractBuilder<ClassEntity>>>()))
+            mediatorMock.Setup(m => m.ReceiveClassEntityBuilders(It.IsAny<List<AbstractBuilder<ClassEntity>>>()))
                 .Callback<List<AbstractBuilder<ClassEntity>>>(r => abstractBuilders = r);
             _antlrService = new ANTLRService(mediatorMock.Object);
             _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile3.txt", true);
@@ -157,7 +157,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
             // Assert
-            mediatorMock.Verify(m => m.ReceiveMethodBuilder(It.IsAny<List<AbstractBuilder<Method>>>()), Times.Once);
+            mediatorMock.Verify(m => m.ReceiveMethodBuilders(It.IsAny<List<AbstractBuilder<Method>>>()), Times.Once);
 
             // Verify each class has been correctly identified
             Assert.True(abstractBuilders.Count == 2);

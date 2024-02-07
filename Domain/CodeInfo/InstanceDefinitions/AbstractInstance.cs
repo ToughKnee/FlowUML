@@ -21,26 +21,25 @@ namespace Domain.CodeInfo
         /// has been assigned by a method or constructor and is not an alias of another Instance
         /// and we know its return type
         /// </summary>
-        public ClassEntity? implementation { get; set; }
+        public string? type { get; set; }
 
-        public AbstractInstance(string name, ClassEntity? implementation)
+        public AbstractInstance(string name, string? type)
         {
             this.name = name;
-            this.implementation = implementation;
+            this.type = type;
         }
         public AbstractInstance(string name)
         {
             this.name = name;
-            this.implementation = null;
+            this.type = null;
         }
         public AbstractInstance()
         {
-            this.implementation = null;
         }
 
         public static bool operator ==(AbstractInstance obj1, AbstractInstance obj2)
         {
-            if (obj1.implementation == obj2.implementation || obj1.name == obj2.name)
+            if (obj1.type == obj2.type || obj1.name == obj2.name)
                 return true;
 
             return false;
@@ -48,7 +47,7 @@ namespace Domain.CodeInfo
 
         public static bool operator !=(AbstractInstance obj1, AbstractInstance obj2)
         {
-            if (obj1.implementation == obj2.implementation || obj1.name == obj2.name)
+            if (obj1.type == obj2.type || obj1.name == obj2.name)
                 return false;
 
             return true;
