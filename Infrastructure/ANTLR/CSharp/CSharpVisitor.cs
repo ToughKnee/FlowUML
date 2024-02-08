@@ -144,13 +144,13 @@ namespace Infrastructure.Antlr
                 if (j != -1)
                 {
                     _currentNamespace = Visit(fileNamespacesNode.GetChild(j));
-                    _mediator.ReceiveNamespace(_currentNamespace);
                     classDeclarationsNode = GetRuleNodeInChildren("classDeclarations", fileNamespacesNode.GetChild(j));
                 }
                 else
                 {
                     classDeclarationsNode = GetRuleNodeInChildren("classDeclarations", context);
                 }
+                _mediator.ReceiveNamespace(_currentNamespace);
 
                 // Navigate through the classes available in this namespace or file
                 int classDeclarationsCount = (classDeclarationsNode != null) ? (classDeclarationsNode.ChildCount) : (0);
@@ -191,7 +191,6 @@ namespace Infrastructure.Antlr
         {
             var classBodyContentNode = GetRuleNodeInChildren("classBodyContent", context);
             IParseTree classContentNode;
-            // TODO: Fill in info for the ClassEntityBuilder
             var classIdentifierNode = GetRuleNodeInChildren("identifier", context);
             _currentClassBuilder.SetName(classIdentifierNode.GetText());
 
@@ -205,9 +204,8 @@ namespace Infrastructure.Antlr
                     // If this is a property rule, we visit the node
                     if (ChildRuleNameIs("property", classContentNode, 0))
                     {
-                        // aa   TODO: Call the mediator to make him receive the results of visiting the parameters
-                        // and make him add to the instancesDicionary the parameters
-                        Visit(classContentChild);
+                        string[] properties = Visit(classContentChild).Split("-");
+                        _mediator.ReceiveProperties(properties[0], properties[1]);
                     }
                     // If this is a method rule node, we create a methodBuilder and start building the method
                     else if (ChildRuleNameIs("method", classContentNode, 0))
@@ -266,7 +264,6 @@ namespace Infrastructure.Antlr
                 // Get the local variable rule if there is
                 if(ChildRuleNameIs("localVariableDeclaration", methodBodyNode.GetChild(j), 0))
                 {
-                    // TODO: Make the MethodInstances WTIH their linked Callsites, ALSO, when making the callsites or MEthodInstances also STORE the usings that were used in this file to be able to disambiaguate between classes with the same name
                     string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0));
                     // If the localVariableDeclaration contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
                     if(localVariableText.Contains('-'))

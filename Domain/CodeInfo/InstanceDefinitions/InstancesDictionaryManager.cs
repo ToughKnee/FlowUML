@@ -11,7 +11,8 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// If the value of a key is "null", then this means that the key has the 
         /// type defined and the search to know the type of an instance is over
         /// </summary>
-        public Dictionary<AbstractInstance, AbstractInstance?> instancesDictionary { get; private set; } = new Dictionary<AbstractInstance, AbstractInstance>();
+        private Dictionary<AbstractInstance, AbstractInstance?> _instancesDictionary = new Dictionary<AbstractInstance, AbstractInstance>();
+        public IReadOnlyDictionary<AbstractInstance, AbstractInstance?> instancesDictionary => _instancesDictionary.AsReadOnly();
 
         private static InstancesDictionaryManager _instance;
         private InstancesDictionaryManager()
@@ -32,7 +33,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
         public void CleanInstancesDictionary()
         {
-            _instance.instancesDictionary.Clear();
+            _instance._instancesDictionary.Clear();
         }
 
         /// <summary>
@@ -46,14 +47,19 @@ namespace Domain.CodeInfo.InstanceDefinitions
             if (hasType)
             {
                 instanceAssignee = new Instance(instanceAssigneeName, instanceAssignerName);
-                instancesDictionary.Add(instanceAssignee, null);
+                _instancesDictionary.Add(instanceAssignee, null);
             }
             else
             {
                 instanceAssignee = new Instance(instanceAssigneeName);
                 var instanceAssigner = new Instance(instanceAssignerName);
-                instancesDictionary.Add(instanceAssignee, instanceAssigner);
+                _instancesDictionary.Add(instanceAssignee, instanceAssigner);
             }
+        }
+        public void AddMethodAssignment(string instanceAssigneeName, MethodInstance methodCallAssigner)
+        {
+            var instanceAssignee = new Instance(instanceAssigneeName);
+            _instancesDictionary.Add(instanceAssignee, methodCallAssigner);
         }
         /// <summary>
         /// Adds the definition of a method which is called when a ClassEntity is being defined too,
@@ -62,8 +68,16 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// be the return type of this method
         /// </summary>
         /// <param name="method">Method from a ClassEntity definition or just a lone function definition</param>
-        public void AddMethodAssignment(string instanceAssigneeName, string methodCallAssigner)
+        /*TODO: Complete this method*/public void AddMethodDeclaration(string instanceAssigneeName, string methodCallAssigner)
         {
+        }
+        /// <summary>
+        /// This method adds a single methodInstance which only needs to be cleaned from the aliases
+        /// </summary>
+        /// <param name="methodInstance"></param>
+        public void AddMethodInstance(MethodInstance methodInstance)
+        {
+            _instancesDictionary.Add(methodInstance, null);
         }
     }
 }

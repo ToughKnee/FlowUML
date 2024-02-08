@@ -13,8 +13,8 @@
         /// the complete Method from a ClassEntity which is being defined and defining its Methods
         /// This method is considered as complete when we know its 'returnType'
         /// </summary>
-        public Method calledMethod;
-        public Callsite(Method called)
+        public Method? calledMethod;
+        public Callsite(Method? called)
         {
             calledMethod = called;
         }

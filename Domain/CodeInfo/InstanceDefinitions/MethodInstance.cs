@@ -44,13 +44,21 @@
         /// </summary>
         public string? aliasClassName;
         /// <summary>
+        /// Name of the method which does not have alias
+        /// </summary>
+        public string methodName;
+        /// <summary>
         /// The parameters of the method used in the call known by their aliases
         /// </summary>
         public List<string>? aliasParameters { get; private set; } = new List<string>();
-        
-        public MethodInstance(Callsite callsite)
+
+        public MethodInstance(string aliasClassName, string methodName, List<string> aliasParams, Callsite linkedCallsite, bool unknownMethod)
         {
-            this.linkedCallsite = callsite;
+            this.aliasClassName = aliasClassName;
+            this.methodName = methodName;
+            this.aliasParameters = aliasParams;
+            this.linkedCallsite = linkedCallsite;
+            this.methodIsUnknown = unknownMethod;
             RegisterToTheMethodInstancesList(this);
         }
         public MethodInstance(Method method)

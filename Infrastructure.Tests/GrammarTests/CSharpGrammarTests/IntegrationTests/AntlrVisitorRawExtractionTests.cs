@@ -11,14 +11,13 @@ using Xunit.Abstractions;
 
 namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 {
-    public class AntlrAnalysisTests
+    public class AntlrVisitorRawExtractionTests
     {
         private static string currentDirectoryPath = "..\\..\\..\\";
         private readonly string pathToTestFiles = "GrammarTests\\CSharpGrammarTests\\IntegrationTests\\TestFiles\\";
         private ANTLRService _antlrService;
-        public AntlrAnalysisTests()
+        public AntlrVisitorRawExtractionTests()
         {
-            InstancesDictionaryManager.instance.CleanInstancesDictionary();
         }
 
         public static IEnumerable<object[]> TextFile1Expectations

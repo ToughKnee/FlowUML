@@ -53,18 +53,18 @@ namespace Domain.CodeInfo
             return true;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj == null || GetType() != obj.GetType())
-                return false;
+        //public override bool Equals(object obj)
+        //{
+        //    if (obj == null || GetType() != obj.GetType())
+        //        return false;
 
-            AbstractInstance absInstance = (AbstractInstance)obj;
-            return this.name == absInstance.name;
-        }
+        //    AbstractInstance absInstance = (AbstractInstance)obj;
+        //    return this.name == absInstance.name;
+        //}
 
-        public override int GetHashCode()
-        {
-            return this.name.GetHashCode();
-        }
+        //public override int GetHashCode()
+        //{
+        //    return this.name.GetHashCode();
+        //}
     }
 }

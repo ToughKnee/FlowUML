@@ -27,7 +27,7 @@ namespace Infrastructure.Mediators
         public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders);
 
         //===========================  Managing the KNWON methods, like the method Declarations
-        public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name
+        public void ReceiveMethodDeclaration(string? belongingNamespace, string? ownerClass, string name
             , string parametersType, string returnType);
 
         //===========================  Managing unknown instances and method calls within methods declarations
@@ -50,7 +50,7 @@ namespace Infrastructure.Mediators
         /// </summary>
         /// <param name="type"></param>
         /// <param name="identifier"></param>
-        public void ReceiveProperties(List<string> properties);
+        public void ReceiveProperties(string type, string identifier);
         /// <summary>
         /// Receives the parameters that the ANTLR visitor found and manage them
         /// </summary>

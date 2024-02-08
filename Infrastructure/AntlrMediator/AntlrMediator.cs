@@ -10,129 +10,77 @@ namespace Infrastructure.Mediators
     {
         private string _currentNamespace;
         private string _currentClassName;
+        private string _currentMethodName;
         /// <summary>
-        /// Used to know when there is a parameter or property used in a method and we must identify it
+        /// Used to know when there are instances with their defined type used in a method and we must identify it
         /// </summary>
-        private Dictionary<string, string> _parameterAndPropertyDeclaredInCurrentMethodAnalysis = new Dictionary<string, string>();
-        /// <summary>
-        /// This stores the properties declared in a class and refills the _parameterAndPropertyDeclaredInCurrentMethodAnalysis 
+        private Dictionary<string, string> _knownInstancesDeclaredInCurrentMethodAnalysis = new Dictionary<string, string>();
+        /// This stores the properties declared in a class and refills the _knownInstancesDeclaredInCurrentMethodAnalysis 
         /// everytime it is cleared when a methodAnalysisEnd is reached
         /// </summary>
         private Dictionary<string, string> _propertiesDeclared = new Dictionary<string, string>();
+        /// <summary>
+        /// This is used first by the method ReceiveMethodCall, which creates the MethodInstance 
+        /// AND Callsite made form the method currently analyzed, and sets this property with 
+        /// the MethodInstance created, which is then read by the ReceiveLocalVariableDeclaration, 
+        /// to be able to manage it and set it null IF the method was used in an assignment and send 
+        /// it to the instancesManager, if the methodCall did not assign anything to any variable, 
+        /// then ReceiveLocalVariableDeclaration won't read this property and must be 
+        /// managed the next time ReceiveMethodCall is called
+        /// </summary>
+        private MethodInstance? _currentMethodCallInstance = null;
 
         public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
         {
-            throw new NotImplementedException();
         }
         public void ReceiveMethodBuilders(List<AbstractBuilder<Method>> builders)
         {
-            throw new NotImplementedException();
         }
-        public void ReceiveMethodDeclaration(string belongingNamespace, string ownerClass, string name, string parametersType, string returnType)
+        public void ReceiveMethodDeclaration(string? belongingNamespace, string? ownerClass, string name, string parametersType, string returnType)
         {
-            throw new NotImplementedException();
+            _currentMethodName = name + ".";
+
+            // TODO: Add this method declaration to the instancesDictionary
         }
 
         public void ReceiveNamespace(string? belongingNamespace)
         {
-            _currentNamespace = (belongingNamespace == null) ? ("") : (belongingNamespace);
+            _currentNamespace = (belongingNamespace == null) ? ("") : (belongingNamespace + ".");
         }
         public void ReceiveClassName(string? className)
         {
-            _currentNamespace = (className == null) ? ("") : (className);
-        }
-        public void ReceiveProperties(List<string> properties)
-        {
-            // Clear all the dicts since this is a new class we received
-            _parameterAndPropertyDeclaredInCurrentMethodAnalysis.Clear();
+            _knownInstancesDeclaredInCurrentMethodAnalysis.Clear();
             _propertiesDeclared.Clear();
-            
-            // Go through all the properties
-            foreach (var property in properties)
-            {
-                // Split the properties between its type and identifier 
-                string[] propertiesArray = property.Split("-");
-                string propertyInstanceId = _currentNamespace + _currentNamespace + propertiesArray[1];
-
-                // Send the identifier and type to the instancesManager
-                InstancesDictionaryManager.instance.AddAssignment(propertyInstanceId, propertiesArray[0], true);
-
-                // Add the property with its custom identifier to apply this identifier to future usages of this instance
-                _propertiesDeclared.Add(propertiesArray[1], propertyInstanceId);
-                _parameterAndPropertyDeclaredInCurrentMethodAnalysis.Add(propertiesArray[1], propertyInstanceId);
-            }
+            _currentClassName = (className == null) ? ("") : (className + ".");
+        }
+        public void ReceiveProperties(string type, string identifier)
+        {
+            string propertyInstanceId = _currentNamespace + _currentClassName + identifier;
+            InstancesDictionaryManager.instance.AddAssignment(propertyInstanceId, type, true);
+            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, propertyInstanceId);
         }
         public void ReceiveParameters(string type, string identifier)
         {
-            string parameterInstanceId = _currentNamespace + _currentClassName + identifier;
+            string parameterInstanceId = _currentNamespace + _currentClassName + _currentMethodName + identifier;
 
             // Send the parameter to the instancesManager
             InstancesDictionaryManager.instance.AddAssignment(parameterInstanceId, type, true);
 
             // Add the parameter with its custom identifier to apply this identifier to future usages of this instance
-            _parameterAndPropertyDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstanceId);
+            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstanceId);
         }
-        // TODO: =================  CHECK the "assigner" parameter, and if it is a methodCall, it has NO WHITESPACES
         public void ReceiveLocalVariableDeclaration(string assignee, string assigner)
         {
             // If the assigner is a method call...
             if(assigner.Contains("("))
             {
-                //===========================  Getting the components of the method called
-                string functionSignature = assigner;
-                var lastPeriodIndex = functionSignature.LastIndexOf('.');
-                Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
-                var methodName = functionSignature.Substring(
-                    (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
-                    );
-                var namespaceAndClass = (lastPeriodIndex != -1) ? (functionSignature.Substring(0, lastPeriodIndex)) : ("");
-                var openParenIndex = methodName.IndexOf('(');
-                var closeParenIndex = methodName.IndexOf(')');
-                var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
-                List<string> parameterList = null;
-                if (!String.IsNullOrEmpty(parameters[0]))
+                // Get the _currentMethodCallInstance which contains the methodCall assigner already processed and add the assignment to the instanceDictionary
+                if(_currentMethodCallInstance is null)
                 {
-                    parameterList = new List<string>(parameters);
+                    throw new NullReferenceException("The property '_currentMethodCallInstance' is null when it should never be null in this case");
                 }
-                methodName = methodName.Substring(0, openParenIndex);
-
-                //===========================  Check if parameters or properties were used here to replace them with the custom identifiers
-                // If not, make the identifier of the components
-
-                // If the namespaceAndClass component has a period, it means that it has already the identifier we were about to give it and we just keep as is
-                // If not AND there is a 
-                if(!namespaceAndClass.Contains(".") && _parameterAndPropertyDeclaredInCurrentMethodAnalysis.TryGetValue(namespaceAndClass, out string? namespaceAndClassIdentifier))
-                {
-                    namespaceAndClass = namespaceAndClassIdentifier;
-                }
-                // If that component wasn't in that dictionary, then we must add the custom identifier ourselves
-                else
-                {
-                    namespaceAndClass = _currentNamespace + _currentClassName + namespaceAndClass;
-                }
-
-                // Now we pass through each parameter and do the same process
-                for (global::System.Int32 j = 0; j < parameterList.Count; j++)
-                {
-                    string parameterAlias = parameterList[j];
-                    if (_parameterAndPropertyDeclaredInCurrentMethodAnalysis.TryGetValue(parameterAlias, out string? parameterAliasIdentifier))
-                    {
-                        parameterList[j] = parameterAliasIdentifier;
-                    }
-                    else
-                    {
-                        parameterList[j] = _currentNamespace + _currentClassName + parameterAlias;
-                    }
-                }
-
-                // //===========================  TODO: Check a property of type MethodInstance in this class that should ALWAYS contain the MethodInstance that should be generated by the
-                // ReceiveMethodCall, since that method is called BEFORE this one
-
-                // Check the property with the methodInstance and set it null afterwards, and manage it to use it as the assignmer and send it to the InstancesManager
-
-                // Finally, we pass the MethodInstance to the instancesManager
-                InstancesDictionaryManager.instance.AddMethodAssignment(assigner, assigner);
-
+                InstancesDictionaryManager.instance.AddMethodAssignment(assignee, _currentMethodCallInstance);
+                _currentMethodCallInstance = null;
             }
 
             return;
@@ -140,32 +88,62 @@ namespace Infrastructure.Mediators
         public void ReceiveMethodAnalysisEnd()
         {
             // Refilling the common dictionary with the custom identifiers while erasing the ones that are not needed anymore
-            _parameterAndPropertyDeclaredInCurrentMethodAnalysis.Clear();
+            _knownInstancesDeclaredInCurrentMethodAnalysis.Clear();
             foreach (var property in _propertiesDeclared)
             {
-                _parameterAndPropertyDeclaredInCurrentMethodAnalysis.Add(property.Key, property.Value);
+                _knownInstancesDeclaredInCurrentMethodAnalysis.Add(property.Key, property.Value);
             }
-
-            throw new NotImplementedException();
         }
 
         public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder)
         {
             // Check the property which contains the MethodInstance this method will put in there, if this is not null, then it means the RecieveLocalVariableDeclaration did not catch that since this was a pure methodCall without assigning any variable anything, and we must manage it ourselves, we must then put this MethodInstance to the InstancesManager to let that MethodCall be identifiable if it isn't identifiable
+            if(_currentMethodCallInstance is not null)
+            {
+                // Send the MethodInstance to the instancesDictionary
+                InstancesDictionaryManager.instance.AddMethodInstance(_currentMethodCallInstance);
+            }
 
-            // Make the callsite from here
+            //===========================  Get the components of this methodCall(methodName, className, properties) and make the custom identifier for the components that require identification
+            // If the namespaceAndClass component has a period, it means that it has already the identifier we were about to give it and we just keep as is
+            // If not AND the className has an identification already made in the _parameterAndPropertyDeclaredInCurrentMethodAnalysis, then we rename it
+            if (!calledClassName.Contains(".") 
+                && _knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(calledClassName, out string? namespaceAndClassIdentifier) 
+                )
+            {
+                calledClassName = namespaceAndClassIdentifier;
+            }
+            // If that component wasn't in that dictionary AND it isn't emtpy, then we must add the custom identifier ourselves
+            else if (!String.IsNullOrEmpty(calledClassName))
+            {
+                calledClassName = _currentNamespace + _currentClassName + _currentMethodName + calledClassName;
+            }
 
-            // Get the components of this methodCall(methodName, className, properties) and make the custom identifier for the components that require identification
+            // Now we pass through each parameter and do the same process
+            for (global::System.Int32 j = 0; j < calledParameters.Count; j++)
+            {
+                string parameterAlias = calledParameters[j];
+                if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(parameterAlias, out string? parameterAliasIdentifier))
+                {
+                    calledParameters[j] = parameterAliasIdentifier;
+                }
+                else
+                {
+                    calledParameters[j] = _currentNamespace + _currentClassName + _currentMethodName + parameterAlias;
+                }
+            }
+            //======
+
+            // Make the callsite for the method
+            Callsite callsite = new Callsite(null);
+            MethodInstance methodInstance = new MethodInstance(calledClassName, calledMethodName, calledParameters, callsite, true);
 
             // Put the MethodInstance created in a property to be passed to the RecieveLocalVariableDeclaration
-
-
-            throw new NotImplementedException();
+            _currentMethodCallInstance = methodInstance;
         }
 
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
         {
-            throw new NotImplementedException();
         }
     }
 }   
