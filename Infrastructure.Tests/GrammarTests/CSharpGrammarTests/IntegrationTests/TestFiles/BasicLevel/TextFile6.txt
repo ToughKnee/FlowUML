@@ -19,23 +19,31 @@ public class TeamsUseCase : ITeamsUseCase
         team.AddPlayer(player);
 
         await _teamsRepository.UpdateTeamAsync(team);
+        var myVar = parentProperty.DoSomething();
 
         return team;
     }
 
-    public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
+}
+
+public class ITeamsUseCase : Entity
+{
+    private readonly ITeamsUseCaseProperty parentProperty;
+
+    public override string ToString()
     {
-        var teamId = TeamName.Create(teamName);
+        return GetEntityName();
+    }
 
-        var team = await _teamsRepository.GetByIdAsync(teamId);
+}
 
-        var playerId = UserName.Create(playerName);
+public class Entity
+{
+    private string grandParentProperty;
 
-        team.RemovePlayer(playerId);
-
-        await _teamsRepository.UpdateTeamAsync(team);
-
-        return team;
+    public string GetEntityName()
+    {
+        return grandParentProperty;
     }
 
 }

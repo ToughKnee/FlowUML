@@ -26,7 +26,7 @@
         public static List<MethodInstance> methodInstancesWithUndefinedCallsite = new List<MethodInstance>();
 
         // TODO: Add the correct method identifier used(the method signature/)
-        public override string name => linkedCallsite.calledMethod.name;
+        public override string name => "";
         /// <summary>
         /// This makes this MethodInstance know which Callsite it is linked to,
         /// Because the callsite must be generated alongside the instances, and when
@@ -42,7 +42,7 @@
         /// <summary>
         /// Alias of the name the class is known by its alias
         /// </summary>
-        public string? aliasClassName;
+        public AbstractInstance? aliasClassName;
         /// <summary>
         /// Name of the method which does not have alias
         /// </summary>
@@ -50,15 +50,43 @@
         /// <summary>
         /// The parameters of the method used in the call known by their aliases
         /// </summary>
-        public List<string>? aliasParameters { get; private set; } = new List<string>();
+        public List<AbstractInstance> aliasParameters { get; private set; } = new List<AbstractInstance>();
+        /// <summary>
+        /// Property that is mainly declared to let other instances that were 
+        /// assigned by this class know eventually their type
+        /// </summary>
+        public string returnType = "";
 
-        public MethodInstance(string aliasClassName, string methodName, List<string> aliasParams, Callsite linkedCallsite, bool unknownMethod)
+        /// <summary>
+        /// Constructor for methodCall instances inside methods
+        /// Every value is normal except for 2 components of the methodCall, namely the class name and parameters,
+        /// because since they are linked directly to this MethodInstance,they must share the inheritanceList 
+        /// with the one this MethodInstance has
+        /// </summary>
+        /// <param name="aliasClassName"></param>
+        /// <param name="methodName"></param>
+        /// <param name="aliasParams"></param>
+        /// <param name="linkedCallsite"></param>
+        /// <param name="unknownMethod"></param>
+        public MethodInstance(AbstractInstance? aliasClassName, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, bool unknownMethod)
         {
-            this.aliasClassName = aliasClassName;
-            this.methodName = methodName;
-            this.aliasParameters = aliasParams;
-            this.linkedCallsite = linkedCallsite;
-            this.methodIsUnknown = unknownMethod;
+            if (unknownMethod)
+            {
+                this.aliasClassName = aliasClassName;
+                if(aliasClassName is not null)
+                {
+                    aliasClassName.inheritanceNames = inheritanceNames;
+                }
+
+                this.methodName = methodName;
+                this.aliasParameters = aliasParams;
+                for (global::System.Int32 i = 0; i < aliasParameters.Count; i++)
+                {
+                    aliasParams[i].inheritanceNames = inheritanceNames;
+                }
+                this.linkedCallsite = linkedCallsite;
+                this.methodIsUnknown = unknownMethod;
+            }
             RegisterToTheMethodInstancesList(this);
         }
         public MethodInstance(Method method)
@@ -71,7 +99,6 @@
         {
             MethodInstance.methodInstancesWithUndefinedCallsite.Add(methodInstance);
         }
-
         /// <summary>
         /// This method checks the instancesDIctionary looking for the type of the aliases found and 
         /// defined when analysing the code files, in order to be complete and add itself to the methodInstancesWithUndefinedCallsite

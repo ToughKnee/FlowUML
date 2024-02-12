@@ -158,9 +158,19 @@ namespace Infrastructure.Antlr
                 {
                     _currentClassBuilder = new ClassEntityBuilder();
                     _classBuilders.Add(_currentClassBuilder);
+                    // TODO: Send the inheritance of this class to the ClassBuilder
                     _currentClassBuilder.SetNamespace(_currentNamespace);
                     var classDeclarationNode = GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i);
-                    _mediator.ReceiveClassName(GetRuleNodeInChildren("identifier", classDeclarationNode).GetText());
+
+                    string classNameAndInheritance = GetRuleNodeInChildren("identifier", classDeclarationNode).GetText();
+                    var classHeritageNode = GetRuleNodeInChildren("classHeritage", classDeclarationNode);
+                    // Get the name of the class and their inheritance if they have any, and send it to the mediator
+                    if (classHeritageNode != null)
+                    {
+                        classNameAndInheritance += "," + classHeritageNode.GetText().Substring(1);
+                    }
+
+                    _mediator.ReceiveClassNameAndInheritance(classNameAndInheritance);
                     // Visit the "classDeclaration"
                     Visit(classDeclarationNode);
                 }
@@ -232,8 +242,6 @@ namespace Infrastructure.Antlr
                             parameters = Visit(parameterListNode);
                             _currentMethodBuilder.SetParameters(parameters);
                         }
-                        // Send to the mediator the method declaration to put that in the isntancesDictionary
-                        _mediator.ReceiveMethodDeclaration(_currentNamespace, ownerClassText, methodIdentifierText, parameters, returnTypeText);
                         // And after filling the available info at this Node, we go to another Node to get more info for the current Method
                         Visit(classContentChild);
                     }

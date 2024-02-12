@@ -64,6 +64,7 @@ namespace Domain.CodeInfo
             return this;
         }
 
+        // TODO: In the future, since the methods vary a lot from langauge to language, think of implementing a software patterm like strategy that returns the identifier based on the language chosen to make the analysis
         public string GetIdentifier()
         {
             // TODO: Check if this works

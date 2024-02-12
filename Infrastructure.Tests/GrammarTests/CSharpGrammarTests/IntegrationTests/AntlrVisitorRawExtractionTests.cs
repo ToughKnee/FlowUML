@@ -201,7 +201,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             //===========================  Capturing the received info from the antlr visitor
             mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
                 .Callback<string>((param1) => receivedNamespace = param1);
-            mediatorMock.Setup(x => x.ReceiveClassName(It.IsAny<string>()))
+            mediatorMock.Setup(x => x.ReceiveClassNameAndInheritance(It.IsAny<string>()))
                 .Callback<string>((param1) =>
                 {
                     receivedClassNames.Add(param1);
@@ -271,7 +271,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 {
                     receivedNamespaces.Add(param1);
                 });
-            mediatorMock.Setup(x => x.ReceiveClassName(It.IsAny<string>()))
+            mediatorMock.Setup(x => x.ReceiveClassNameAndInheritance(It.IsAny<string>()))
                 .Callback<string>((param1) =>
                 {
                     receivedClassNames.Add(param1);
@@ -323,62 +323,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
             // Assert
             mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.Exactly(9));
-        }
-
-        public static IEnumerable<object[]> MediatorMethodDeclaraationExpectations
-        {
-            get
-            {
-                yield return new object[] {
-                    new List<string> { "CleanArchitectureWorkshop.Application.UseCases", "CleanArchitectureWorkshop.Application.UseCases", "CleanArchitectureWorkshop.Application.UseCases", "CleanArchitectureWorkshop.Application.UseCases", "CleanArchitectureWorkshop.Application.UseCases", "CleanArchitectureWorkshop.Application.UseCases"},
-                    new List<string> { "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase", "TeamsUseCase"},
-                    new List<string> { "AddPlayerToTeamAsync", "CreateTeamAsync", "GetAllTeamsAsync", "GetTeamByIdAsync", "RemovePlayerFromTeamAsync",   "GetTeamsByNameAsync"},
-                    new List<string> { "string,string", "string", "", "string", "string,string", "string" },
-                    new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>"},
-                };
-            }
-        }
-        [Theory]
-        [MemberData(nameof(MediatorMethodDeclaraationExpectations))]
-        public void AnalyzeBasicClassDeclaration_MediatorReceivesMethodDeclaration_CorrectInfoReceived(List<string> expNamespace, List<string> expOwnerClass, List<string> expMethodName, List<string> expParameters, List<string> expReturnType)
-        {
-            // Arrange
-            var mediatorMock = new Mock<IMediator>();
-
-            // Create a collection to store the captured parameters
-            List<string> receivedNamespace = new List<string>();
-            List<string> receivedOwnerClass = new List<string>();
-            List<string> receivedMethodName = new List<string>();
-            List<string> receivedParameters = new List<string>();
-            List<string> receivedReturnType = new List<string>();
-
-            //===========================  Capturing the received info from the antlr visitor
-            mediatorMock.Setup(x => x.ReceiveMethodDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Callback<string, string, string, string, string>((param1, param2, param3, param4, param5) =>
-                {
-                    receivedNamespace.Add(param1);
-                    receivedOwnerClass.Add(param2);
-                    receivedMethodName.Add(param3);
-                    receivedParameters.Add(param4);
-                    receivedReturnType.Add(param5);
-                });
-
-            // Creating the antlr visitor
-            _antlrService = new ANTLRService(mediatorMock.Object);
-            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile2.txt", true);
-
-            // Act
-            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
-
-            // Assert
-            mediatorMock.Verify(m => m.ReceiveMethodDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(6));
-
-            // Verify each class has been correctly identified
-            receivedNamespace.Should().BeEquivalentTo(expNamespace);
-            receivedOwnerClass.Should().BeEquivalentTo(expOwnerClass);
-            receivedMethodName.Should().BeEquivalentTo(expMethodName);
-            receivedParameters.Should().BeEquivalentTo(expParameters);
-            receivedReturnType.Should().BeEquivalentTo(expReturnType);
         }
 
         public static IEnumerable<object[]> MediatorCallsiteIfnoExpectations

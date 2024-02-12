@@ -10,13 +10,13 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         private readonly string pathToTestFiles = "GrammarTests\\CSharpGrammarTests\\IntegrationTests\\TestFiles\\";
         private ANTLRService _antlrService;
 
-        public MediatorTests() 
-        { 
+        public MediatorTests()
+        {
             InstancesDictionaryManager.instance.CleanInstancesDictionary();
         }
 
         [Fact]
-        public void Test1()
+        public void MediatorReceivesInstancesInfo_MediatorHandlesInfo_MediatorCreatesCorrespondingInstancesAndStoredInInstancesDictionaryCorrectly()
         {
             // Arrange
             var mediator = new AntlrMediator();
