@@ -25,7 +25,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// is contained in this list, it means that this current instance has more inheritance and 
         /// we must add the inhertied stuff from the received class too
         /// </summary>
-        public List<string> inheritanceNames = new List<string>();
+        public List<string>? inheritanceNames = new List<string>();
 
         /// <summary>
         /// If null, this Instance is just an alias of another instance, if not null, then this Instance 

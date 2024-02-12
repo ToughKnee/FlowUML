@@ -20,6 +20,7 @@ public class TeamsUseCase : ITeamsUseCase
 
         await _teamsRepository.UpdateTeamAsync(team);
         var myVar = parentProperty.DoSomething();
+        myVar.PrintResults();
 
         return team;
     }

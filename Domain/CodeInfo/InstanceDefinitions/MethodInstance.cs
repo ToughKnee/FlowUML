@@ -60,8 +60,8 @@
         /// <summary>
         /// Constructor for methodCall instances inside methods
         /// Every value is normal except for 2 components of the methodCall, namely the class name and parameters,
-        /// because since they are linked directly to this MethodInstance,they must share the inheritanceList 
-        /// with the one this MethodInstance has
+        /// because since they are linked directly to this MethodInstance, they must share the inheritanceList 
+        /// with the one this MethodInstance has unless the instance already has inheritance
         /// </summary>
         /// <param name="aliasClassName"></param>
         /// <param name="methodName"></param>
@@ -73,7 +73,7 @@
             if (unknownMethod)
             {
                 this.aliasClassName = aliasClassName;
-                if(aliasClassName is not null)
+                if(aliasClassName is not null && aliasClassName.inheritanceNames is null)
                 {
                     aliasClassName.inheritanceNames = inheritanceNames;
                 }
@@ -82,7 +82,10 @@
                 this.aliasParameters = aliasParams;
                 for (global::System.Int32 i = 0; i < aliasParameters.Count; i++)
                 {
-                    aliasParams[i].inheritanceNames = inheritanceNames;
+                    if (aliasParams[i].inheritanceNames is null)
+                    {
+                        aliasParams[i].inheritanceNames = inheritanceNames;
+                    }
                 }
                 this.linkedCallsite = linkedCallsite;
                 this.methodIsUnknown = unknownMethod;

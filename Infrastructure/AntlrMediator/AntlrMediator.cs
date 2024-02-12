@@ -98,7 +98,6 @@ namespace Infrastructure.Mediators
                     }
                     else
                     {
-
                         _currentInheritanceNames.Add(classAndInheritanceNamesArray[j]);
                     }
                 }
@@ -112,7 +111,7 @@ namespace Infrastructure.Mediators
             // Create the instance of the property and add it to both of the dictionaries
             var propertyInstance = new Instance(propertyInstanceId, type);
 
-            // Since this is a property, we must fill its inheritanceList to be albe to recognize the usage of this property in child classes
+            // Since this is a property, we must fill its inheritanceList to be able to recognize the usage of this property in child classes
             // If the received class has inheritance, pass the inheritance info to the instance
             foreach (string inheritanceType in _currentInheritanceNames)
             {
@@ -126,11 +125,9 @@ namespace Infrastructure.Mediators
         }
         public void ReceiveParameters(string type, string identifier)
         {
-            string parameterInstanceId = _currentNamespace + _currentClassName + _currentMethodName + identifier;
-
+            var parameterInstance = new Instance(identifier, type);
             // Send the parameter to the instancesManager
-            var parameterInstance = new Instance(parameterInstanceId, type);
-            InstancesDictionaryManager.instance.AddInstanceWithDefinedType(parameterInstance);
+            // InstancesDictionaryManager.instance.AddInstanceWithDefinedType(parameterInstance);
 
             // Add the parameter Instance with its identifier inside this method to link with future instances
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
@@ -168,14 +165,23 @@ namespace Infrastructure.Mediators
                 {
                     instanceAssignee.type = knownAssignerInstance.type;
                 }
+                // If unknown, then the assigner must be a property from a parent class, and then we must add this assignment to the instancesDictionary
                 else
                 {
-                    throw new Exception("The assigner instance is unknown within this methodand this shouldn't happen");
+                    // Creating the Instance of the unknown assigner
+                    var unknownAssignerInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + assigner);
+                    SubscribeInstanceToChainedInheritance(unknownAssignerInstance);
+                    foreach (string inheritanceType in _currentInheritanceNames)
+                    {
+                        unknownAssignerInstance.inheritanceNames.Add(inheritanceType);
+                    }
+
+                    // Handle to the instancesManager the unknown assignment 
+                    InstancesDictionaryManager.instance.AddSimpleAssignment(instanceAssignee, unknownAssignerInstance);
                 }
 
                 // Add the new instance to the known instances dictionary and the instancesDictionary
                 _knownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
-                InstancesDictionaryManager.instance.AddSimpleAssignment(instanceAssignee, knownAssignerInstance);
             }
 
             // Add the new instance to the known instances dictionary
@@ -212,6 +218,7 @@ namespace Infrastructure.Mediators
             else if (!String.IsNullOrEmpty(calledClassName))
             {
                 linkedClassNameInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + calledClassName);
+                linkedClassNameInstance.inheritanceNames = null;
             }
 
             int calledParametersCount = (calledParameters is null) ? (0) : (calledParameters.Count);
@@ -225,7 +232,9 @@ namespace Infrastructure.Mediators
                 }
                 else
                 {
-                    linkedParametersNameInstance.Add(new Instance(_currentNamespace + _currentClassName + _currentMethodName + parameterAlias));
+                    var linkedParameterInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + parameterAlias);
+                    linkedParameterInstance.inheritanceNames = null;
+                    linkedParametersNameInstance.Add(linkedParameterInstance);
                 }
             }
             //======

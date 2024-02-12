@@ -22,8 +22,8 @@ PS: Since the major operation we need to do is to COMPARE a MethodInstance with 
 「 Scenario 」     ※ Receive info to create Instances
 Actors:
   -Instance:
-    The instances are generated from properties(which will be registered inside the instancesDictionary), parameters and local variables(which WON'T be registered into the instancesDictionary)
-    The intance will be equal to another instance in 2 cases:
+    The instances are generated from properties, methodCalls(which will be registered inside the instancesDictionary and need special id), parameters and local variables(which WON'T be registered into the instancesDictionary and DON'T need special id)
+    The instance will be equal to another instance in 2 cases:
     1. If the property 'inheritanceList' has one element, then they should have the same name
     2. If true, we ignore namespaces and check if they have at least one value in their inheritanceList that matches another value in the other instance
 Given:
@@ -32,8 +32,8 @@ Given:
         -Properties and MethodCalls(including each component of this methodCallInstance, class name and properties) get their inheritanceList filled if the current class analyzed inherits from other classes or interfaces
         -Properties, Parameters and Local variables are stored inside the mediator to link them with other instances assigned by them
 When:
-        -Mediator receives the current namespace, className alongside the inheritance classes and methodName the AntlrVisitor is analyzing
-        -Mediator receives instance or instances which could be a local variable declaration, property, parameter or methodCall
+        -Mediator has received the current namespace, className alongside the inheritance classes and methodName the AntlrVisitor is analyzing
+        -Mediator receives info for instances which could be a local variable, property, parameter or methodCall
 Then:
         -Make the identifier for the received instance
         -Put the instance with the identifier into the instancesManager through the corresponding method depending of the type of instance to be sent
