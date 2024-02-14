@@ -20,6 +20,7 @@ PS: Since the major operation we need to do is to COMPARE a MethodInstance with 
 //===========================  MAKE TEST
 //===========================  MAKE TEST
 「 Scenario 」     ※ Receive info to create Instances
+ENHANCEMENTS TODO: Right now the AbstractInstances fill their inheritanceList by subcribing to the mediator, but we need to use another implementation to make these instances fill their list since the class declaration may already have been anounced but they didn't subsribe in time, we must use something like a dictionary they acn access
 Actors:
   -Instance:
     The instances are generated from properties, methodCalls(which will be registered inside the instancesDictionary and need special id), parameters and local variables(which WON'T be registered into the instancesDictionary and DON'T need special id)
@@ -38,21 +39,22 @@ Then:
         -Make the identifier for the received instance
         -Put the instance with the identifier into the instancesManager through the corresponding method depending of the type of instance to be sent
         -New Instances that are parts of a methodCall or assignments of local variables by properties, params or local variables MUST be linked to them and share their type property
-          -If we can't connect this new instance with another instance, we must make data to recognize at a later time the instance that should have been defined AND store it into the instancesDictionary
+          -If we can't connect this new instance with another ALREADY existing instance, we must make data to recognize at a later time the instance that should have been defined AND store it into the instancesDictionary
         -IF the class has inheritance
          ALL methodCalss AND properties must have contents in their inheritanceList containing the parents of the current class analyzed AND ALSO the grandparents
          The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are diretly linked to
 
 
-「 Scenario 」     ※ Instance is equal to another instance
+「 Scenario 」     ※ EXTENSION:Parent method called:: Receive info to create Instances
 Given:
-        -The instances have inheritance
-        -Instances are:
-        1. namespace
+        -We are in the same context and kind of scenario as in the previous scenario
+        -
 When:
-        -
+        -There is an MethodInstance that is a call to a PARENT method, which was inherited
+        -The calls was performed using the "this." prefix or just the method call 
 Then:
-        -
+        -This MethodInstance sets a boolean as "true", which represents that it needs the class that owns the method it has AND it matches one of the string in the inheritanceList
+        -The MethodInstance now when we call the method that checks the types of the aliases on the instances dictioanry, now must also do before that, a comparison of the owner class of each method and see if any matches an element from the inheritanceList
 
 
 

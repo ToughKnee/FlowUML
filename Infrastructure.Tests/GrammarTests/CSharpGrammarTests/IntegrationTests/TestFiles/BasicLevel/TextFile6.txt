@@ -3,6 +3,28 @@ using CleanArchitectureWorkshop.Domain.TeamAggregate;
 
 namespace CleanArchitectureWorkshop.Application.UseCases;
 
+public class ITeamsUseCase : Entity
+{
+    private readonly ITeamsUseCaseProperty parentProperty;
+
+    public override string ToString()
+    {
+        return GetEntityName();
+    }
+
+}
+
+public class Entity
+{
+    private string grandParentProperty;
+
+    public string GetEntityName()
+    {
+        return grandParentProperty;
+    }
+
+}
+
 public class TeamsUseCase : ITeamsUseCase
 {
     private readonly ITeamsRepository _teamsRepository;
@@ -23,28 +45,6 @@ public class TeamsUseCase : ITeamsUseCase
         myVar.PrintResults();
 
         return team;
-    }
-
-}
-
-public class ITeamsUseCase : Entity
-{
-    private readonly ITeamsUseCaseProperty parentProperty;
-
-    public override string ToString()
-    {
-        return GetEntityName();
-    }
-
-}
-
-public class Entity
-{
-    private string grandParentProperty;
-
-    public string GetEntityName()
-    {
-        return grandParentProperty;
     }
 
 }

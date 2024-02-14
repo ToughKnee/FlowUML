@@ -74,6 +74,24 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 , valueType: null, valueIdentifier: null
                 , valueInheritanceNames: null
                 );
+            AssertInstanceAssignment(instancesDicList[2]
+                , keyType: null, keyIdentifier: "ITeamsRepository.UpdateTeamAsync(team)"
+                , keyInheritanceNames: new List<string> { "ITeamsUseCase", "Entity" }
+                , valueType: null, valueIdentifier: null
+                , valueInheritanceNames: null
+                );
+            AssertInstanceAssignment(instancesDicList[3]
+                , keyType: null, keyIdentifier: "myVar.PrintResults()"
+                , keyInheritanceNames: new List<string> { "ITeamsUseCase", "Entity" }
+                , valueType: null, valueIdentifier: null
+                , valueInheritanceNames: null
+                );
+            AssertInstanceAssignment(instancesDicList[4]
+                , keyType: "ITeamsUseCaseProperty", keyIdentifier: "CleanArchitectureWorkshop.Application.UseCases.ITeamsUseCase.parentProperty"
+                , keyInheritanceNames: new List<string> { "Entity" }
+                , valueType: null, valueIdentifier: null
+                , valueInheritanceNames: null
+                );
         }
     }
 }

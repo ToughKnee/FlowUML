@@ -124,32 +124,38 @@
         {
             string result = "";
             // Getting the className identification of this MethodInstance
-            if (!String.IsNullOrEmpty(aliasClassName.type))
+            if(aliasClassName is not null)
             {
-                result += aliasClassName.type;
-            }
-            else
-            {
-                result += aliasClassName.name;
+                if (!String.IsNullOrEmpty(aliasClassName.type))
+                {
+                    result += aliasClassName.type;
+                }
+                else
+                {
+                    result += aliasClassName.name;
+                }
             }
             result += ".";
             result += methodName;
 
             result += "(";
             // Getting the parameters identification of this MethodInstance
-            foreach(var param in aliasParameters)
+            if(aliasParameters.Count > 0)
             {
-                if (!String.IsNullOrEmpty(param.type))
+                foreach(var param in aliasParameters)
                 {
-                    result += param.type;
+                    if (!String.IsNullOrEmpty(param.type))
+                    {
+                        result += param.type;
+                    }
+                    else
+                    {
+                        result += param.name;
+                    }
+                    result += ",";
                 }
-                else
-                {
-                    result += param.name;
-                }
-                result += ",";
+                result = result.Substring(0, result.Length - 1);
             }
-            result = result.Substring(0, result.Length - 1);
             result += ")";
 
             return result;
