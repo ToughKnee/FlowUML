@@ -18,7 +18,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public virtual string name { get; set; }
 
         /// <summary>
-        /// List containging other classes, interfaces, etc this class inherits, so that we can
+        /// List containging other classes, interfaces, etc this instance's class inherits, so that we can
         /// identify instances like properties or methods from parent instances that were used in this instance
         /// If this list contains elements, then this class needs to subscribe to an event that has 
         /// where we receive the name of a class being declared AND has inhertiance too, if that class

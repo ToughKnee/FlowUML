@@ -26,7 +26,7 @@
         public static List<MethodInstance> methodInstancesWithUndefinedCallsite = new List<MethodInstance>();
 
         // TODO: Add the correct method identifier used(the method signature/)
-        public override string name => "";
+        public override string name => GetIdentifier();
         /// <summary>
         /// This makes this MethodInstance know which Callsite it is linked to,
         /// Because the callsite must be generated alongside the instances, and when
@@ -111,6 +111,48 @@
         public void CheckTypesIninstancesDictionary()
         {
 
+        }
+
+        /// <summary>
+        /// Gets the identifier of this MethodInstance based on the components of this method
+        /// If the components have their types defined(the className and the parameters), then 
+        /// they are going to be instead of their aliases(or "name"), else then they're names 
+        /// are going to be shown
+        /// </summary>
+        /// <returns>Identification of the MethodInstance's method</returns>
+        public string GetIdentifier()
+        {
+            string result = "";
+            // Getting the className identification of this MethodInstance
+            if (!String.IsNullOrEmpty(aliasClassName.type))
+            {
+                result += aliasClassName.type;
+            }
+            else
+            {
+                result += aliasClassName.name;
+            }
+            result += ".";
+            result += methodName;
+
+            result += "(";
+            // Getting the parameters identification of this MethodInstance
+            foreach(var param in aliasParameters)
+            {
+                if (!String.IsNullOrEmpty(param.type))
+                {
+                    result += param.type;
+                }
+                else
+                {
+                    result += param.name;
+                }
+                result += ",";
+            }
+            result = result.Substring(0, result.Length - 1);
+            result += ")";
+
+            return result;
         }
     }
 }

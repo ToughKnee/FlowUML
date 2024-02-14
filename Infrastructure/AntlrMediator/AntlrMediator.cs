@@ -130,7 +130,7 @@ namespace Infrastructure.Mediators
             // InstancesDictionaryManager.instance.AddInstanceWithDefinedType(parameterInstance);
 
             // Add the parameter Instance with its identifier inside this method to link with future instances
-            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
+            // _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
         }
         public void ReceiveLocalVariableDeclaration(string assignee, string assigner)
         {
@@ -149,7 +149,7 @@ namespace Infrastructure.Mediators
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
                 instanceAssignee.type = _currentMethodCallInstance.returnType;
-                InstancesDictionaryManager.instance.AddMethodAssignment(instanceAssignee, _currentMethodCallInstance);
+                // InstancesDictionaryManager.instance.AddMethodAssignment(instanceAssignee, _currentMethodCallInstance);
              
                 // After handling the methodCall instance, we clean the property
                 _currentMethodCallInstance = null;
@@ -209,7 +209,7 @@ namespace Infrastructure.Mediators
             AbstractInstance? linkedClassNameInstance = null;
             List<AbstractInstance> linkedParametersNameInstance = new();
 
-            // If we already registered an instance with the same name of the className, then can link that instance to this method
+            // If we already registered an instance with the same name of the className, then we link that instance to this method
             if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(calledClassName, out AbstractInstance classInstance))
             {
                 linkedClassNameInstance = classInstance;
