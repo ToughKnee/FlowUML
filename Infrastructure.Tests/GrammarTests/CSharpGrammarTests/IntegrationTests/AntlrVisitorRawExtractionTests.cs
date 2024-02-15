@@ -177,7 +177,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             {
                 yield return new object[] {
                     "CleanArchitectureWorkshop.Application.UseCases",
-                    new List<string> { "TeamsUseCase", "Team"},
+                    new List<string> { "TeamsUseCase,ITeamsUseCase", "Team,AggregateRoot<TeamName>"},
                 };
             }
         }
@@ -244,7 +244,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             {
                 yield return new object[] {
                     new List<string> { "CleanArchitectureWorkshop.Application.UseCases", "com.packages.TeamUtils"},
-                    new List<string> { "TeamsUseCase", "Team", "TeamManager", "Director", "Player"}
+                    new List<string> { "TeamsUseCase,ITeamsUseCase", "Team,AggregateRoot<TeamName>", "TeamManager", "Director", "Player,AggregateRoot<TeamName>" }
                 };
             }
         }

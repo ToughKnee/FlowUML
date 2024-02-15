@@ -73,18 +73,18 @@
             if (unknownMethod)
             {
                 this.aliasClassName = aliasClassName;
-                if(aliasClassName is not null && aliasClassName.inheritanceNames is null)
+                if(aliasClassName is not null && aliasClassName.inheritedClasses is null)
                 {
-                    aliasClassName.inheritanceNames = inheritanceNames;
+                    aliasClassName.inheritedClasses = inheritedClasses;
                 }
 
                 this.methodName = methodName;
                 this.aliasParameters = aliasParams;
                 for (global::System.Int32 i = 0; i < aliasParameters.Count; i++)
                 {
-                    if (aliasParams[i].inheritanceNames is null)
+                    if (aliasParams[i].inheritedClasses is null)
                     {
-                        aliasParams[i].inheritanceNames = inheritanceNames;
+                        aliasParams[i].inheritedClasses = inheritedClasses;
                     }
                 }
                 this.linkedCallsite = linkedCallsite;
@@ -134,8 +134,8 @@
                 {
                     result += aliasClassName.name;
                 }
+                result += ".";
             }
-            result += ".";
             result += methodName;
 
             result += "(";

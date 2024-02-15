@@ -31,9 +31,9 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 (instanceAssignment.Value).type = valueType;
             else
                 instanceAssignment.Value.Should().Be(null);
-            (instanceAssignment.Key).inheritanceNames.OrderBy(x => x).SequenceEqual(keyInheritanceNames.OrderBy(x => x)).Should().Be(true);
+            (instanceAssignment.Key).inheritedClasses.OrderBy(x => x).SequenceEqual(keyInheritanceNames.OrderBy(x => x)).Should().Be(true);
             if(valueInheritanceNames is not null)
-            (instanceAssignment.Value).inheritanceNames.OrderBy(x => x).SequenceEqual(valueInheritanceNames.OrderBy(x => x)).Should().Be(true);
+            (instanceAssignment.Value).inheritedClasses.OrderBy(x => x).SequenceEqual(valueInheritanceNames.OrderBy(x => x)).Should().Be(true);
         }
 
         public List<string> MakeStrList(params string[] values)
@@ -55,40 +55,49 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             // Assert
             InstancesDictionaryManager.instance.instancesDictionary.Count.Should().Be(7);
 
-            // Creating an ordered dict out of the instacesDictionary to check all elements
-
+            // Creating a list of the instancesDictionary to check all the elements
             List<KeyValuePair<AbstractInstance, AbstractInstance>> instancesDicList = InstancesDictionaryManager.instance.instancesDictionary.ToList();
  
-            int i = 0;
-            int o = 0;
             // Verify each value inside the instancesDictionary has the correct info
-            AssertInstanceAssignment(instancesDicList[0] 
+            AssertInstanceAssignment(instancesDicList[0]
+                , keyType: "ITeamsUseCaseProperty", keyIdentifier: "CleanArchitectureWorkshop.Application.UseCases.ITeamsUseCase.parentProperty"
+                , keyInheritanceNames: new List<string> { "Entity" }
+                , valueType: null, valueIdentifier: null
+                , valueInheritanceNames: null
+                );
+            AssertInstanceAssignment(instancesDicList[1]
+                , keyType: null, keyIdentifier: "GetEntityName()"
+                , keyInheritanceNames: new List<string> { "Entity" }
+                , valueType: null, valueIdentifier: null
+                , valueInheritanceNames: null
+                );
+            AssertInstanceAssignment(instancesDicList[2]
+                , keyType: "string", keyIdentifier: "CleanArchitectureWorkshop.Application.UseCases.Entity.grandParentProperty"
+                , keyInheritanceNames: new List<string> { }
+                , valueType: null, valueIdentifier: null
+                , valueInheritanceNames: null
+                );
+            AssertInstanceAssignment(instancesDicList[3]
                 , keyType: "ITeamsRepository", keyIdentifier: "CleanArchitectureWorkshop.Application.UseCases.TeamsUseCase._teamsRepository"
                 , keyInheritanceNames: new List<string> { "ITeamsUseCase", "Entity" }
                 , valueType: null, valueIdentifier: null
                 , valueInheritanceNames: null
                 );
-            AssertInstanceAssignment(instancesDicList[1]
+            AssertInstanceAssignment(instancesDicList[4]
                 , keyType: null, keyIdentifier: "team.AddPlayer(player)"
                 , keyInheritanceNames: new List<string> { "ITeamsUseCase", "Entity" }
                 , valueType: null, valueIdentifier: null
                 , valueInheritanceNames: null
                 );
-            AssertInstanceAssignment(instancesDicList[2]
+            AssertInstanceAssignment(instancesDicList[5]
                 , keyType: null, keyIdentifier: "ITeamsRepository.UpdateTeamAsync(team)"
                 , keyInheritanceNames: new List<string> { "ITeamsUseCase", "Entity" }
                 , valueType: null, valueIdentifier: null
                 , valueInheritanceNames: null
                 );
-            AssertInstanceAssignment(instancesDicList[3]
+            AssertInstanceAssignment(instancesDicList[6]
                 , keyType: null, keyIdentifier: "myVar.PrintResults()"
                 , keyInheritanceNames: new List<string> { "ITeamsUseCase", "Entity" }
-                , valueType: null, valueIdentifier: null
-                , valueInheritanceNames: null
-                );
-            AssertInstanceAssignment(instancesDicList[4]
-                , keyType: "ITeamsUseCaseProperty", keyIdentifier: "CleanArchitectureWorkshop.Application.UseCases.ITeamsUseCase.parentProperty"
-                , keyInheritanceNames: new List<string> { "Entity" }
                 , valueType: null, valueIdentifier: null
                 , valueInheritanceNames: null
                 );

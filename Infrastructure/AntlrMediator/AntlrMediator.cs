@@ -1,7 +1,6 @@
 ﻿using Antlr4.Runtime.Tree;
 using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
-using Domain.CodeInfo.InstanceDefinitions.ObserverPattern;
 using Infrastructure.Builders;
 using System;
 using System.Numerics;
@@ -10,14 +9,12 @@ using static Antlr4.Runtime.Atn.SemanticContext;
 
 namespace Infrastructure.Mediators
 {
-    public class AntlrMediator : IMediator, IMediatorSubject
+    public class AntlrMediator : IMediator
     {
-        public List<IInstanceObserver> Observers { get; } = new List<IInstanceObserver>();
-
         private string _currentNamespace;
         private string _currentClassName;
+        private string _currentClassNameWithoutDot => _currentClassName.Substring(0, _currentClassName.Length - 1);
         private string _currentMethodName;
-        private List<string> _currentInheritanceNames = new List<string>();
         /// <summary>
         /// Used to know when there are instances with their defined type used in a method and we must identify it
         /// </summary>
@@ -46,23 +43,6 @@ namespace Infrastructure.Mediators
                 _currentMethodCallInstance = null;
             }
         }
-        public void SubscribeInstanceToChainedInheritance(IInstanceObserver observer)
-        {
-            Observers.Add(observer);
-        }
-
-        public void Detach(IInstanceObserver observer)
-        {
-            Observers.Remove(observer);
-        }
-
-        public void NotifyClassWithInheritanceNames(string[] classAndInheritance)
-        {
-            foreach (var observer in Observers)
-            {
-                observer.ReceiveClassAndInheritanceNames(classAndInheritance);
-            }
-        }
 
         public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
         {
@@ -81,27 +61,16 @@ namespace Infrastructure.Mediators
 
             _knownInstancesDeclaredInCurrentMethodAnalysis.Clear();
             _propertiesDeclared.Clear();
-            _currentInheritanceNames.Clear();
-            // If the received parameter contains a ",", it means this class has inheritance and we must make Instances inside this class match this info and raise an event with this inheritance
+            string[] classAndInheritanceNamesArray = { classAndInheritanceNames };
+            // If the received parameter contains a ",", it means this class has inheritance and we must make Instances inside this class match this info and send this inheritance to the inheritance manager
             if (classAndInheritanceNames.Contains(","))
             {
-                var classAndInheritanceNamesArray = classAndInheritanceNames.Split(',');
-                // NOTIFY and send the string with the class and its inheritance
-                NotifyClassWithInheritanceNames(classAndInheritanceNamesArray);
-
-                // Pass throguh the class and inheritance types received, and set the currentName and currentInheeritance properties in this mediator
-                for (global::System.Int32 j = 0; j < classAndInheritanceNamesArray.Count(); j++)
-                {
-                    if(j == 0)
-                    {
-                        classAndInheritanceNames = classAndInheritanceNamesArray[j];
-                    }
-                    else
-                    {
-                        _currentInheritanceNames.Add(classAndInheritanceNamesArray[j]);
-                    }
-                }
+                classAndInheritanceNamesArray = classAndInheritanceNames.Split(',');
+                classAndInheritanceNames = classAndInheritanceNamesArray[0];
             }
+            // Send the class to the inheritanceDictionaryManager
+            InheritanceDictionaryManager.instance.ReceiveClassDeclaration(classAndInheritanceNamesArray);
+
             _currentClassName = (classAndInheritanceNames == null) ? ("") : (classAndInheritanceNames + ".");
         }
         public void ReceiveProperties(string type, string identifier)
@@ -113,11 +82,7 @@ namespace Infrastructure.Mediators
 
             // Since this is a property, we must fill its inheritanceList to be able to recognize the usage of this property in child classes
             // If the received class has inheritance, pass the inheritance info to the instance
-            foreach (string inheritanceType in _currentInheritanceNames)
-            {
-                propertyInstance.inheritanceNames.Add(inheritanceType);
-            }
-            SubscribeInstanceToChainedInheritance(propertyInstance);
+            propertyInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot ];
 
             InstancesDictionaryManager.instance.AddInstanceWithDefinedType(propertyInstance);
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, propertyInstance);
@@ -170,11 +135,7 @@ namespace Infrastructure.Mediators
                 {
                     // Creating the Instance of the unknown assigner
                     var unknownAssignerInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + assigner);
-                    SubscribeInstanceToChainedInheritance(unknownAssignerInstance);
-                    foreach (string inheritanceType in _currentInheritanceNames)
-                    {
-                        unknownAssignerInstance.inheritanceNames.Add(inheritanceType);
-                    }
+                    unknownAssignerInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot ];
 
                     // Handle to the instancesManager the unknown assignment 
                     InstancesDictionaryManager.instance.AddSimpleAssignment(instanceAssignee, unknownAssignerInstance);
@@ -218,7 +179,7 @@ namespace Infrastructure.Mediators
             else if (!String.IsNullOrEmpty(calledClassName))
             {
                 linkedClassNameInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + calledClassName);
-                linkedClassNameInstance.inheritanceNames = null;
+                linkedClassNameInstance.inheritedClasses = null;
             }
 
             int calledParametersCount = (calledParameters is null) ? (0) : (calledParameters.Count);
@@ -233,7 +194,7 @@ namespace Infrastructure.Mediators
                 else
                 {
                     var linkedParameterInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + parameterAlias);
-                    linkedParameterInstance.inheritanceNames = null;
+                    linkedParameterInstance.inheritedClasses = null;
                     linkedParametersNameInstance.Add(linkedParameterInstance);
                 }
             }
@@ -243,13 +204,9 @@ namespace Infrastructure.Mediators
             var callsite = new Callsite(null);
             linkedMethodBuilder.AddCallsite(callsite);
 
-            // Put the MethodInstance created in a property to be passed to the RecieveLocalVariableDeclaration
+            // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
             _currentMethodCallInstance = new MethodInstance(linkedClassNameInstance, calledMethodName, linkedParametersNameInstance, callsite, true);
-            SubscribeInstanceToChainedInheritance(_currentMethodCallInstance);
-            foreach (string inheritanceType in _currentInheritanceNames)
-            {
-                _currentMethodCallInstance.inheritanceNames.Add(inheritanceType);
-            }
+            _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot ];
         }
 
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
