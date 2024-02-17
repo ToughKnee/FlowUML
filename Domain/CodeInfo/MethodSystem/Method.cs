@@ -3,7 +3,7 @@ using System;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Numerics;
 
-namespace Domain.CodeInfo
+namespace Domain.CodeInfo.MethodSystem
 {
     /// <summary>
     /// Represents a way to identify a function more easily
@@ -17,7 +17,7 @@ namespace Domain.CodeInfo
         /// The namespace from the ClassEntity is not used because the 
         /// method may be alone
         /// </summary>
-        public string? belongingNamespace{ get; private set; } = null;
+        public string? belongingNamespace { get; private set; } = null;
         /// <summary>
         /// The class that has this method's definition, if null then this is just a function
         /// </summary>
@@ -46,16 +46,17 @@ namespace Domain.CodeInfo
             this.belongingNamespace = belongingNamespace;
             this.name = name;
             this.parameters = parameters;
-            this.returnType = retType;
+            returnType = retType;
             this.callsites = callsites;
+
         }
         public Method(string belongingNamespace, ClassEntity owner, string name, List<string> parameters, string retType)
         {
             this.belongingNamespace = belongingNamespace;
-            this.ownerClass = owner;
+            ownerClass = owner;
             this.name = name;
             this.parameters = parameters;
-            this.returnType = retType;
+            returnType = retType;
         }
 
         public Method SetOwnerClass(ClassEntity ownerClass)
@@ -63,18 +64,50 @@ namespace Domain.CodeInfo
             this.ownerClass = ownerClass;
             return this;
         }
+        public string GetParamsAsString()
+        {
+            string result = "";
+            if (parameters.Count > 0)
+            {
+                foreach (var param in parameters)
+                {
+                    result += param;
+                    result += ",";
+                }
+                result = result.Substring(0, result.Length - 1);
+            }
+
+            return result;
+        }
 
         // TODO: In the future, since the methods vary a lot from langauge to language, think of implementing a software patterm like strategy that returns the identifier based on the language chosen to make the analysis
         public string GetIdentifier()
         {
-            // TODO: Check if this works
             // We need to provide the namespace of the class this belongs as well as the class name,
             // if we are not able to dissambiguate between 2 classes with the same name
-            return (belongingNamespace == null) ? ("") : (belongingNamespace + ".") + 
-                ((ownerClass == null) ? ("") : (ownerClass.name + ".")) +
+            return belongingNamespace == null ? "" : belongingNamespace + "." +
+                (ownerClass == null ? "" : ownerClass.name + ".") +
                 name +
-                "(" + parameters.ToArray() + ")" +
-                ":" + returnType;
+                "(" + GetParamsAsString() + ")";
         }
+
+        /// <summary>
+        /// This method get the MethodIdentifier of this MethodInstance which is used ONLY 
+        /// when all the aliases have been found out their types and we must get 
+        /// the actual Method from the methodDictionary
+        /// </summary>
+        /// <returns></returns>
+        public MethodIdentifier GetMethodIdentifier()
+        {
+            // Setting the parameters of the MethodIdentifier to store this Method into the MethodDictionary
+            var methodIdentifier = new MethodIdentifier();
+            methodIdentifier.methodParameters = parameters;
+            methodIdentifier.methodOwnerClass = ownerClass.name;
+            methodIdentifier.methodName = name;
+            methodIdentifier.methodBelongingNamespace = belongingNamespace;
+
+            return methodIdentifier;
+        }
+
     }
 }

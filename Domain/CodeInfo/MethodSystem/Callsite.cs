@@ -1,4 +1,4 @@
-﻿namespace Domain.CodeInfo
+﻿namespace Domain.CodeInfo.MethodSystem
 {
     /// <summary>
     /// This is used to store calls that a method does to another place in the code, 

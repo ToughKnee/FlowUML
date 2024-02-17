@@ -1,4 +1,5 @@
 ﻿using Domain.CodeInfo;
+using Domain.CodeInfo.MethodSystem;
 
 namespace Infrastructure.Builders
 {
@@ -23,8 +24,11 @@ namespace Infrastructure.Builders
             ClassEntity builtClass = new ClassEntity(name, belongingNamespace, properties);
             foreach (var methoBbuilder in methodBuilders)
             {
-                builtClass.AddMethod(methoBbuilder.Build());
+                var method = methoBbuilder.Build();
+                builtClass.AddMethod(method);
+                MethodDictionaryManager.instance.AddMethod(method);
             }
+            ClassEntityManager.instance.AddClassEntityInstance(builtClass);
             return builtClass;
         }
         public ClassEntityBuilder SetName(string name)

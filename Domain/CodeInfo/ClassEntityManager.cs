@@ -33,7 +33,7 @@ namespace Domain.CodeInfo
             throw new NotImplementedException();
         }
 
-        public void ReceiveNewClassEntityInstance(ClassEntity entity)
+        public void AddClassEntityInstance(ClassEntity entity)
         {
             _classEntities.Add(entity);
         }

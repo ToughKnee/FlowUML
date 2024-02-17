@@ -15,10 +15,6 @@ PS: Since the major operation we need to do is to COMPARE a MethodInstance with 
 +Decoupled way to handle the info and then convert the info to instanceManager info
 -Drawbacks
 
-//===========================  MAKE TEST
-//===========================  MAKE TEST
-//===========================  MAKE TEST
-//===========================  MAKE TEST
 「 Scenario 」     ※ Receive info to create Instances
 ENHANCEMENTS TODO: Right now the AbstractInstances fill their inheritanceList by subcribing to the mediator, but we need to use another implementation to make these instances fill their list since the class declaration may already have been anounced but they didn't subsribe in time, we must use something like a dictionary they acn access
 Actors:
@@ -45,16 +41,78 @@ Then:
          The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are diretly linked to
 
 
-「 Scenario 」     ※ EXTENSION:Parent method called:: Receive info to create Instances
+「 Scenario 」     ※ EXTENSION::: Receive info to create Instances:Parent method called
 Given:
         -We are in the same context and kind of scenario as in the previous scenario
-        -
 When:
-        -There is an MethodInstance that is a call to a PARENT method, which was inherited
-        -The calls was performed using the "this." prefix or just the method call 
+        -There is a MethodInstance that is a call to a PARENT method, which was inherited
+        -The calls was performed using the "this." prefix or just the name of the method
 Then:
-        -This MethodInstance sets a boolean as "true", which represents that it needs the class that owns the method it has AND it matches one of the string in the inheritanceList
-        -The MethodInstance now when we call the method that checks the types of the aliases on the instances dictioanry, now must also do before that, a comparison of the owner class of each method and see if any matches an element from the inheritanceList
+        -The MethodInstance to be created sets a boolean as "true", which represents that it needs the class that owns the method it has AND it matches one of the string in the inheritanceList
+        -When we call the MethodInstance, the method that checks the types of the aliases on the instances dictioanry(CheckTypesOfAliases), has to do something before doing anything else, which is a comparison of the owner class of each method and see if any matches an element from the inheritanceList
+
+//===========================  
+//===========================   「 Feature 」     ※ ???
+        Responsibilities(+|-):
++Benefits
+-Drawbacks
+
+
+「 Scenario 」     ※ Resolution of aliases from Instance
+Given:
+        -Analysis of all code files FINISHED
+        -InstancesDictionary and InheritanceDictionary completed
+        -List of MethodInstances with unknown type complete and wich will be traversed in this scenario
+        --The Builders(ClassEntity and Method) are complete and ready to create the classes of their correspondent type
+                These builders are going to be crucial for this scenario
+When:
+        -We need the Callsites to be completed so that we can make Diagrams
+Then:
+        -Use the inheritance manager to link the ClassEntityBuilders with their inherited classes
+        -Build all the ClassEntities, which will then build the Methods
+        -Make the MethodBuilders deposit their built Method to the MethodDictionaryManager
+        -Pass through all the List of MethodInstances with unknown type and call the "CheckTypesOfAliases()" method, which will query the methodDictionary for the Method object containing the correspondent signature
+                -If the method did not find a match, then proceed to discover the missing types of aliases with other solutions, like using the instancesDictionary and inheritanceDictionary(for aliases that came from properties from a parent class)
+
+
+//===========================   「 Feature 」     ※ MethodDictionaryInstance
+        Responsibilities(+|-):
++Lets the MethodInstances access this dictionary and check with their complete signature the Method instance they needed
+-Drawbacks
+
+
+//===========================   「 Feature 」     ※ Recognizer between MethodInstanceSignature and MethodSignature
+        Reason:
+-We need to find a match between info that a MethodInstance has and info an actual Method has
+-Both objects have the same info, EXCEPT for the returnType and namespaces, which the Method knows well and the MethodInstance doesn't but has a List of possible candidates
+
+        Responsibilities(+|-):
++Special lookup when MethodInstance requests the actual Method to the InstancesManager
+-Drawbacks
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

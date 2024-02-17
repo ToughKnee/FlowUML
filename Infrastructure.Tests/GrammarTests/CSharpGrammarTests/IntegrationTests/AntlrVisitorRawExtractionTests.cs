@@ -1,5 +1,6 @@
 using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
+using Domain.CodeInfo.MethodSystem;
 using FluentAssertions;
 using Infrastructure.Antlr;
 using Infrastructure.Builders;

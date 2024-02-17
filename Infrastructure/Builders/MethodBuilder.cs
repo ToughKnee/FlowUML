@@ -1,4 +1,5 @@
-﻿using Domain.CodeInfo;
+﻿using Domain.CodeInfo.InstanceDefinitions;
+using Domain.CodeInfo.MethodSystem;
 
 namespace Infrastructure.Builders
 {

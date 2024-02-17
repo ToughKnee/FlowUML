@@ -1,4 +1,7 @@
-﻿namespace Domain.CodeInfo.InstanceDefinitions
+﻿using System;
+using Domain.CodeInfo.MethodSystem;
+
+namespace Domain.CodeInfo.InstanceDefinitions
 {
     /// <summary>
     /// Special class for the instances that are return types from methods
@@ -56,6 +59,10 @@
         /// assigned by this class know eventually their type
         /// </summary>
         public string returnType = "";
+        /// <summary>
+        /// The identifier to be used when this Method must be added to the methodDictionary
+        /// </summary>
+        public MethodIdentifier methodIdentifier { get; private set; }
 
         /// <summary>
         /// Constructor for methodCall instances inside methods
@@ -68,7 +75,7 @@
         /// <param name="aliasParams"></param>
         /// <param name="linkedCallsite"></param>
         /// <param name="unknownMethod"></param>
-        public MethodInstance(AbstractInstance? aliasClassName, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, bool unknownMethod)
+        public MethodInstance(AbstractInstance? aliasClassName, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, bool unknownMethod, List<string> usedNamespaces)
         {
             if (unknownMethod)
             {
@@ -90,6 +97,8 @@
                 this.linkedCallsite = linkedCallsite;
                 this.methodIsUnknown = unknownMethod;
             }
+            this.candidateNamespaces = usedNamespaces;
+
             RegisterToTheMethodInstancesList(this);
         }
         public MethodInstance(Method method)
@@ -103,13 +112,70 @@
             MethodInstance.methodInstancesWithUndefinedCallsite.Add(methodInstance);
         }
         /// <summary>
-        /// This method checks the instancesDIctionary looking for the type of the aliases found and 
-        /// defined when analysing the code files, in order to be complete and add itself to the methodInstancesWithUndefinedCallsite
-        /// so that it is candidate to receive the method definition through subcribing to the instancesManager and finally be complete
-        /// Called after the analysis is finished and the instancesManager cleaned the instancesDictionary
+        /// This method checks the types of the aliases it has(className and parameters)
+        /// and if there are no unknown types, then this MethodInstance will remove itself from
+        /// the methodInstancesWithUndefinedCallsite, and start defining the remaning classes with
+        /// this info
+        /// If there are still unknwon types, we need to look for it with the help of other classes
+        /// And we have several places to look for
         /// </summary>
-        public void CheckTypesIninstancesDictionary()
+        public void CheckTypesOfAliases()
         {
+            //===========================  Check if this MethodInstance knows the class name and parameters types, if so then proceed to find the actual Method, if not then do nothing
+            bool isAliasClassTypeKnown = true;
+            bool isAliasClassAParent = false;
+            if (aliasClassName is not null)
+            {
+                if (String.IsNullOrEmpty(aliasClassName.type))
+                {
+                   isAliasClassTypeKnown = false;
+                }
+            }
+            // If the alias class name is null, then the method called came from a parent of the class owning this method, and we must consult the methodDictionary as many times as parents this MethoInstance knows
+            else
+            {
+                isAliasClassTypeKnown = false;
+                isAliasClassAParent = true;
+            }
+
+            bool areParametersTypeKnown = true;
+            for (int i = 0; i < aliasParameters.Count; i++)
+            {
+                if (String.IsNullOrEmpty(aliasParameters[i].type))
+                {
+                    areParametersTypeKnown = false;
+                    // Make function to look for the unknown type
+                }
+            }
+            //======
+            // If both the parameters and className are known, then look into the methodDictionary the actual Method and get the return type, and also defining the linkedCallstie with that Method
+            if(isAliasClassTypeKnown && areParametersTypeKnown)
+            {
+                if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod))
+                {
+                    this.returnType = actualMethod.returnType;
+                    this.linkedCallsite.calledMethod = actualMethod;
+                }
+                
+            }
+            // If the alias class name is from a parent and we know the types then consult the methodDictionary as many parents as there are
+            else if (isAliasClassAParent && areParametersTypeKnown)
+            {
+                // Consulting the Dictionary as many parents this MethodInstance knows this method has
+                for (int i = 0; i < this.inheritedClasses.Count; i++)
+                {
+                    this.aliasClassName = new Instance(inheritedClasses[i]);
+                    // Consulting the methodDictionary with the known inherited type
+                    if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod))
+                    {
+                        this.returnType = actualMethod.returnType;
+                        this.linkedCallsite.calledMethod = actualMethod;
+                        // If we found the class, break the cycle
+                        break;
+                    }
+                    this.aliasClassName = null;
+                }
+            }
 
         }
 
@@ -159,6 +225,29 @@
             result += ")";
 
             return result;
+        }
+
+        /// <summary>
+        /// This method get the MethodIdentifier of this MethodInstance which is used ONLY 
+        /// when all the aliases have been found out their types and we must get 
+        /// the actual Method from the methodDictionary
+        /// </summary>
+        /// <returns></returns>
+        public MethodIdentifier GetMethodIdentifier()
+        {
+            // Setting the parameters of the MethodIdentifier to request the actual Method to the methodDictionary
+            var methodIdentifier = new MethodIdentifier();
+            var parameters = new List<string>();
+            foreach(var param in aliasParameters)
+            {
+                parameters.Add(param.type);
+            }
+            methodIdentifier.methodParameters = parameters;
+            methodIdentifier.methodOwnerClass = (String.IsNullOrEmpty(aliasClassName.type)) ? (aliasClassName.name) : (aliasClassName.type);
+            methodIdentifier.methodName = methodName;
+            methodIdentifier.methodInstanceCandidateNamespaces = this.candidateNamespaces;
+
+            return methodIdentifier;
         }
     }
 }

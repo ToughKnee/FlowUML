@@ -1,6 +1,7 @@
 ﻿using Antlr4.Runtime.Tree;
 using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
+using Domain.CodeInfo.MethodSystem;
 using Infrastructure.Builders;
 using System;
 using System.Numerics;
@@ -24,6 +25,11 @@ namespace Infrastructure.Mediators
         /// </summary>
         private Dictionary<string, AbstractInstance> _propertiesDeclared = new Dictionary<string, AbstractInstance>();
         /// <summary>
+        /// Used to set the proprety of the MethodInstance to know the namespaces used and be 
+        /// able to dissambiguate between classes with the same name
+        /// </summary>
+        private List<string> _usedNamespaces = new List<string>();
+        /// <summary>
         /// This is used first by the method ReceiveMethodCall, which creates the MethodInstance 
         /// AND Callsite made form the method currently analyzed, and sets this property with 
         /// the MethodInstance created, which is then read by the ReceiveLocalVariableDeclaration, 
@@ -46,14 +52,29 @@ namespace Infrastructure.Mediators
 
         public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
         {
+            // After the code analysis of all files is complete, we start building the ClassEntities and Methods(which are built within the ClassEntityBuilder)
+            foreach (var builder in builders)
+            {
+                builder.Build();
+            }
+
+            // After that we traverse the methodInstancesWithUndefinedCallsite to be able to define them and start making the diagrams
+            for (int j = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count; j++)
+            {
+                var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
+                methodInstance.CheckTypesOfAliases();
+            }
+            
+
         }
         public void ReceiveMethodBuilders(List<AbstractBuilder<Method>> builders)
         {
-        }
+        }   
 
         public void ReceiveNamespace(string? belongingNamespace)
         {
             _currentNamespace = (belongingNamespace == null) ? ("") : (belongingNamespace + ".");
+            _usedNamespaces.Add(belongingNamespace);
         }
         public void ReceiveClassNameAndInheritance(string? classAndInheritanceNames)
         {
@@ -95,7 +116,7 @@ namespace Infrastructure.Mediators
             // InstancesDictionaryManager.instance.AddInstanceWithDefinedType(parameterInstance);
 
             // Add the parameter Instance with its identifier inside this method to link with future instances
-            // _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
+            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
         }
         public void ReceiveLocalVariableDeclaration(string assignee, string assigner)
         {
@@ -205,12 +226,13 @@ namespace Infrastructure.Mediators
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            _currentMethodCallInstance = new MethodInstance(linkedClassNameInstance, calledMethodName, linkedParametersNameInstance, callsite, true);
-            _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot ];
+            _currentMethodCallInstance = new MethodInstance(linkedClassNameInstance, calledMethodName, linkedParametersNameInstance, callsite, true, _usedNamespaces);
+            _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
         }
 
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
         {
+            _usedNamespaces = (usedNamespaces is null) ? (_usedNamespaces) : (usedNamespaces);
         }
     }
 }   

@@ -1,4 +1,5 @@
 ﻿using Domain.CodeInfo.InstanceDefinitions;
+using Domain.CodeInfo.MethodSystem;
 
 namespace Domain.CodeInfo
 {
@@ -27,19 +28,16 @@ namespace Domain.CodeInfo
             this.classNamespace = belongingNamepsace;
             this.properties = properties;
             this.methods = methods;
-            ClassEntityManager.instance.ReceiveNewClassEntityInstance(this);
         }
         public ClassEntity(string name, string belongingNamepsace, List<Property> properties)
         {
             this.name = name;
             this.classNamespace = belongingNamepsace;
             this.properties = properties;
-            ClassEntityManager.instance.ReceiveNewClassEntityInstance(this);
         }
         public ClassEntity(string name)
         {
             this.name = name;
-            ClassEntityManager.instance.ReceiveNewClassEntityInstance(this);
         }
 
         public void AddMethod(Method method)
@@ -48,20 +46,5 @@ namespace Domain.CodeInfo
             method.SetOwnerClass(this);
         }
 
-        public static bool operator ==(ClassEntity obj1, ClassEntity obj2)
-        {
-            if (obj1.name == obj2.name && obj1.classNamespace == obj2.classNamespace)
-                return true;
-
-            return false;
-        }
-
-        public static bool operator !=(ClassEntity obj1, ClassEntity obj2)
-        {
-            if (obj1.name == obj2.name && obj1.classNamespace == obj2.classNamespace)
-                return false;
-
-            return true;
-        }
     }
 }

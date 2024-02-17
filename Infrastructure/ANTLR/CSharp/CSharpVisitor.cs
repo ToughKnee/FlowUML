@@ -2,6 +2,7 @@
 using Antlr4.Runtime.Tree;
 using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
+using Domain.CodeInfo.MethodSystem;
 using Infrastructure.ANTLR.CSharp;
 using Infrastructure.Builders;
 using Infrastructure.Mediators;
