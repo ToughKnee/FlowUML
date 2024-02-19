@@ -25,6 +25,7 @@ using
 AWAIT: 'await';
 
 NEW: 'new';
+new: NEW;
 
 RETURN: 'return';
 
@@ -203,26 +204,25 @@ methodContent
 
 localVariableDeclaration
     : type identifier '=' expression ';'
-    | type identifier '=' NEW expression ';'
     ;
 functionCall: expression;
 
 returnExpression
-    : RETURN NEW? (identifier | expression) ';' 
+    : RETURN (identifier | expression) ';' 
     ;
 
 // Something that returns something
 expression
-    : AWAIT? methodCall
-    | /* other expressions */
+    : AWAIT? expressionMethodCall
+    ;
+
+expressionMethodCall
+    : (methodCall | identifier) ('.' methodCall | '.' identifier)?
+    | 
     ;
 
 methodCall
-    : methodIdentifier '(' argumentList ')'
-    ;
-
-methodIdentifier
-    : identifier ( '.' methodCall | '.' identifier)*
+    : new? identifier ('.' identifier)? '(' argumentList ')'
     ;
 
 argumentList

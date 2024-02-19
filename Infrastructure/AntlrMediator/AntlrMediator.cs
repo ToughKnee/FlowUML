@@ -4,6 +4,7 @@ using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
 using Infrastructure.Builders;
 using System;
+using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using static Antlr4.Runtime.Atn.SemanticContext;
@@ -163,7 +164,7 @@ namespace Infrastructure.Mediators
                 }
 
                 // Add the new instance to the known instances dictionary and the instancesDictionary
-                _knownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
+                //_knsownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
             }
 
             // Add the new instance to the known instances dictionary
@@ -182,42 +183,66 @@ namespace Infrastructure.Mediators
                 _knownInstancesDeclaredInCurrentMethodAnalysis.Add(property.Key, property.Value);
             }
         }
-        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder)
+        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor)
         {
             // Check the property which contains the MethodInstance this method will put in there, if this is not null, then it means the RecieveLocalVariableDeclaration did not catch that since this was a pure methodCall without assigning any variable anything, and we must manage it ourselves, we must then put this MethodInstance to the InstancesManager to let that MethodCall be identifiable if it isn't identifiable
             CheckMethodInstanceWasHandled();
 
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
-            AbstractInstance? linkedClassNameInstance = null;
+            AbstractInstance? linkedClassOrParameterInstance = null;
             List<AbstractInstance> linkedParametersNameInstance = new();
+            KindOfInstance instanceKind = KindOfInstance.Normal;
 
-            // If we already registered an instance with the same name of the className, then we link that instance to this method
-            if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(calledClassName, out AbstractInstance classInstance))
+            // Adding at the end the className instance
+            if(calledParameters is null)
             {
-                linkedClassNameInstance = classInstance;
+                calledParameters = new List<string>{calledClassName};
             }
-            // If that component wasn't in that dictionary AND it isn't emtpy, then this must be a property from this class or a inherited clas and we must add the data to later find out the linked instance and its type
-            else if (!String.IsNullOrEmpty(calledClassName))
+            else
             {
-                linkedClassNameInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + calledClassName);
-                linkedClassNameInstance.inheritedClasses = null;
+                calledParameters.Add(calledClassName);
             }
 
-            int calledParametersCount = (calledParameters is null) ? (0) : (calledParameters.Count);
-            // Now we pass through each parameter and do the same process
-            for (global::System.Int32 j = 0; j < calledParametersCount; j++)
+            // Process each parameter and class name according to what it is(based on its position in the List, all but the last one are parameters, the last element is the class name)
+            int calledParametersCount2 = (calledParameters is null) ? (0) : (calledParameters.Count);
+            for(int i = 0; i < calledParametersCount2; i++)
             {
-                string parameterAlias = calledParameters[j];
-                if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(parameterAlias, out AbstractInstance knownInstance))
+                string currentStringInstance = calledParameters[i];
+
+                linkedClassOrParameterInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + currentStringInstance);
+                linkedClassOrParameterInstance.inheritedClasses = null;
+                //===========================  Make the analysis just as usual
+                // TODO: Make the case when the class name or parameter is another MethodCall
+                // If this is the class name and it is a constructor, then mark the kind of the MethodInstance and set the data to match the actual Method later
+                if (i == calledParametersCount2 - 1 && isConstructor)
                 {
-                    linkedParametersNameInstance.Add(knownInstance);
+                    linkedClassOrParameterInstance.kind = KindOfInstance.IsConstructor;
+                    break;
                 }
-                else
+                // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
+                if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
                 {
-                    var linkedParameterInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + parameterAlias);
-                    linkedParameterInstance.inheritedClasses = null;
-                    linkedParametersNameInstance.Add(linkedParameterInstance);
+                    linkedClassOrParameterInstance = knownClassInstance;
                 }
+                // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
+                else if (!String.IsNullOrEmpty(currentStringInstance) && (currentStringInstance != "this" || currentStringInstance != "base"))
+                {
+                    linkedClassOrParameterInstance.kind = KindOfInstance.HasClassNameStaticOrParentProperty;
+                }
+                // If this is the class name component, is empty, is "this" or "base" keyword, then this method must be from a parent class or from a method owned by this class
+                else if (i == calledParametersCount2 - 1 && String.IsNullOrEmpty(currentStringInstance) || currentStringInstance == "this" || currentStringInstance == "base")
+                {
+                    linkedClassOrParameterInstance.kind = KindOfInstance.IsInheritedOrInThisClass;
+                }
+
+                // If this iteration covers the properties then add the instance to the parameters listof the MethodInstance to be created
+                if(i < calledParametersCount2 - 1 && linkedClassOrParameterInstance is not null)
+                {
+                    linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
+                }
+
+                //======
+
             }
             //======
 
@@ -226,7 +251,7 @@ namespace Infrastructure.Mediators
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            _currentMethodCallInstance = new MethodInstance(linkedClassNameInstance, calledMethodName, linkedParametersNameInstance, callsite, true, _usedNamespaces);
+            _currentMethodCallInstance = new MethodInstance(linkedClassOrParameterInstance, calledMethodName, linkedParametersNameInstance, callsite, instanceKind, _usedNamespaces);
             _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
         }
 

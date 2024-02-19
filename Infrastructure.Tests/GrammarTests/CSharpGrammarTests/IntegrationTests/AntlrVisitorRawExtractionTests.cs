@@ -366,8 +366,8 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             List<MethodBuilder> receivedMethodBuilders= new List<MethodBuilder>();
 
             //===========================  Capturing the received info from the antlr visitor
-            mediatorMock.Setup(x => x.ReceiveMethodCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<MethodBuilder>()))
-                .Callback<string, string, List<string>, MethodBuilder>((param1, param2, param3, param4) =>
+            mediatorMock.Setup(x => x.ReceiveMethodCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<MethodBuilder>(), It.IsAny<bool>()))
+                .Callback<string, string, List<string>, MethodBuilder, bool>((param1, param2, param3, param4, param5) =>
                 {
                     receivedClassNames.Add(param1);
                     receivedMethodNames.Add(param2);
@@ -383,7 +383,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
             // Assert
-            mediatorMock.Verify(m => m.ReceiveMethodCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<MethodBuilder>()), Times.Exactly(12));
+            mediatorMock.Verify(m => m.ReceiveMethodCall(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<MethodBuilder>(), It.IsAny<bool>()), Times.Exactly(12));
 
             // Verify each class has been correctly identified
             receivedClassNames.Should().BeEquivalentTo(expClassNames);

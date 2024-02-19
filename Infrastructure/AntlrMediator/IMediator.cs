@@ -75,7 +75,7 @@ namespace Infrastructure.Mediators
         /// <param name="calledMethodName">Name of the method called</param>
         /// <param name="calledParameters">List of parametrs from the calld method</param>
         /// <param name="linkedMethodBuilder">The linked method builder which has the info for the method that made this callsite, to be able to set the callsite generated and let the builder be able to add this callsite to the Method class to be built</param>
-        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder);
+        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor);
         /// <summary>
         /// Receive the usedNamespaces to be able to disambiguate between classes with the same name
         /// Intended to be used after the ReceiveMethodCall was made

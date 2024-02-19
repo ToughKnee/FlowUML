@@ -16,7 +16,6 @@ PS: Since the major operation we need to do is to COMPARE a MethodInstance with 
 -Drawbacks
 
 「 Scenario 」     ※ Receive info to create Instances
-ENHANCEMENTS TODO: Right now the AbstractInstances fill their inheritanceList by subcribing to the mediator, but we need to use another implementation to make these instances fill their list since the class declaration may already have been anounced but they didn't subsribe in time, we must use something like a dictionary they acn access
 Actors:
   -Instance:
     The instances are generated from properties, methodCalls(which will be registered inside the instancesDictionary and need special id), parameters and local variables(which WON'T be registered into the instancesDictionary and DON'T need special id)
@@ -39,6 +38,13 @@ Then:
         -IF the class has inheritance
          ALL methodCalss AND properties must have contents in their inheritanceList containing the parents of the current class analyzed AND ALSO the grandparents
          The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are diretly linked to
+
+
+「 Feature 」     ※ Enum Kind of MethodInstance
+        Responsibilities(+|-):
+++Ensures a way we can know the type of each instance depending on the context the MethodInstance was called and
+-Drawbacks
+
 
 
 「 Scenario 」     ※ EXTENSION::: Receive info to create Instances:Parent method called

@@ -5,6 +5,22 @@ using System;
 namespace Domain.CodeInfo.InstanceDefinitions
 {
     /// <summary>
+    /// The enum will mark how should we treat this Instance when trying to get the actual 
+    /// type, depending on the context this Instance was called was made
+    /// </summary>
+    public enum KindOfInstance
+    {
+        // normal means this Instance has its components (className and parameters) linked to other Instances which will have their type knwon when the ClassEntities and Method Builders start building
+        Normal,
+        // This case is easy since getting the actual Method comes down to adding the used namespace(including the belonging namespace) and consult the methodDictionary
+        IsConstructor,
+        // This too
+        IsInheritedOrInThisClass,
+        // This case may be hard, since if the className was not a Class Entity(the method was not static), then the className is a property from a inherited class and we must use a PropertyDictionary to get the type of this property
+        HasClassNameStaticOrParentProperty
+    }
+
+    /// <summary>
     /// An instance is a variable, parameter or method return type that has a type which we need to know when a ClassEntity calls another ClassEntity
     /// </summary>
     public abstract class AbstractInstance
@@ -31,9 +47,13 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// and we know its return type
         /// </summary>
         public string? type { get; set; } = null;
+        /// <summary>
+        /// This bool represents wether this MethodCall does not have an aliasClassName and must come from 
+        /// </summary>
+        public KindOfInstance kind;
 
         public AbstractInstance(string name, string? type)
-        {
+        {   
             this.name = name;
             this.type = type;
         }
@@ -45,7 +65,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public AbstractInstance()
         {
         }
-
 
         public static bool operator ==(AbstractInstance obj1, AbstractInstance obj2)
         {

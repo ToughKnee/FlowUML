@@ -1,48 +1,144 @@
 ﻿using CleanArchitectureWorkshop.Application.Repositories;
 using CleanArchitectureWorkshop.Domain.TeamAggregate;
 
-namespace CleanArchitectureWorkshop.Application.UseCases;
-
-public class Entity
+namespace CleanArchitectureWorkshop.Application.UseCases
 {
-    private string grandParentProperty;
-
-    public string GetEntityName()
+    public class Entity
     {
-        return grandParentProperty;
+        private string grandParentProperty;
+
+        public string GetEntityName()
+        {
+            return grandParentProperty;
+        }
+    }
+
+    public class ITeamsUseCase : Entity
+    {
+        private readonly MyProperty parentProperty;
+
+        public override string ToString()
+        {
+            return GetEntityName();
+        }
+    }
+
+    public class TeamsUseCase : ITeamsUseCase
+    {
+        private readonly ITeamsRepository _teamsRepository;
+
+        public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+        {
+            var teamId = TeamName.Create(teamName);
+
+            var team = await _teamsRepository.GetByIdAsync(teamId);
+
+            var playerId = UserName.Create(playerName);
+            var player = new Player(playerId);
+
+            team.AddPlayer(player);
+
+            await _teamsRepository.UpdateTeamAsync(team);
+            var myVar = parentProperty.DoSomething();
+            myVar.PrintResults();
+
+            return team;
+        }
+    }
+    public class MyProperty
+    {
+        private Printer _printer;
+
+        public Printer GetPrinter()
+        {
+            return _printer;
+        }
+    }
+    public class Printer
+    {
+        public Printer PrintResults()
+        {
+        }
     }
 }
 
-public class ITeamsUseCase : Entity
+namespace CleanArchitectureWorkshop.Domain.TeamAggregate
 {
-    private readonly ITeamsUseCaseProperty parentProperty;
-
-    public override string ToString()
+    public class TeamName
     {
-        return GetEntityName();
+        public string Value;
+
+        private TeamName(string value)
+        {
+        }
+
+        public static TeamName Create(string value)
+        {
+            return new TeamName(value);
+        }
+    }
+
+    public class UserName
+    {
+        public string Value;
+
+        private UserName(string value)
+        {
+        }
+
+        public static UserName Create(string value)
+        {
+            return new UserName(value);
+        }
+    }
+    public class Team : AggregateRoot<TeamName>
+    {
+        private readonly List<Player> _players;
+        public Team(TeamName name)
+        {
+        }
+
+        public void AddPLayer(Player player)
+        {
+            _players.Add(player);
+            player.AssignTeam(this);
+        }
+    }
+    public class Player
+    {
+        public Team? Team;
+
+        public Player(UserName userName)
+        {
+        }
+        private Player()
+        {
+        }
+
+        public void AssignTeam(Team team)
+        {
+        }
     }
 }
 
-public class TeamsUseCase : ITeamsUseCase
+namespace CleanArchitectureWorkshop.Infrastructure.Repositories
 {
-    private readonly ITeamsRepository _teamsRepository;
-
-    public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+    internal class TeamsRepository : ITeamsRepository
     {
-        var teamId = TeamName.Create(teamName);
+        private readonly ApplicationDbContext _dbContext;
 
-        var team = await _teamsRepository.GetByIdAsync(teamId);
+        public TeamsRepository(ApplicationDbContext dbContext)
+        {
+        }
 
-        var playerId = UserName.Create(playerName);
-        var player = new Player(playerId);
+        public async Task<Team?> GetByIdAsync(TeamName teamName)
+        {
+        }
 
-        team.AddPlayer(player);
-
-        await _teamsRepository.UpdateTeamAsync(team);
-        var myVar = parentProperty.DoSomething();
-        myVar.PrintResults();
-
-        return team;
+        public async Task UpdateTeamAsync(Team team)
+        {
+            _dbContext.Teams.Update(team);
+            await _dbContext.SaveChangesAsync();
+        }
     }
-
 }

@@ -325,9 +325,9 @@ namespace Infrastructure.Antlr
             var identifierNode = GetRuleNodeInChildren("identifier", context);
 
             string assignerExpression = "";
-            var methodCallNode = GetRuleNodeInChildren("methodCall", expressionNode);
-            // If the expression is a methodCall...
-            if (methodCallNode != null)
+            var expressionMethodCallNode = GetRuleNodeInChildren("expressionMethodCall", expressionNode);
+            // If the expression is a expressionMethodCall, visit it and get the info of the assignment
+            if (expressionMethodCallNode != null)
             {
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
@@ -339,20 +339,34 @@ namespace Infrastructure.Antlr
         }
         /// <summary>
         /// Represents the logic that results in a given value of any type, like a methodCall or a simple math procedure
-        /// This normally gets the "right side" of an assignment, which is something that gives an type of something to a variable
+        /// This normally gets the "right side" of an assignment, which is something that gives a type of something to a variable
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
         public override string VisitExpression([NotNull] CSharpGrammarParser.ExpressionContext context)
         {
             string assignmentText = "";
-            var methodCallNode = GetRuleNodeInChildren("methodCall", context);
-            if(methodCallNode != null)
+            var expressionMethodCallNode = GetRuleNodeInChildren("expressionMethodCall", context);
+            
+            // Get the full text of the assignment 
+            if(expressionMethodCallNode != null)
             {
-                assignmentText = Visit(methodCallNode) + separator;
+                assignmentText = Visit(expressionMethodCallNode) + separator;
             }
+            
             assignmentText = assignmentText.Substring(0, assignmentText.Length - 1);
             return assignmentText;
+        }
+        public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
+        {
+            string wholeFunctionString = context.GetText().Replace("new", "");
+            for (int j = 0; j < context.ChildCount; j++)
+            {
+                var methodCallNode = GetRuleNodeInChildren("methodCall", context, j);
+                Visit(methodCallNode);
+            }
+
+            return wholeFunctionString;
         }
         /// <summary>
         /// Gets the info of this methodCall like the method's signature to later
@@ -364,13 +378,18 @@ namespace Infrastructure.Antlr
         public override string VisitMethodCall([NotNull] CSharpGrammarParser.MethodCallContext context)
         {
             //===========================  Getting the components of the method called
-            string functionSignature = context.GetText();
-            var lastPeriodIndex = functionSignature.LastIndexOf('.');
+            string completeFunctionString = context.GetText();
+            bool isConstructor = (GetRuleNodeInChildren("new", context) != null) ? (true) : (false);
+            if (isConstructor)
+            {
+                completeFunctionString = completeFunctionString.Replace("new", "");
+            }
+            var lastPeriodIndex = completeFunctionString.LastIndexOf('.');
             Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
-            var methodName = functionSignature.Substring(
+            var methodName = completeFunctionString.Substring(
                 (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
                 );
-            var namespaceAndClass = (lastPeriodIndex != -1) ? (functionSignature.Substring(0, lastPeriodIndex)) : ("");
+            var namespaceAndClass = (lastPeriodIndex != -1) ? (completeFunctionString.Substring(0, lastPeriodIndex)) : ("");
             var openParenIndex = methodName.IndexOf('(');
             var closeParenIndex = methodName.IndexOf(')');
             var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
@@ -382,9 +401,9 @@ namespace Infrastructure.Antlr
             methodName = methodName.Substring(0, openParenIndex);
 
             // Passing the info to the mediator
-            _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder);
+            _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder, isConstructor);
 
-            return functionSignature;
+            return completeFunctionString;
         }
     }
 }

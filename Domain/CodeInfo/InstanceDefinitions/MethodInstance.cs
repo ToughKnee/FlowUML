@@ -13,7 +13,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
     /// </summary>
     public class MethodInstance : AbstractInstance
     {
-
         // TODO: Make a List of strings which has the namespaces where this callsite was called, to help identify from which namespace came this method if there are multiple classes with the same name
         // TODO: Make this class subscribe to a method which receives a Method, and this will be called everytime a Method instance is built, to fill, BUT we also need to have the instancesDictionary clean this class to be able to compare the received Method first
 
@@ -74,32 +73,29 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// <param name="methodName"></param>
         /// <param name="aliasParams"></param>
         /// <param name="linkedCallsite"></param>
-        /// <param name="unknownMethod"></param>
-        public MethodInstance(AbstractInstance? aliasClassName, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, bool unknownMethod, List<string> usedNamespaces)
+        /// <param name="kind"></param>
+        public MethodInstance(AbstractInstance? aliasClassName, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, KindOfInstance kind, List<string> usedNamespaces)
         {
-            if (unknownMethod)
+            this.aliasClassName = aliasClassName;
+            if(aliasClassName is not null && aliasClassName.inheritedClasses is null)
             {
-                this.aliasClassName = aliasClassName;
-                if(aliasClassName is not null && aliasClassName.inheritedClasses is null)
-                {
-                    aliasClassName.inheritedClasses = inheritedClasses;
-                }
-
-                this.methodName = methodName;
-                this.aliasParameters = aliasParams;
-                for (global::System.Int32 i = 0; i < aliasParameters.Count; i++)
-                {
-                    if (aliasParams[i].inheritedClasses is null)
-                    {
-                        aliasParams[i].inheritedClasses = inheritedClasses;
-                    }
-                }
-                this.linkedCallsite = linkedCallsite;
-                this.methodIsUnknown = unknownMethod;
+                aliasClassName.inheritedClasses = inheritedClasses;
             }
+
+            this.methodName = methodName;
+            this.aliasParameters = aliasParams;
+            for (global::System.Int32 i = 0; i < aliasParameters.Count; i++)
+            {
+                if (aliasParams[i].inheritedClasses is null)
+                {
+                    aliasParams[i].inheritedClasses = inheritedClasses;
+                }
+            }
+            this.linkedCallsite = linkedCallsite;
+            this.kind = kind;
+            RegisterToTheMethodInstancesList(this);
             this.candidateNamespaces = usedNamespaces;
 
-            RegisterToTheMethodInstancesList(this);
         }
         public MethodInstance(Method method)
         {
@@ -158,10 +154,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 }
                 
             }
-            // If the alias class name is from a parent and we know the types then consult the methodDictionary as many parents as there are
-            else if (isAliasClassAParent && areParametersTypeKnown)
+            // If the alias class name is from a parent or this class and we know their types then consult the methodDictionary as many parents as there are
+            else if (kind == KindOfInstance.IsInheritedOrInThisClass && areParametersTypeKnown)
             {
-                // Consulting the Dictionary as many parents this MethodInstance knows this method has
+
+                // Consulting the Dictionary as many parents this MethodInstance knows this method has AND also itself, since the method could also be from the same class
                 for (int i = 0; i < this.inheritedClasses.Count; i++)
                 {
                     this.aliasClassName = new Instance(inheritedClasses[i]);
@@ -176,7 +173,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
                     this.aliasClassName = null;
                 }
             }
-
         }
 
         /// <summary>
