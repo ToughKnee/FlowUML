@@ -82,7 +82,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// <param name="methodCallAssigner"></param>
         public void AddMethodAssignment(Instance instanceAssignee, MethodInstance methodCallAssigner)
         {
-            instanceAssignee.type = methodCallAssigner.returnType;
+            //instanceAssignee.type = methodCallAssigner.returnType;
             _instancesDictionary.Add(instanceAssignee, methodCallAssigner);
         }
         /// <summary>

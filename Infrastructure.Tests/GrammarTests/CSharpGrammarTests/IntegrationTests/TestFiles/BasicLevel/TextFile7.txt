@@ -27,19 +27,19 @@ namespace CleanArchitectureWorkshop.Application.UseCases
     {
         private readonly ITeamsRepository _teamsRepository;
 
-        public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+        public Team AddPlayerToTeam(string teamName, string playerName)
         {
             var teamId = TeamName.Create(teamName);
 
-            var team = await _teamsRepository.GetByIdAsync(teamId);
+            var team = _teamsRepository.GetById(teamId);
 
             var playerId = UserName.Create(playerName);
             var player = new Player(playerId);
 
             team.AddPlayer(player);
 
-            await _teamsRepository.UpdateTeamAsync(team);
-            var myVar = parentProperty.DoSomething();
+            _teamsRepository.UpdateTeam(team);
+            var myVar = parentProperty.GetPrinter();
             myVar.PrintResults();
 
             return team;
@@ -98,7 +98,7 @@ namespace CleanArchitectureWorkshop.Domain.TeamAggregate
         {
         }
 
-        public void AddPLayer(Player player)
+        public void AddPlayer(Player player)
         {
             _players.Add(player);
             player.AssignTeam(this);
@@ -131,14 +131,14 @@ namespace CleanArchitectureWorkshop.Infrastructure.Repositories
         {
         }
 
-        public async Task<Team?> GetByIdAsync(TeamName teamName)
+        public Team GetById(TeamName teamName)
         {
         }
 
-        public async Task UpdateTeamAsync(Team team)
+        public void UpdateTeam(Team team)
         {
             _dbContext.Teams.Update(team);
-            await _dbContext.SaveChangesAsync();
+            _dbContext.SaveChanges();
         }
     }
 }

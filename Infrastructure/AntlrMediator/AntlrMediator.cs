@@ -51,6 +51,21 @@ namespace Infrastructure.Mediators
             }
         }
 
+        public void DefineUndefinedMethodInstances()
+        {
+            // After having the analysis of the entire codebase done, we traverse the methodInstancesWithUndefinedCallsite to be able to define them to start making the diagrams
+            for (int j = 0, maxTries = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count || maxTries > 10; j++)
+            {
+                var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
+                methodInstance.SolveTypesOfAliases();
+                if (j == MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
+                {
+                    j = -1;
+                    maxTries++;
+                }
+            }
+        }
+
         public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
         {
             // After the code analysis of all files is complete, we start building the ClassEntities and Methods(which are built within the ClassEntityBuilder)
@@ -58,15 +73,6 @@ namespace Infrastructure.Mediators
             {
                 builder.Build();
             }
-
-            // After that we traverse the methodInstancesWithUndefinedCallsite to be able to define them and start making the diagrams
-            for (int j = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count; j++)
-            {
-                var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
-                methodInstance.CheckTypesOfAliases();
-            }
-            
-
         }
         public void ReceiveMethodBuilders(List<AbstractBuilder<Method>> builders)
         {
@@ -97,14 +103,10 @@ namespace Infrastructure.Mediators
         }
         public void ReceiveProperties(string type, string identifier)
         {
-            string propertyInstanceId = _currentNamespace + _currentClassName + identifier;
+            string propertyInstanceId = identifier;
 
             // Create the instance of the property and add it to both of the dictionaries
             var propertyInstance = new Instance(propertyInstanceId, type);
-
-            // Since this is a property, we must fill its inheritanceList to be able to recognize the usage of this property in child classes
-            // If the received class has inheritance, pass the inheritance info to the instance
-            propertyInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot ];
 
             InstancesDictionaryManager.instance.AddInstanceWithDefinedType(propertyInstance);
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, propertyInstance);
@@ -135,7 +137,9 @@ namespace Infrastructure.Mediators
 
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
-                instanceAssignee.type = _currentMethodCallInstance.returnType;
+                var returnType = new StringWrapper();
+                _currentMethodCallInstance.refType = returnType;
+                instanceAssignee.refType = _currentMethodCallInstance.refType;
                 // InstancesDictionaryManager.instance.AddMethodAssignment(instanceAssignee, _currentMethodCallInstance);
              
                 // After handling the methodCall instance, we clean the property
@@ -150,14 +154,13 @@ namespace Infrastructure.Mediators
                 // Check in the known instances the assigner and make the link between these 2 instances
                 if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(assigner, out AbstractInstance knownAssignerInstance))
                 {
-                    instanceAssignee.type = knownAssignerInstance.type;
+                    instanceAssignee.refType.data = knownAssignerInstance.type;
                 }
                 // If unknown, then the assigner must be a property from a parent class, and then we must add this assignment to the instancesDictionary
                 else
                 {
                     // Creating the Instance of the unknown assigner
                     var unknownAssignerInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + assigner);
-                    unknownAssignerInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot ];
 
                     // Handle to the instancesManager the unknown assignment 
                     InstancesDictionaryManager.instance.AddSimpleAssignment(instanceAssignee, unknownAssignerInstance);
@@ -209,7 +212,7 @@ namespace Infrastructure.Mediators
             {
                 string currentStringInstance = calledParameters[i];
 
-                linkedClassOrParameterInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + currentStringInstance);
+                linkedClassOrParameterInstance = new Instance(currentStringInstance);
                 linkedClassOrParameterInstance.inheritedClasses = null;
                 //===========================  Make the analysis just as usual
                 // TODO: Make the case when the class name or parameter is another MethodCall
@@ -217,6 +220,7 @@ namespace Infrastructure.Mediators
                 if (i == calledParametersCount2 - 1 && isConstructor)
                 {
                     linkedClassOrParameterInstance.kind = KindOfInstance.IsConstructor;
+                    instanceKind = KindOfInstance.IsConstructor;
                     break;
                 }
                 // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
@@ -225,18 +229,27 @@ namespace Infrastructure.Mediators
                     linkedClassOrParameterInstance = knownClassInstance;
                 }
                 // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
-                else if (!String.IsNullOrEmpty(currentStringInstance) && (currentStringInstance != "this" || currentStringInstance != "base"))
+                else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
                 {
                     linkedClassOrParameterInstance.kind = KindOfInstance.HasClassNameStaticOrParentProperty;
+                    // We set the inheritedClasses of the component to the inheritance of this current class we are analyzing since an inherited class may contain this component as its property
+                    linkedClassOrParameterInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
+                    instanceKind = KindOfInstance.HasClassNameStaticOrParentProperty;
                 }
-                // If this is the class name component, is empty, is "this" or "base" keyword, then this method must be from a parent class or from a method owned by this class
-                else if (i == calledParametersCount2 - 1 && String.IsNullOrEmpty(currentStringInstance) || currentStringInstance == "this" || currentStringInstance == "base")
+                // If this is not empty and is the "this" and isn't the "base" keyword, then this component is of type of the class we are analyzing
+                else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance == "this")
+                {
+                    linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
+                }
+                // If this is the called class name component, is empty or is the "this" or "base" keyword, then this method uses inheritance to get its type and we set this inheritance information
+                else if (String.IsNullOrEmpty(currentStringInstance) || currentStringInstance == "this" || currentStringInstance == "base")
                 {
                     linkedClassOrParameterInstance.kind = KindOfInstance.IsInheritedOrInThisClass;
+                    instanceKind = KindOfInstance.IsInheritedOrInThisClass;
                 }
 
-                // If this iteration covers the properties then add the instance to the parameters listof the MethodInstance to be created
-                if(i < calledParametersCount2 - 1 && linkedClassOrParameterInstance is not null)
+                // If this iteration covers the properties then add the instance to the parameters list of the MethodInstance to be created
+                if (i < calledParametersCount2 - 1 && linkedClassOrParameterInstance is not null)
                 {
                     linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
                 }
@@ -252,7 +265,11 @@ namespace Infrastructure.Mediators
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
             _currentMethodCallInstance = new MethodInstance(linkedClassOrParameterInstance, calledMethodName, linkedParametersNameInstance, callsite, instanceKind, _usedNamespaces);
-            _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
+            // If this methodCall is inherited or in this class, then we set the inheritedClass of this component since it needs the inheritance of the current class to know where this came from
+            if (instanceKind == KindOfInstance.IsInheritedOrInThisClass)
+            {
+                _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
+            }
         }
 
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)

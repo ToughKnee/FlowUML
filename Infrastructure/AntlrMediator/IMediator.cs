@@ -11,6 +11,11 @@ namespace Infrastructure.Mediators
     public interface IMediator
     {
         /// <summary>
+        /// This will start defining the undefined MethodInstances that require knowing the 
+        /// types of its components(the class name and the parameters)
+        /// </summary>
+        public void DefineUndefinedMethodInstances();
+        /// <summary>
         /// Receive a builder which contains all the necessary info
         /// to create all the methods from a ClassEntity if there is one
         /// The builder contains all the info necessary to build

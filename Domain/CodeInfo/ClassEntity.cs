@@ -21,6 +21,11 @@ namespace Domain.CodeInfo
         /// Methods of the class
         /// </summary>
         public List<Method> methods { get; private set; } = new List<Method>();
+        /// <summary>
+        /// List containing the names of the inherited classes found in the code 
+        /// of this class and also its own class name, provided by the inheritanceDictionary
+        /// </summary>
+        public IReadOnlyCollection<string> inheritedClasses { get; set; }
 
         public ClassEntity(string name, string belongingNamepsace, List<Property> properties, List<Method> methods)
         {

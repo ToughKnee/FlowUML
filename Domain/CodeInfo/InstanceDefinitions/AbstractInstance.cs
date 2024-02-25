@@ -39,28 +39,37 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// The List instance this will reference is in the inheritanceDictionary, where all the inheritance will
         /// be managed in there
         /// </summary>
-        public IReadOnlyList<string>? inheritedClasses;
+        public IReadOnlyList<string> inheritedClasses;
 
         /// <summary>
         /// If null, this Instance is just an alias of another instance, if not null, then this Instance 
         /// has been assigned by a method or constructor and is not an alias of another Instance
         /// and we know its return type
+        /// For the MethodInstance, this will be used as a
+        /// property that is solely used to let other instances that were
+        /// assigned by this MethodInstance know eventually their type
         /// </summary>
-        public string? type { get; set; } = null;
+        public string? type => refType.data;
+        /// <summary>
+        /// This property is used to modify the tyoe if this Instance and be able to update other
+        /// Instances that were pointing to the same type if one was assigning the type of the other
+        /// Instance(like when a method call assigns a variable)
+        /// </summary>
+        public StringWrapper refType { get; set; }
         /// <summary>
         /// This bool represents wether this MethodCall does not have an aliasClassName and must come from 
         /// </summary>
         public KindOfInstance kind;
 
-        public AbstractInstance(string name, string? type)
+        public AbstractInstance(string name, StringWrapper type)
         {   
             this.name = name;
-            this.type = type;
+            this.refType = type;
         }
         public AbstractInstance(string name)
         {
             this.name = name;
-            this.type = null;
+            this.refType = new StringWrapper();
         }
         public AbstractInstance()
         {

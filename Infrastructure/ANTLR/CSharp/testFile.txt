@@ -1,49 +1,144 @@
 using CleanArchitectureWorkshop.Application.Repositories;
 using CleanArchitectureWorkshop.Domain.TeamAggregate;
 
-namespace CleanArchitectureWorkshop.Application.UseCases;
-
-public class TeamsUseCase : ITeamsUseCase
+namespace CleanArchitectureWorkshop.Application.UseCases
 {
-    private readonly ITeamsRepository _teamsRepository;
-
-    public TeamsUseCase(ITeamsRepository teamsRepository)
+    public class Entity
     {
+        private string grandParentProperty;
+
+        public string GetEntityName()
+        {
+            return grandParentProperty;
+        }
     }
 
-    public async Task<Team> AddPlayerToTeamAsync(string teamName, string playerName)
+    public class ITeamsUseCase : Entity
     {
-        var teamId = TeamName.Create(teamName);
+        private readonly MyProperty parentProperty;
 
-        var team = await _teamsRepository.GetByIdAsync(teamId);
-
-        var playerId = UserName.Create(playerName);
-        var player = new Player(playerId);
-
-        team.AddPlayer(player);
-
-        await _teamsRepository.UpdateTeamAsync(team);
-
-        return team;
+        public override string ToString()
+        {
+            return GetEntityName();
+        }
     }
 
-    public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
+    public class TeamsUseCase : ITeamsUseCase
     {
-        var teamId = TeamName.Create(teamName);
+        private readonly ITeamsRepository _teamsRepository;
 
-        var team = await _teamsRepository.GetByIdAsync(teamId);
+        public Team AddPlayerToTeam(string teamName, string playerName)
+        {
+            var teamId = TeamName.Create(teamName);
 
-        var playerId = UserName.Create(playerName);
+            var team = _teamsRepository.GetById(teamId);
 
-        team.RemovePlayer(playerId);
+            var playerId = UserName.Create(playerName);
+            var player = new Player(playerId);
 
-        await _teamsRepository.UpdateTeamAsync(team);
+            team.AddPlayer(player);
 
-        return team;
+            _teamsRepository.UpdateTeam(team);
+            var myVar = parentProperty.GetPrinter();
+            myVar.PrintResults();
+
+            return team;
+        }
+    }
+    public class MyProperty
+    {
+        private Printer _printer;
+
+        public Printer GetPrinter()
+        {
+            return _printer;
+        }
+    }
+    public class Printer
+    {
+        public Printer PrintResults()
+        {
+        }
+    }
+}
+
+namespace CleanArchitectureWorkshop.Domain.TeamAggregate
+{
+    public class TeamName
+    {
+        public string Value;
+
+        private TeamName(string value)
+        {
+        }
+
+        public static TeamName Create(string value)
+        {
+            return new TeamName(value);
+        }
     }
 
-    public async Task<List<Team>> GetTeamsByNameAsync(string searchTerm)
+    public class UserName
     {
-        return await _teamsRepository.GetTeamsByNameAsync(searchTerm);
+        public string Value;
+
+        private UserName(string value)
+        {
+        }
+
+        public static UserName Create(string value)
+        {
+            return new UserName(value);
+        }
+    }
+    public class Team : AggregateRoot<TeamName>
+    {
+        private readonly List<Player> _players;
+        public Team(TeamName name)
+        {
+        }
+
+        public void AddPlayer(Player player)
+        {
+            _players.Add(player);
+            player.AssignTeam(this);
+        }
+    }
+    public class Player
+    {
+        public Team? Team;
+
+        public Player(UserName userName)
+        {
+        }
+        private Player()
+        {
+        }
+
+        public void AssignTeam(Team team)
+        {
+        }
+    }
+}
+
+namespace CleanArchitectureWorkshop.Infrastructure.Repositories
+{
+    internal class TeamsRepository : ITeamsRepository
+    {
+        private readonly ApplicationDbContext _dbContext;
+
+        public TeamsRepository(ApplicationDbContext dbContext)
+        {
+        }
+
+        public Team GetById(TeamName teamName)
+        {
+        }
+
+        public void UpdateTeam(Team team)
+        {
+            _dbContext.Teams.Update(team);
+            _dbContext.SaveChanges();
+        }
     }
 }

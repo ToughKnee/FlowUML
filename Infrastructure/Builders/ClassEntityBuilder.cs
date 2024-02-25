@@ -1,11 +1,12 @@
 ﻿using Domain.CodeInfo;
+using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
 
 namespace Infrastructure.Builders
 {
     /// <summary>
-    /// Method builder used by the antlr visitor and be passed to anothre class which 
-    /// uses it as an abstract builder and get the finished Method
+    /// Method builder used by the antlr visitor and be passed to another class which 
+    /// uses it as an abstract builder and get the finished ClassEntity alongside the Methods
     /// </summary>
     public class ClassEntityBuilder : AbstractBuilder<ClassEntity>
     {
@@ -15,19 +16,29 @@ namespace Infrastructure.Builders
         public List<MethodBuilder> methodBuilders { get; private set; } = new List<MethodBuilder>();
 
         /// <summary>
-        /// This Build must be ran instead of running the MethodBuiler Build method
+        /// Creates the ClassEntity alognside the correspondent Methods from 
+        /// the respective MethodBuilders by building the Methods also
+        /// As well as passing the created Methods and ClassEntity to the Managers of those kind of objects
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The ClassEntity with the respective Methods</returns>
         public ClassEntity Build()
         {
-            var methods = new List<Method>();
             ClassEntity builtClass = new ClassEntity(name, belongingNamespace, properties);
-            foreach (var methoBbuilder in methodBuilders)
+
+            // Getting the inheritance of this class from the inheritanceDictionary
+            if(InheritanceDictionaryManager.instance.inheritanceDictionary.TryGetValue(name, out List<string> inheritedClasses))
+                builtClass.inheritedClasses = inheritedClasses.AsReadOnly();
+            else
+                builtClass.inheritedClasses = new List<string>();
+
+            // Building all the Methods from this ClassEntity
+            foreach (var methodBuilder in methodBuilders)
             {
-                var method = methoBbuilder.Build();
+                var method = methodBuilder.Build();
                 builtClass.AddMethod(method);
                 MethodDictionaryManager.instance.AddMethod(method);
             }
+
             ClassEntityManager.instance.AddClassEntityInstance(builtClass);
             return builtClass;
         }

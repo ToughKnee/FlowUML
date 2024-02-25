@@ -26,8 +26,8 @@ namespace Domain.CodeInfo
             }
         }
 
-        private List<ClassEntity> _classEntities = new List<ClassEntity>();
-        public IReadOnlyCollection<ClassEntity> classEntities => _classEntities.AsReadOnly();
+        private Dictionary<string, ClassEntity> _classEntities = new Dictionary<string, ClassEntity>();
+        public IReadOnlyDictionary<string, ClassEntity> classEntities => _classEntities.AsReadOnly();
         public ClassEntity? GetExistingClassEntity(string belongingNamepsace, string identifier)
         {
             throw new NotImplementedException();
@@ -35,7 +35,7 @@ namespace Domain.CodeInfo
 
         public void AddClassEntityInstance(ClassEntity entity)
         {
-            _classEntities.Add(entity);
+            _classEntities.Add(entity.name, entity);
         }
     }
 }

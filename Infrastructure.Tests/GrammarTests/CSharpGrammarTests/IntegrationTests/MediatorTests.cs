@@ -1,4 +1,6 @@
+using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
+using Domain.CodeInfo.MethodSystem;
 using FluentAssertions;
 using Infrastructure.Antlr;
 using Infrastructure.Mediators;
@@ -16,7 +18,9 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
         public MediatorTests()
         {
+            InheritanceDictionaryManager.instance.CleanInheritanceDictionary();
             InstancesDictionaryManager.instance.CleanInstancesDictionary();
+            MethodDictionaryManager.instance.CleanMethodDictionary();
         }
 
         public void AssertInstanceAssignment(KeyValuePair<AbstractInstance, AbstractInstance> instanceAssignment, string? keyType, string keyIdentifier
@@ -26,14 +30,14 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             if(valueIdentifier is not null)
                 (instanceAssignment.Value).name = valueIdentifier;
             if(keyType is not null)
-                (instanceAssignment.Key).type = keyType;
+                (instanceAssignment.Key).refType.data = keyType;
             if (valueType is not null)
-                (instanceAssignment.Value).type = valueType;
+                (instanceAssignment.Value).refType.data = valueType;
             else
                 instanceAssignment.Value.Should().Be(null);
             (instanceAssignment.Key).inheritedClasses.OrderBy(x => x).SequenceEqual(keyInheritanceNames.OrderBy(x => x)).Should().Be(true);
             if(valueInheritanceNames is not null)
-            (instanceAssignment.Value).inheritedClasses.OrderBy(x => x).SequenceEqual(valueInheritanceNames.OrderBy(x => x)).Should().Be(true);
+                (instanceAssignment.Value).inheritedClasses.OrderBy(x => x).SequenceEqual(valueInheritanceNames.OrderBy(x => x)).Should().Be(true);
         }
 
         public List<string> MakeStrList(params string[] values)
@@ -42,6 +46,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         }
 
         [Fact]
+        // TODO: REdesign entire test because of the uselesness of the instancesDictionary
         public void MediatorReceivesInstancesInfo_MediatorHandlesInfo_MediatorCreatesCorrespondingInstancesAndStoredInInstancesDictionaryCorrectly()
         {
             // Arrange
@@ -103,8 +108,14 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                 );
         }
 
+        public void AssertInstanceType(KeyValuePair<string, MethodInstance> methodInstance, string? keyType, string keyIdentifier
+            , string? valueType, string? valueIdentifier, List<string> keyInheritanceNames, List<string>? valueInheritanceNames)
+        {
+        }
+
         [Fact]
-        public void Testt()
+        //===========================  TODO: Rename TEST
+        public void MediatorCreatedAllInstances_MediatorCreatesClasses_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
         {
             // Arrange
             var mediator = new AntlrMediator();
@@ -115,7 +126,35 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
             // Assert
-            InstancesDictionaryManager.instance.instancesDictionary.Count.Should().Be(7);
+            int i = 0;
+            i = 9;
+            ClassEntityManager.instance.classEntities.Count.Should().Be(10);
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+            classEntitiesList[2].methods[0].callsites.Count.Should().Be(8);
+            var TeamNameCreateMethod = classEntitiesList[5].methods[1];
+            classEntitiesList[2].methods[0].callsites[0].calledMethod.Should().Be(TeamNameCreateMethod);
+
+            var ITeamsRepositoryGetByIdAsyncMethod = classEntitiesList[9].methods[1];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(ITeamsRepositoryGetByIdAsyncMethod);
+
+            var UserNameCreateMethod = classEntitiesList[6].methods[1];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(UserNameCreateMethod);
+
+            var PlayerConstructorMethod = classEntitiesList[8].methods[0];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(PlayerConstructorMethod);
+
+            var TeamAddPlayerMethod = classEntitiesList[7].methods[1];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(TeamAddPlayerMethod);
+
+            var ITeamsRepositoryUpdateTeamAsyncMethod = classEntitiesList[9].methods[2];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(ITeamsRepositoryUpdateTeamAsyncMethod);
+
+            var MyPropertyGetPrinterMethod = classEntitiesList[3].methods[0];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(MyPropertyGetPrinterMethod);
+
+            var PrinetPrintResultsMethod = classEntitiesList[4].methods[0];
+            classEntitiesList[2].methods[0].callsites[1].calledMethod.Should().Be(PrinetPrintResultsMethod);
+
 
         }
     }

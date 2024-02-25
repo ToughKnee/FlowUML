@@ -19,6 +19,8 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         private ANTLRService _antlrService;
         public AntlrVisitorRawExtractionTests()
         {
+            InheritanceDictionaryManager.instance.CleanInheritanceDictionary();
+            MethodDictionaryManager.instance.CleanMethodDictionary();
         }
 
         public static IEnumerable<object[]> TextFile1Expectations
@@ -141,6 +143,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
         [Theory]
         [MemberData(nameof(TextFile3Expectations))]
+
         public void AnalyzeBasicClassDeclaration_MediatorReceivesClassBuilder_CorrectClassesBuilt(string expBelNamespace, List<string> expName
             , List<List<Property>> expProperties, List<int> expMethodCount)
         {

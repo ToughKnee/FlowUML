@@ -238,6 +238,11 @@ namespace Infrastructure.Antlr
                             returnTypeText = returnTypeNode.GetText();
                             _currentMethodBuilder.SetReturnType(returnTypeText);
                         }
+                        // If the return type is null(meaning also it isn't "void"), then use the identifier of this method as the return type since this is a constructor method
+                        else
+                        {
+                            _currentMethodBuilder.SetReturnType(methodIdentifierText);
+                        }
                         if (parameterListNode != null)
                         {
                             parameters = Visit(parameterListNode);
@@ -357,13 +362,25 @@ namespace Infrastructure.Antlr
             assignmentText = assignmentText.Substring(0, assignmentText.Length - 1);
             return assignmentText;
         }
+        /// <summary>
+        /// This method explores all the methodCalls that are nested, as in having to visit the 
+        /// 3 methodCalls inside a line like this 
+        /// "myClass.getClass2().doSomething().myProperty.function3()", 
+        /// and return this entire method, for the cases where this was used to assign a variable 
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns>The whole method that may be assigning a variable</returns>
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
             string wholeFunctionString = context.GetText().Replace("new", "");
             for (int j = 0; j < context.ChildCount; j++)
             {
-                var methodCallNode = GetRuleNodeInChildren("methodCall", context, j);
-                Visit(methodCallNode);
+                // Check each part of the expressionMethodCall, if there are nested methodCalls, then we visit each of them to be extract the information
+                if(ChildRuleNameIs("methodCall", context, j))
+                {
+                   var methodCallNode = GetRuleNodeInChildren("methodCall", context, j);
+                   Visit(methodCallNode);
+                }
             }
 
             return wholeFunctionString;

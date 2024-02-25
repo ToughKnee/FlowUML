@@ -102,7 +102,8 @@ namespace Domain.CodeInfo.MethodSystem
             // Setting the parameters of the MethodIdentifier to store this Method into the MethodDictionary
             var methodIdentifier = new MethodIdentifier();
             methodIdentifier.methodParameters = parameters;
-            methodIdentifier.methodOwnerClass = ownerClass.name;
+            methodIdentifier.ownerClassNameAndInheritedClasses = ownerClass.inheritedClasses.ToList();
+            methodIdentifier.ownerClassNameAndInheritedClasses.Add(ownerClass.name);
             methodIdentifier.methodName = name;
             methodIdentifier.methodBelongingNamespace = belongingNamespace;
 
