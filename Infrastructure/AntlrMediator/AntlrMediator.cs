@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using static Antlr4.Runtime.Atn.SemanticContext;
 
 namespace Infrastructure.Mediators
 {
@@ -45,8 +44,6 @@ namespace Infrastructure.Mediators
         {
             if (_currentMethodCallInstance is not null)
             {
-                // Send the MethodInstance to the instancesDictionary
-                InstancesDictionaryManager.instance.AddMethodCallInstance(_currentMethodCallInstance);
                 _currentMethodCallInstance = null;
             }
         }
@@ -54,7 +51,7 @@ namespace Infrastructure.Mediators
         public void DefineUndefinedMethodInstances()
         {
             // After having the analysis of the entire codebase done, we traverse the methodInstancesWithUndefinedCallsite to be able to define them to start making the diagrams
-            for (int j = 0, maxTries = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count || maxTries > 10; j++)
+            for (int j = 0, maxTries = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count && maxTries < 10; j++)
             {
                 var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
                 methodInstance.SolveTypesOfAliases();
@@ -108,7 +105,6 @@ namespace Infrastructure.Mediators
             // Create the instance of the property and add it to both of the dictionaries
             var propertyInstance = new Instance(propertyInstanceId, type);
 
-            InstancesDictionaryManager.instance.AddInstanceWithDefinedType(propertyInstance);
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, propertyInstance);
             _propertiesDeclared.Add(identifier, propertyInstance);
         }
@@ -161,9 +157,6 @@ namespace Infrastructure.Mediators
                 {
                     // Creating the Instance of the unknown assigner
                     var unknownAssignerInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + assigner);
-
-                    // Handle to the instancesManager the unknown assignment 
-                    InstancesDictionaryManager.instance.AddSimpleAssignment(instanceAssignee, unknownAssignerInstance);
                 }
 
                 // Add the new instance to the known instances dictionary and the instancesDictionary

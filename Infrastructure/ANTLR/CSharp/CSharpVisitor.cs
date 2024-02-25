@@ -272,7 +272,7 @@ namespace Infrastructure.Antlr
                 }
             }
 
-            // Getting inside the "methodBodyContent" to get the variables and pass them to the mediator
+            // Getting inside the "methodBodyContent" to get the variables and methodCalls and pass them to the mediator
             for (int j = 1; j < methodBodyNode.ChildCount-1; j++)
             {
                 // Get the local variable rule if there is
@@ -288,9 +288,12 @@ namespace Infrastructure.Antlr
                 }
                 else
                 {
-                    // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively before the default type
+                    // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively
                     Visit(methodBodyNode.GetChild(j).GetChild(0));
                 }
+
+                // Check if the methodCall data has been sent to the mediator by the local variable if statement, if not then send it right now
+                // TODO:
             }
             _mediator.ReceiveMethodAnalysisEnd();
             return "";
