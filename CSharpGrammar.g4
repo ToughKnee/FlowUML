@@ -217,12 +217,12 @@ expression
     ;
 
 expressionMethodCall
-    : (methodCall | identifier) ('.' methodCall | '.' identifier)?
+    : new? (methodCall | identifier) ('.' methodCall | '.' identifier)*
     | 
     ;
 
 methodCall
-    : new? identifier ('.' identifier)? '(' argumentList ')'
+    : new? identifier ('.' identifier)* '(' argumentList ')'
     ;
 
 argumentList
