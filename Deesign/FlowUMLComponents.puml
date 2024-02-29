@@ -1,0 +1,72 @@
+Skinparam backgroundColor #EEEBDC
+'skinparam componentStyle uml1
+skinparam linetype polyline
+'skinparam linetype ortho
+skinparam Nodesep 45
+'skinparam Ranksep 45
+skinparam MaxMessageSize 300
+skinparam WrapWidth 300
+skinparam component {
+ArrowColor Maroon
+BorderColor Maroon
+BackgroundColor  #fefece
+}
+
+'//===========================  Layout object, invisible object to maipualte the position of other objects
+skinparam package<<Layout>> {
+  borderColor Transparent
+  backgroundColor Transparent
+  fontColor Transparent
+  stereotypeFontColor Transparent
+}
+package layouter <<Layout>>
+package layouter2 <<Layout>>
+package layouter3 <<Layout>>
+'//====
+
+'//===========================  Domain
+package Domain #AAAAAA {
+    package ProcessedDataStorage #ccc {
+      [MethodDictionaryManager]
+      [ClassEntityManager]
+      [InheritanceDictionaryManager]
+    }
+
+    [ClassEntity]
+    [Method]
+
+    package InstanceDefinitions #9a9 {
+      [AbstractInstance]
+      [MethodInstance] -u-|> [AbstractInstance]
+      [Instance] -u-|> [AbstractInstance]
+    }
+}
+
+'//===========================  Infrastructure
+package Infrastructure #89b {
+  portin "Code Raw Data"
+
+  "Code Raw Data" ..> [AntlrVisitor]
+  [AntlrVisitor] ..> "Raw Data"
+  "Raw Data" ..> [Mediator]
+  [Mediator]
+  note top of [Mediator] : The mediator only receives the raw data, and he manages the data by **'caching'** the information that will create all the Instances
+  [RawDataProcessorFacade]
+  note top of [RawDataProcessorFacade] : This will be in charge of creating the concrete Instances **according to the programming language AND the context in which the information is received**(This means that this will make sure to implement the logic to create the accurate Instances with its info AND its relations to other instances, like one MethodInstance assigning an Instance), we can also implement here other patterns like the Decorator pattern for complex and shared behaviour of Concrete Instances
+  [Mediator]  -0)- [RawDataProcessorFacade] : Passes the data to the Facade and this is in charge of **generating** the actual classes, by using the cached data in the Mediator
+
+}
+
+''//===========================  External relations
+'============  Domain
+InstanceDefinitions --u-> ProcessedDataStorage : Sends the Concrete Instance to the respective Managers
+
+'============  Infrastructure
+[Mediator] -0)- [InheritanceDictionaryManager] : Uses inheritanceManager to store and set inheritance info to the Domain classes
+
+[RawDataProcessorFacade]  --- "Creates"
+"Creates" --->  InstanceDefinitions
+
+[Mediator] -0)--- ProcessedDataStorage #blue : Stores the processed data in the respective Managers when buidling the ClassEntities and Methods
+
+

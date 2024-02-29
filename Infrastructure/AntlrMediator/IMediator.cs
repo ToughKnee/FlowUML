@@ -66,21 +66,23 @@ namespace Infrastructure.Mediators
         /// </summary>
         /// <param name="assigner">The "right part" of an assignment</param>
         /// <param name="assignee">The "left part" of an assignment</param>
-        public void ReceiveLocalVariableDeclaration(string assignee, string assigner);
+        /// <param name="methodCallAssigner">The info of the MethodCall if the assigner is a methodCall</param>
+        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, List<MethodCallData> methodCallAssigner);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
         /// should start processing the parameters and local variables received
         /// </summary>
         public void ReceiveMethodAnalysisEnd();
         /// <summary>
-        /// This will receive the info for the callsites a method made, and be able to create the callsite alongside the MethodInstance, 
+        /// This will receive the info for the callsites a method made, and be able to create 
+        /// the callsite alongside the MethodInstance, 
         /// which must be connected, and send each class to their correspondent classes
         /// </summary>
-        /// <param name="calledClassName">Name of the called class if any</param>
-        /// <param name="calledMethodName">Name of the method called</param>
-        /// <param name="calledParameters">List of parametrs from the calld method</param>
-        /// <param name="linkedMethodBuilder">The linked method builder which has the info for the method that made this callsite, to be able to set the callsite generated and let the builder be able to add this callsite to the Method class to be built</param>
-        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor);
+        /// <param name="methodCallData">Contains all the data of the MethodCall, the linked method builder that 
+        /// is in this parameter which has the info for the method that made this callsite, 
+        /// to be able to set the callsite generated and let the builder be able to add this 
+        /// callsite to the Method class to be built</param>
+        public void ReceiveMethodCall(List<MethodCallData> methodCallData);
         /// <summary>
         /// Receive the usedNamespaces to be able to disambiguate between classes with the same name
         /// Intended to be used after the ReceiveMethodCall was made

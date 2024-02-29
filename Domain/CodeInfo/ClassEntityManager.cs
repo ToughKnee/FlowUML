@@ -25,6 +25,10 @@ namespace Domain.CodeInfo
                 return _instance;
             }
         }
+        public void CleanClassEntitiesDictionary()
+        {
+            _instance._classEntities.Clear();
+        }
 
         private Dictionary<string, ClassEntity> _classEntities = new Dictionary<string, ClassEntity>();
         public IReadOnlyDictionary<string, ClassEntity> classEntities => _classEntities.AsReadOnly();

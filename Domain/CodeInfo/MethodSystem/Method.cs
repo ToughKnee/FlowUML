@@ -110,5 +110,9 @@ namespace Domain.CodeInfo.MethodSystem
             return methodIdentifier;
         }
 
+        public override string ToString()
+        {
+            return $"{belongingNamespace}.{name}({string.Join(", ", parameters.Select(p => $"{p}"))}): {returnType}";
+        }
     }
 }

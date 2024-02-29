@@ -1,5 +1,6 @@
 ﻿using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
+using System.Text;
 
 namespace Domain.CodeInfo
 {
@@ -49,6 +50,37 @@ namespace Domain.CodeInfo
         {
             this.methods.Add(method);
             method.SetOwnerClass(this);
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine($"Name: {name}");
+            sb.AppendLine($"Namespace: {classNamespace}");
+            
+            sb.AppendLine("Properties:");
+            foreach (var property in properties)
+            {
+                sb.AppendLine($"  {property.name}: {property.type}");
+            }
+
+            sb.AppendLine("Methods:");
+            foreach (var method in methods)
+            {
+                sb.AppendLine($"  {method}");
+            }
+
+            if (inheritedClasses != null)
+            {
+                sb.AppendLine("Inherited Classes:");
+                foreach (var inheritedClass in inheritedClasses)
+                {
+                    sb.AppendLine($"  {inheritedClass}");
+                }
+            }
+
+            return sb.ToString();
         }
 
     }

@@ -1,51 +1,26 @@
-Problem: We need to put inside the instancesDictionary this method's delcaration, but we can't create a Method since that responsability is exclusive to the METHODBUILDER
-We don't need callsite, but we NEED the Method class since the other MethodInstances need the complete Method
-THEN, we actually don't need this method, because the goal of handling the declaration of a method is to make the MethodInstances receive the complete Method in order to:
-1. Get the return type and rename the aliases with the return type AND
-2. Put the Method inside the Callsite which was incomplete
-With that in mind, we then need just a way to SEND to those MethodInstaces the Method when it's created, and the easiest way to do that is to have a list of all the MethodInstances with their unknown Method, and everytime a Method is created, make them receive the Method and CHECK if their parts of a method is the same as the Method received, and all is done
-PS: Since the major operation we need to do is to COMPARE a MethodInstance with a Method, we can make a List of MethodInstances that request to be compared, and then a Dictionary of Methods, where the scenario is...
-
-
-
-
 //===========================  
 //===========================  「 Feature 」     ※ Mediator between AntlrVisitor and instancesManager
         Responsibilities(+|-):
 +Decoupled way to handle the info and then convert the info to instanceManager info
++Mediator is responsible of 'caching' the raw info to be able to link Instances between them
++Can be modularized separating the Concrete Instances creation, making room for more complex logic when creating the Instances
 -Drawbacks
 
 「 Scenario 」     ※ Receive info to create Instances
-Actors:
-  -Instance:
-    The instances are generated from properties, methodCalls(which will be registered inside the instancesDictionary and need special id), parameters and local variables(which WON'T be registered into the instancesDictionary and DON'T need special id)
-    The instance will be equal to another instance in 2 cases:
-    1. If the property 'inheritanceList' has one element, then they should have the same name
-    2. If true, we ignore namespaces and check if they have at least one value in their inheritanceList that matches another value in the other instance
 Given:
         -Analysis of AntlrVisitor is ongoing
-        -Mediator is also doing other things
-        -Properties and MethodCalls(including each component of this methodCallInstance, class name and properties) get their inheritanceList filled if the current class analyzed inherits from other classes or interfaces
-        -Properties, Parameters and Local variables are stored inside the mediator to link them with other instances assigned by them
+        -Mediator receives all the raw info from the ANTLR Visitor of the code 
+        -Mediator has to handle this info and create the respective Instance classes from that(this needs to have special logic to also handle cases like inheritance)
+        --The Mediator has to link with the respective Instances the Properties, Parameters and Local variables if they are related somehow
 When:
-        -Mediator has received the current namespace, className alongside the inheritance classes and methodName the AntlrVisitor is analyzing
+        -Mediator has received the current namespace, className alongside the inherited classes and methodName the AntlrVisitor is analyzing
         -Mediator receives info for instances which could be a local variable, property, parameter or methodCall
 Then:
-        -Make the identifier for the received instance
-        -Put the instance with the identifier into the instancesManager through the corresponding method depending of the type of instance to be sent
         -New Instances that are parts of a methodCall or assignments of local variables by properties, params or local variables MUST be linked to them and share their type property
-          -If we can't connect this new instance with another ALREADY existing instance, we must make data to recognize at a later time the instance that should have been defined AND store it into the instancesDictionary
-        -IF the class has inheritance
-         ALL methodCalss AND properties must have contents in their inheritanceList containing the parents of the current class analyzed AND ALSO the grandparents
-         The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are diretly linked to
-
-
-「 Feature 」     ※ Enum Kind of MethodInstance
-        Responsibilities(+|-):
-++Ensures a way we can know the type of each instance depending on the context the MethodInstance was called and
--Drawbacks
-
-
+          -If we can't connect this new instance with another ALREADY existing instance, we must make data to recognize at a later time the instance that should have been defined(NOT implemented)
+        -IF the class has inheritance AND the Instance to be made requires knowing the inheritance of the class to know its type(like an Instance named the "this" keyword) then ALL methodCalss AND properties must have contents in their inheritanceList containing the parents of the current class analyzed AND ALSO the grandparents
+         The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are directly linked to
+        -inheritanceDictionary is filled by the Mediator when processing the raw data
 
 「 Scenario 」     ※ EXTENSION::: Receive info to create Instances:Parent method called
 Given:
@@ -67,18 +42,22 @@ Then:
 「 Scenario 」     ※ Resolution of aliases from Instance
 Given:
         -Analysis of all code files FINISHED
-        -InstancesDictionary and InheritanceDictionary completed
-        -List of MethodInstances with unknown type complete and wich will be traversed in this scenario
+        -InheritanceDictionary completed
+        -Method and ClassEntity Builders ready to build their classes from the analyzed code files
+        -Filled the list of MethodInstances with unknown type complete and wich will be traversed in this scenario
         --The Builders(ClassEntity and Method) are complete and ready to create the classes of their correspondent type
-                These builders are going to be crucial for this scenario
+                These builders are crucial for this scenario
 When:
-        -We need the Callsites to be completed so that we can make Diagrams
+        -We need the Callsites to be completed so that we can start making Diagrams
 Then:
-        -Use the inheritance manager to link the ClassEntityBuilders with their inherited classes
+        -ClassEntityBuilders use the inheritance manager to link the ClassEntities with their inherited classes
         -Build all the ClassEntities, which will then build the Methods
-        -Make the MethodBuilders deposit their built Method to the MethodDictionaryManager
-        -Pass through all the List of MethodInstances with unknown type and call the "CheckTypesOfAliases()" method, which will query the methodDictionary for the Method object containing the correspondent signature
-                -If the method did not find a match, then proceed to discover the missing types of aliases with other solutions, like using the instancesDictionary and inheritanceDictionary(for aliases that came from properties from a parent class)
+        -Make the MethodBuilders store their built Method to the MethodDictionaryManager, which will be used for the resolution of Instances
+        ---(BIG STEP)Pass through all the List of MethodInstances with unknown type and call the "SolveTypesOfAliases()" method, which will solve the type of the components if this MethodInstance(owner class name and parameters) and then query the methodDictionary for the Method object containing the correspondent signature
+                -If the method found a match, then set the respective data and remove itself from the list of MethodInstances with undefined callsite
+        -Keep going until a max number of attempts since there may be methodCalls that can't be tracked
+Result:
+        -The ClassEntityManager has all the ClassEntities with the respective Methods which contain their Callsites to all the parts of the code and we have finished the code analysis
 
 
 //===========================   「 Feature 」     ※ MethodDictionaryInstance
@@ -87,7 +66,7 @@ Then:
 -Drawbacks
 
 
-//===========================   「 Feature 」     ※ Recognizer between MethodInstanceSignature and MethodSignature
+//===========================   「 Feature 」     ※ MethodIdentifier: Recognizer between MethodInstanceSignature and MethodSignature
         Reason:
 -We need to find a match between info that a MethodInstance has and info an actual Method has
 -Both objects have the same info, EXCEPT for the returnType and namespaces, which the Method knows well and the MethodInstance doesn't but has a List of possible candidates

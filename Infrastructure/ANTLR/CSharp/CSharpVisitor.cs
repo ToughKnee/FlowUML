@@ -44,6 +44,15 @@ namespace Infrastructure.Antlr
         /// "public string name"
         /// </summary>
         private readonly string separator = "-";
+        /// <summary>
+        /// Property that gets filled whenever a MethodCall or set of MethodCalls if there were nested 
+        /// MethodCalls(where if we have nested methodCalls like 
+        /// "myClass.getClass2().doSomething().myProperty.function3()", then we will have a list of 
+        /// 3 MethodCallData, AND also we will have each MethodCall as part of the identifier of its next MethodCall)
+        /// This will be handed to the mediator after visiting a localVariableDeclaration or visiting just the MethodCall and then emptied
+        /// </summary>
+        private List<MethodCallData> _methodCallDataList = new();
+        private bool _isExpressionMethodCallConstructor = false;
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -95,8 +104,9 @@ namespace Infrastructure.Antlr
         {
             var identifierNode = GetRuleNodeInChildren("identifier", context);
             var typeNode = GetRuleNodeInChildren("type", context);
-            _currentClassBuilder.AddProperty(typeNode.GetText(), identifierNode.GetText());
-            return typeNode.GetText() + separator + identifierNode.GetText();
+            var propertyTypeString = typeNode.GetText().Replace("?", "");
+            _currentClassBuilder.AddProperty(propertyTypeString, identifierNode.GetText());
+            return propertyTypeString + separator + identifierNode.GetText();
         }
         /// <summary>
         /// Returns the identifiers of all the namespaces in a string separated by hyphens
@@ -283,7 +293,8 @@ namespace Infrastructure.Antlr
                     if(localVariableText.Contains('-'))
                     {
                         string[] assignmentValues = localVariableText.Split("-");
-                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1]);
+                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1], new List<MethodCallData>(_methodCallDataList));
+                        _methodCallDataList.Clear();
                     }
                 }
                 else
@@ -293,7 +304,11 @@ namespace Infrastructure.Antlr
                 }
 
                 // Check if the methodCall data has been sent to the mediator by the local variable if statement, if not then send it right now
-                // TODO:
+                if(_methodCallDataList.Count > 0)
+                {
+                    _mediator.ReceiveMethodCall(new List<MethodCallData>(_methodCallDataList));
+                    _methodCallDataList.Clear();
+                }
             }
             _mediator.ReceiveMethodAnalysisEnd();
             return "";
@@ -375,6 +390,7 @@ namespace Infrastructure.Antlr
         /// <returns>The whole method that may be assigning a variable</returns>
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
+            _isExpressionMethodCallConstructor = (GetRuleNodeInChildren("new", context) != null) ? (true) : (false);
             string wholeFunctionString = context.GetText().Replace("new", "");
             for (int j = 0; j < context.ChildCount; j++)
             {
@@ -399,11 +415,7 @@ namespace Infrastructure.Antlr
         {
             //===========================  Getting the components of the method called
             string completeFunctionString = context.GetText();
-            bool isConstructor = (GetRuleNodeInChildren("new", context) != null) ? (true) : (false);
-            if (isConstructor)
-            {
-                completeFunctionString = completeFunctionString.Replace("new", "");
-            }
+            completeFunctionString = completeFunctionString.Replace("new", "");
             var lastPeriodIndex = completeFunctionString.LastIndexOf('.');
             Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
             var methodName = completeFunctionString.Substring(
@@ -420,8 +432,8 @@ namespace Infrastructure.Antlr
             }
             methodName = methodName.Substring(0, openParenIndex);
 
-            // Passing the info to the mediator
-            _mediator.ReceiveMethodCall(namespaceAndClass, methodName, parameterList, _currentMethodBuilder, isConstructor);
+            // Save the methodCallData to the List to be passed later to the mediator
+            _methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, _currentMethodBuilder, _isExpressionMethodCallConstructor));
 
             return completeFunctionString;
         }

@@ -29,24 +29,6 @@ namespace Infrastructure.Mediators
         /// able to dissambiguate between classes with the same name
         /// </summary>
         private List<string> _usedNamespaces = new List<string>();
-        /// <summary>
-        /// This is used first by the method ReceiveMethodCall, which creates the MethodInstance 
-        /// AND Callsite made form the method currently analyzed, and sets this property with 
-        /// the MethodInstance created, which is then read by the ReceiveLocalVariableDeclaration, 
-        /// to be able to manage it and set it null IF the method was used in an assignment and send 
-        /// it to the instancesManager, if the methodCall did not assign anything to any variable, 
-        /// then ReceiveLocalVariableDeclaration won't read this property and must be 
-        /// managed the next time ReceiveMethodCall is called
-        /// </summary>
-        private MethodInstance? _currentMethodCallInstance = null;
-
-        public void CheckMethodInstanceWasHandled()
-        {
-            if (_currentMethodCallInstance is not null)
-            {
-                _currentMethodCallInstance = null;
-            }
-        }
 
         public void DefineUndefinedMethodInstances()
         {
@@ -82,8 +64,6 @@ namespace Infrastructure.Mediators
         }
         public void ReceiveClassNameAndInheritance(string? classAndInheritanceNames)
         {
-            CheckMethodInstanceWasHandled();
-
             _knownInstancesDeclaredInCurrentMethodAnalysis.Clear();
             _propertiesDeclared.Clear();
             string[] classAndInheritanceNamesArray = { classAndInheritanceNames };
@@ -100,6 +80,7 @@ namespace Infrastructure.Mediators
         }
         public void ReceiveProperties(string type, string identifier)
         {
+            type = type.Replace("?", "");
             string propertyInstanceId = identifier;
 
             // Create the instance of the property and add it to both of the dictionaries
@@ -111,13 +92,11 @@ namespace Infrastructure.Mediators
         public void ReceiveParameters(string type, string identifier)
         {
             var parameterInstance = new Instance(identifier, type);
-            // Send the parameter to the instancesManager
-            // InstancesDictionaryManager.instance.AddInstanceWithDefinedType(parameterInstance);
 
             // Add the parameter Instance with its identifier inside this method to link with future instances
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
         }
-        public void ReceiveLocalVariableDeclaration(string assignee, string assigner)
+        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, List<MethodCallData> methodCallAssigner)
         {
             // Create the instance assignee to be defined
             Instance instanceAssignee;
@@ -125,21 +104,12 @@ namespace Infrastructure.Mediators
             // If the assigner is a method call...
             if (assigner.Contains("("))
             {
-                // Get the _currentMethodCallInstance which contains the methodCall assigner already processed and add the assignment to the instanceDictionary
-                if(_currentMethodCallInstance is null)
-                {
-                    throw new NullReferenceException("The property '_currentMethodCallInstance' is null when it should never be null in this case");
-                }
-
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
                 var returnType = new StringWrapper();
-                _currentMethodCallInstance.refType = returnType;
-                instanceAssignee.refType = _currentMethodCallInstance.refType;
-                // InstancesDictionaryManager.instance.AddMethodAssignment(instanceAssignee, _currentMethodCallInstance);
-             
-                // After handling the methodCall instance, we clean the property
-                _currentMethodCallInstance = null;
+                var methodInstanceAssigner = GenerateMethodInstance(methodCallAssigner[0]);
+                methodInstanceAssigner.refType = returnType;
+                instanceAssignee.refType = methodInstanceAssigner.refType;
             }
             // IF the declaration is simple
             else
@@ -170,8 +140,6 @@ namespace Infrastructure.Mediators
         }
         public void ReceiveMethodAnalysisEnd()
         {
-            CheckMethodInstanceWasHandled();
-
             // Refilling the common dictionary with the custom identifiers while erasing the ones that are not needed anymore
             _knownInstancesDeclaredInCurrentMethodAnalysis.Clear();
             foreach (var property in _propertiesDeclared)
@@ -179,20 +147,29 @@ namespace Infrastructure.Mediators
                 _knownInstancesDeclaredInCurrentMethodAnalysis.Add(property.Key, property.Value);
             }
         }
-        public void ReceiveMethodCall(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor)
-        {
-            // Check the property which contains the MethodInstance this method will put in there, if this is not null, then it means the RecieveLocalVariableDeclaration did not catch that since this was a pure methodCall without assigning any variable anything, and we must manage it ourselves, we must then put this MethodInstance to the InstancesManager to let that MethodCall be identifiable if it isn't identifiable
-            CheckMethodInstanceWasHandled();
 
+        public void ReceiveMethodCall(List<MethodCallData> methodCallData)
+        {
+            GenerateMethodInstance(methodCallData[0]);
+        }
+
+        public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
+        {
+            _usedNamespaces = (usedNamespaces is null) ? (_usedNamespaces) : (usedNamespaces);
+        }
+ 
+        public MethodInstance GenerateMethodInstance(MethodCallData callData)
+        {
+            var (calledClassName, calledMethodName, calledParameters, linkedMethodBuilder, isConstructor) = callData;
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
             AbstractInstance? linkedClassOrParameterInstance = null;
             List<AbstractInstance> linkedParametersNameInstance = new();
             KindOfInstance instanceKind = KindOfInstance.Normal;
 
             // Adding at the end the className instance
-            if(calledParameters is null)
+            if (calledParameters is null)
             {
-                calledParameters = new List<string>{calledClassName};
+                calledParameters = new List<string> { calledClassName };
             }
             else
             {
@@ -201,7 +178,7 @@ namespace Infrastructure.Mediators
 
             // Process each parameter and class name according to what it is(based on its position in the List, all but the last one are parameters, the last element is the class name)
             int calledParametersCount2 = (calledParameters is null) ? (0) : (calledParameters.Count);
-            for(int i = 0; i < calledParametersCount2; i++)
+            for (int i = 0; i < calledParametersCount2; i++)
             {
                 string currentStringInstance = calledParameters[i];
 
@@ -257,17 +234,14 @@ namespace Infrastructure.Mediators
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            _currentMethodCallInstance = new MethodInstance(linkedClassOrParameterInstance, calledMethodName, linkedParametersNameInstance, callsite, instanceKind, _usedNamespaces);
+            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, calledMethodName, linkedParametersNameInstance, callsite, instanceKind, _usedNamespaces);
             // If this methodCall is inherited or in this class, then we set the inheritedClass of this component since it needs the inheritance of the current class to know where this came from
             if (instanceKind == KindOfInstance.IsInheritedOrInThisClass)
             {
-                _currentMethodCallInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
+                methodInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
             }
-        }
-
-        public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
-        {
-            _usedNamespaces = (usedNamespaces is null) ? (_usedNamespaces) : (usedNamespaces);
+         
+            return methodInstance;
         }
     }
 }   
