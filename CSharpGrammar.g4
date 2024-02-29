@@ -73,6 +73,7 @@ advancedTypeName
 
 genericType
     : advancedTypeName
+    | primitiveTypeName
     | genericType '<' genericType (',' genericType)* '>'
     ;
     
@@ -84,6 +85,9 @@ IDENTIFIER
 
 identifier
     : IDENTIFIER
+    ;
+advancedIdentifier
+    : identifier ('.' identifier)*
     ;
 
 type
@@ -197,18 +201,24 @@ parameter
 
 //===========================  Local variables grammar
 methodContent
-    : functionCall ';'
-    | localVariableDeclaration
-    | returnExpression
+    : valueAssignment ';'
+    | functionCall ';'
+    | localVariableDeclaration ';'
+    | returnExpression ';'
     ;
 
 localVariableDeclaration
-    : type identifier '=' expression ';'
+    : type identifier '=' expression
     ;
+
+valueAssignment
+    : advancedIdentifier '=' expression
+    ;
+
 functionCall: expression;
 
 returnExpression
-    : RETURN (identifier | expression) ';' 
+    : RETURN (identifier | expression)
     ;
 
 // Something that returns something
@@ -222,7 +232,7 @@ expressionMethodCall
     ;
 
 methodCall
-    : new? identifier ('.' identifier)* '(' argumentList ')'
+    : new? advancedIdentifier '(' argumentList ')'
     ;
 
 argumentList
