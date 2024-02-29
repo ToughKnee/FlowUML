@@ -37,7 +37,7 @@ namespace Infrastructure.Mediators
             {
                 var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
                 methodInstance.SolveTypesOfAliases();
-                if (j == MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
+                if (j >= MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
                 {
                     j = -1;
                     maxTries++;
@@ -216,6 +216,7 @@ namespace Infrastructure.Mediators
                 {
                     linkedClassOrParameterInstance.kind = KindOfInstance.IsInheritedOrInThisClass;
                     instanceKind = KindOfInstance.IsInheritedOrInThisClass;
+                    linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
                 }
 
                 // If this iteration covers the properties then add the instance to the parameters list of the MethodInstance to be created

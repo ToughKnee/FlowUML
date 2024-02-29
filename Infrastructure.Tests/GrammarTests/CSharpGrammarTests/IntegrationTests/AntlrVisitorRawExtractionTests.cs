@@ -21,7 +21,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
        {
            InheritanceDictionaryManager.instance.CleanInheritanceDictionary();
            MethodDictionaryManager.instance.CleanMethodDictionary();
-            ClassEntityManager.instance.CleanClassEntitiesDictionary();
+           ClassEntityManager.instance.CleanClassEntitiesDictionary();
        }
 
        public static IEnumerable<object[]> TextFile1Expectations

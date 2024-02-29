@@ -20,6 +20,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
         {
             InheritanceDictionaryManager.instance.CleanInheritanceDictionary();
             MethodDictionaryManager.instance.CleanMethodDictionary();
+            ClassEntityManager.instance.CleanClassEntitiesDictionary();
         }
 
         public void AssertInstanceAssignment(KeyValuePair<AbstractInstance, AbstractInstance> instanceAssignment, string? keyType, string keyIdentifier
@@ -44,11 +45,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
             return values.ToList();
         }
 
-        public void AssertInstanceType(KeyValuePair<string, MethodInstance> methodInstance, string? keyType, string keyIdentifier
-            , string? valueType, string? valueIdentifier, List<string> keyInheritanceNames, List<string>? valueInheritanceNames)
-        {
-        }
-
         [Fact]
         public void MediatorCreatedAllInstances_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
         {
@@ -62,7 +58,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
 
             // Assert
             var classStrings = new List<string>();
-            foreach(var classEntity in ClassEntityManager.instance.classEntities.Values)
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
             {
                 classStrings.Add(classEntity.ToString());
             }
@@ -162,7 +158,7 @@ Inherited Classes:
             // TODO: Complete the other Callsites from the other Methods, not just TeamsUseCase
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
             ClassEntityManager.instance.classEntities.Count.Should().Be(10);
-            
+
             // Checking the callsites of TeamsUseCase
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
             var TeamsUseCase_AddPlayerToTeamAsync_Method = classEntitiesList[2].methods[0];
@@ -206,6 +202,171 @@ Inherited Classes:
             var UserNameConstructor = classEntitiesList[6].methods[0];
             UserNameCreateMethod.callsites[0].calledMethod.Should().Be(UserNameConstructor);
 
+        }
+
+        [Fact]
+        public void MediatorCreatedAllInstances_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully2()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile7.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            classStrings[0].Should().Be(@"Name: Program
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.Main(): void
+Inherited Classes:
+");
+            classStrings[1].Should().Be(@"Name: ClassA
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.MethodA(): void
+  MyNamespace.AnotherMethodA(): void
+Inherited Classes:
+");
+            classStrings[2].Should().Be(@"Name: ClassB
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.MethodB(): void
+  MyNamespace.AnotherMethodB(): void
+Inherited Classes:
+");
+
+            // TODO: Complete the other Callsites from the other Methods, not just TeamsUseCase
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            ClassEntityManager.instance.classEntities.Count.Should().Be(3);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Checking the callsites of Main Method from the Program class
+            var Program_Main = classEntitiesList[0].methods[0];
+            Program_Main.callsites.Count.Should().Be(2);
+
+            var MethodA = classEntitiesList[1].methods[0];
+            Program_Main.callsites[0].calledMethod.Should().Be(MethodA);
+
+            var MethodB = classEntitiesList[2].methods[0];
+            Program_Main.callsites[1].calledMethod.Should().Be(MethodB);
+
+            // Checking the callsites of the ClassA class
+            var ClassA_MethodA = classEntitiesList[1].methods[0];
+            ClassA_MethodA.callsites.Count.Should().Be(3);
+
+            ClassA_MethodA.callsites[0].calledMethod.Should().Be(MethodB);
+
+            var AnotherMethodA = classEntitiesList[1].methods[1];
+            ClassA_MethodA.callsites[1].calledMethod.Should().Be(AnotherMethodA);
+
+            var AnotherMethodB = classEntitiesList[2].methods[1];
+            ClassA_MethodA.callsites[2].calledMethod.Should().Be(AnotherMethodB);
+
+            // Checking the callsites of the ClassB class
+            var ClassB_MethodB = classEntitiesList[2].methods[0];
+            ClassB_MethodB.callsites.Count.Should().Be(2);
+
+            ClassB_MethodB.callsites[0].calledMethod.Should().Be(MethodA);
+
+            ClassB_MethodB.callsites[1].calledMethod.Should().Be(AnotherMethodB);
+        }
+        [Fact]
+        public void MediatorCreatedAllInstances_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully3()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile8.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            classStrings[0].Should().Be(@"Name: Program
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.Main(): void
+Inherited Classes:
+");
+            classStrings[1].Should().Be(@"Name: BaseClass
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.CommonMethod(): void
+Inherited Classes:
+");
+            classStrings[2].Should().Be(@"Name: DerivedClassA
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.MethodA(): void
+  MyNamespace.AnotherMethodA(): void
+Inherited Classes:
+  BaseClass
+");
+            classStrings[3].Should().Be(@"Name: DerivedClassB
+Namespace: MyNamespace
+Properties:
+Methods:
+  MyNamespace.MethodB(): void
+  MyNamespace.AnotherMethodB(): void
+Inherited Classes:
+  BaseClass
+");
+
+            // TODO: Complete the other Callsites from the other Methods, not just TeamsUseCase
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            ClassEntityManager.instance.classEntities.Count.Should().Be(4);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Checking the callsites of the Program class
+            var Program_Main = classEntitiesList[0].methods[0];
+            Program_Main.callsites.Count.Should().Be(4);
+
+            var MethodA = classEntitiesList[2].methods[0];
+            Program_Main.callsites[2].calledMethod.Should().Be(MethodA);
+
+            var MethodB = classEntitiesList[3].methods[0];
+            Program_Main.callsites[3].calledMethod.Should().Be(MethodB);
+
+            // Checking the callsites of the DervivedClassA class
+            var DerivedClassA_MethodA = classEntitiesList[2].methods[0];
+            DerivedClassA_MethodA.callsites.Count.Should().Be(2);
+
+            var CommonMethod = classEntitiesList[1].methods[0];
+            DerivedClassA_MethodA.callsites[0].calledMethod.Should().Be(CommonMethod);
+
+            var AnotherMethodA = classEntitiesList[2].methods[1];
+            DerivedClassA_MethodA.callsites[1].calledMethod.Should().Be(AnotherMethodA);
+
+            // Checking the callsites of the DerivedClassB class
+            var ClassB_MethodB = classEntitiesList[3].methods[0];
+            ClassB_MethodB.callsites.Count.Should().Be(2);
+
+            ClassB_MethodB.callsites[0].calledMethod.Should().Be(CommonMethod);
+
+            var AnotherMethodB = classEntitiesList[3].methods[1];
+            ClassB_MethodB.callsites[1].calledMethod.Should().Be(AnotherMethodB);
         }
     }
 }

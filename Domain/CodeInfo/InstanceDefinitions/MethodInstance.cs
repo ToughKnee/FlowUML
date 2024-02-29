@@ -213,6 +213,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
                     // And we check if there is a constructor Method tht matches this MethodINstance in the methodDictionary
                     if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod))
                         HandleActualMethod(actualMethod);
+                    // If the constructor method wasn't found, and if the parameter list has 0 elements, then this methodInstance is the default constructor and we must set the refType
+                    else if(this.aliasParameters.Count == 0)
+                    {
+                        this.refType.data = this.aliasClassName.type;
+                    }
                 }
 
             }

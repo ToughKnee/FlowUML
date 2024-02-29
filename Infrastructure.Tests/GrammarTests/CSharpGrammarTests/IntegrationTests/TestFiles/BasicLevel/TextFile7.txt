@@ -1,0 +1,40 @@
+﻿using System;
+
+namespace MyNamespace
+{
+    class Program
+    {
+        static void Main()
+        {
+            ClassA.MethodA();
+            ClassB.MethodB();
+        }
+    }
+
+    class ClassA
+    {
+        public static void MethodA()
+        {
+            ClassB.MethodB();  
+            AnotherMethodA();
+            ClassB.AnotherMethodB();
+        }
+
+        private static void AnotherMethodA()
+        {
+        }
+    }
+
+    class ClassB
+    {
+        public static void MethodB()
+        {
+            ClassA.MethodA();  
+            ClassB.AnotherMethodB();
+        }
+
+        private static void AnotherMethodB()
+        {
+        }
+    }
+}
