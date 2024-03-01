@@ -68,7 +68,7 @@ Namespace: CleanArchitectureWorkshop.Application.UseCases
 Properties:
   grandParentProperty: string
 Methods:
-  CleanArchitectureWorkshop.Application.UseCases.GetEntityName(): string
+  GetEntityName(): string
 Inherited Classes:
 ");
             classStrings[1].Should().Be(@"Name: ITeamsUseCase
@@ -76,7 +76,7 @@ Namespace: CleanArchitectureWorkshop.Application.UseCases
 Properties:
   parentProperty: MyProperty
 Methods:
-  CleanArchitectureWorkshop.Application.UseCases.ToString(): string
+  ToString(): string
 Inherited Classes:
   Entity
 ");
@@ -85,7 +85,7 @@ Namespace: CleanArchitectureWorkshop.Application.UseCases
 Properties:
   _teamsRepository: ITeamsRepository
 Methods:
-  CleanArchitectureWorkshop.Application.UseCases.AddPlayerToTeam(string, string): Team
+  AddPlayerToTeam(string, string): Team
 Inherited Classes:
   Entity
   ITeamsUseCase
@@ -95,14 +95,14 @@ Namespace: CleanArchitectureWorkshop.Application.UseCases
 Properties:
   _printer: Printer
 Methods:
-  CleanArchitectureWorkshop.Application.UseCases.GetPrinter(): Printer
+  GetPrinter(): Printer
 Inherited Classes:
 ");
             classStrings[4].Should().Be(@"Name: Printer
 Namespace: CleanArchitectureWorkshop.Application.UseCases
 Properties:
 Methods:
-  CleanArchitectureWorkshop.Application.UseCases.PrintResults(): Printer
+  PrintResults(): Printer
 Inherited Classes:
 ");
             classStrings[5].Should().Be(@"Name: TeamName
@@ -110,8 +110,8 @@ Namespace: CleanArchitectureWorkshop.Domain.TeamAggregate
 Properties:
   Value: string
 Methods:
-  CleanArchitectureWorkshop.Domain.TeamAggregate.TeamName(string): TeamName
-  CleanArchitectureWorkshop.Domain.TeamAggregate.Create(string): TeamName
+  TeamName(string): TeamName
+  Create(string): TeamName
 Inherited Classes:
 ");
             classStrings[6].Should().Be(@"Name: UserName
@@ -119,8 +119,8 @@ Namespace: CleanArchitectureWorkshop.Domain.TeamAggregate
 Properties:
   Value: string
 Methods:
-  CleanArchitectureWorkshop.Domain.TeamAggregate.UserName(string): UserName
-  CleanArchitectureWorkshop.Domain.TeamAggregate.Create(string): UserName
+  UserName(string): UserName
+  Create(string): UserName
 Inherited Classes:
 ");
             classStrings[7].Should().Be(@"Name: Team
@@ -128,8 +128,8 @@ Namespace: CleanArchitectureWorkshop.Domain.TeamAggregate
 Properties:
   _players: List<Player>
 Methods:
-  CleanArchitectureWorkshop.Domain.TeamAggregate.Team(TeamName): Team
-  CleanArchitectureWorkshop.Domain.TeamAggregate.AddPlayer(Player): void
+  Team(TeamName): Team
+  AddPlayer(Player): void
 Inherited Classes:
   AggregateRoot<TeamName>
 ");
@@ -138,9 +138,9 @@ Namespace: CleanArchitectureWorkshop.Domain.TeamAggregate
 Properties:
   Team: Team
 Methods:
-  CleanArchitectureWorkshop.Domain.TeamAggregate.Player(UserName): Player
-  CleanArchitectureWorkshop.Domain.TeamAggregate.Player(): Player
-  CleanArchitectureWorkshop.Domain.TeamAggregate.AssignTeam(Team): void
+  Player(UserName): Player
+  Player(): Player
+  AssignTeam(Team): void
 Inherited Classes:
 ");
             classStrings[9].Should().Be(@"Name: TeamsRepository
@@ -148,60 +148,52 @@ Namespace: CleanArchitectureWorkshop.Infrastructure.Repositories
 Properties:
   _dbContext: ApplicationDbContext
 Methods:
-  CleanArchitectureWorkshop.Infrastructure.Repositories.TeamsRepository(ApplicationDbContext): TeamsRepository
-  CleanArchitectureWorkshop.Infrastructure.Repositories.GetById(TeamName): Team
-  CleanArchitectureWorkshop.Infrastructure.Repositories.UpdateTeam(Team): void
+  TeamsRepository(ApplicationDbContext): TeamsRepository
+  GetById(TeamName): Team
+  UpdateTeam(Team): void
 Inherited Classes:
   ITeamsRepository
 ");
 
-            // TODO: Complete the other Callsites from the other Methods, not just TeamsUseCase
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
             ClassEntityManager.instance.classEntities.Count.Should().Be(10);
 
-            // Checking the callsites of TeamsUseCase
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
             var TeamsUseCase_AddPlayerToTeamAsync_Method = classEntitiesList[2].methods[0];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites.Count.Should().Be(8);
             var TeamNameCreateMethod = classEntitiesList[5].methods[1];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[0].calledMethod.Should().Be(TeamNameCreateMethod);
-
             var ITeamsRepositoryGetByIdAsyncMethod = classEntitiesList[9].methods[1];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[1].calledMethod.Should().Be(ITeamsRepositoryGetByIdAsyncMethod);
-
             var UserNameCreateMethod = classEntitiesList[6].methods[1];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[2].calledMethod.Should().Be(UserNameCreateMethod);
-
             var PlayerConstructorMethod = classEntitiesList[8].methods[0];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[3].calledMethod.Should().Be(PlayerConstructorMethod);
-
             var TeamAddPlayerMethod = classEntitiesList[7].methods[1];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[4].calledMethod.Should().Be(TeamAddPlayerMethod);
-
             var ITeamsRepositoryUpdateTeamAsyncMethod = classEntitiesList[9].methods[2];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[5].calledMethod.Should().Be(ITeamsRepositoryUpdateTeamAsyncMethod);
-
             var MyPropertyGetPrinterMethod = classEntitiesList[3].methods[0];
-            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[6].calledMethod.Should().Be(MyPropertyGetPrinterMethod);
-
             var PrinetPrintResultsMethod = classEntitiesList[4].methods[0];
+            var ITeamsUseCase_ToString_Method = classEntitiesList[1].methods[0];
+            var GetEntityNameMethod = classEntitiesList[0].methods[0];
+            var TemaName_Create_Method = classEntitiesList[5].methods[0];
+            var TeamNameConstructor = classEntitiesList[5].methods[0];
+            var UserName_Create_Method = classEntitiesList[6].methods[0];
+            var UserNameConstructor = classEntitiesList[6].methods[0];
+
+            // Checking the callsites of TeamsUseCase
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites.Count.Should().Be(8);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[0].calledMethod.Should().Be(TeamNameCreateMethod);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[1].calledMethod.Should().Be(ITeamsRepositoryGetByIdAsyncMethod);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[2].calledMethod.Should().Be(UserNameCreateMethod);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[3].calledMethod.Should().Be(PlayerConstructorMethod);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[4].calledMethod.Should().Be(TeamAddPlayerMethod);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[5].calledMethod.Should().Be(ITeamsRepositoryUpdateTeamAsyncMethod);
+            TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[6].calledMethod.Should().Be(MyPropertyGetPrinterMethod);
             TeamsUseCase_AddPlayerToTeamAsync_Method.callsites[7].calledMethod.Should().Be(PrinetPrintResultsMethod);
 
             // Checking the callsites of Entity
-            var ITeamsUseCase_ToString_Method = classEntitiesList[1].methods[0];
-            var GetEntityNameMethod = classEntitiesList[0].methods[0];
             ITeamsUseCase_ToString_Method.callsites[0].calledMethod.Should().Be(GetEntityNameMethod);
 
             // Checking the callsites of TeamName
-            var TemaName_Create_Method = classEntitiesList[5].methods[0];
-            var TeamNameConstructor = classEntitiesList[5].methods[0];
             TeamNameCreateMethod.callsites[0].calledMethod.Should().Be(TeamNameConstructor);
 
             // Checking the callsites of UserName
-            var UserName_Create_Method = classEntitiesList[6].methods[0];
-            var UserNameConstructor = classEntitiesList[6].methods[0];
             UserNameCreateMethod.callsites[0].calledMethod.Should().Be(UserNameConstructor);
-
         }
 
         [Fact]
@@ -226,60 +218,52 @@ Inherited Classes:
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.Main(): void
+  Main(): void
 Inherited Classes:
 ");
             classStrings[1].Should().Be(@"Name: ClassA
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.MethodA(): void
-  MyNamespace.AnotherMethodA(): void
+  MethodA(): void
+  AnotherMethodA(): void
 Inherited Classes:
 ");
             classStrings[2].Should().Be(@"Name: ClassB
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.MethodB(): void
-  MyNamespace.AnotherMethodB(): void
+  MethodB(): void
+  AnotherMethodB(): void
 Inherited Classes:
 ");
 
-            // TODO: Complete the other Callsites from the other Methods, not just TeamsUseCase
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
             ClassEntityManager.instance.classEntities.Count.Should().Be(3);
 
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+            var Program_Main = classEntitiesList[0].methods[0];
+            var MethodA = classEntitiesList[1].methods[0];
+            var MethodB = classEntitiesList[2].methods[0];
+            var ClassA_MethodA = classEntitiesList[1].methods[0];
+            var AnotherMethodA = classEntitiesList[1].methods[1];
+            var AnotherMethodB = classEntitiesList[2].methods[1];
+            var ClassB_MethodB = classEntitiesList[2].methods[0];
 
             // Checking the callsites of Main Method from the Program class
-            var Program_Main = classEntitiesList[0].methods[0];
             Program_Main.callsites.Count.Should().Be(2);
-
-            var MethodA = classEntitiesList[1].methods[0];
             Program_Main.callsites[0].calledMethod.Should().Be(MethodA);
-
-            var MethodB = classEntitiesList[2].methods[0];
             Program_Main.callsites[1].calledMethod.Should().Be(MethodB);
 
             // Checking the callsites of the ClassA class
-            var ClassA_MethodA = classEntitiesList[1].methods[0];
             ClassA_MethodA.callsites.Count.Should().Be(3);
-
             ClassA_MethodA.callsites[0].calledMethod.Should().Be(MethodB);
-
-            var AnotherMethodA = classEntitiesList[1].methods[1];
             ClassA_MethodA.callsites[1].calledMethod.Should().Be(AnotherMethodA);
-
-            var AnotherMethodB = classEntitiesList[2].methods[1];
             ClassA_MethodA.callsites[2].calledMethod.Should().Be(AnotherMethodB);
 
             // Checking the callsites of the ClassB class
-            var ClassB_MethodB = classEntitiesList[2].methods[0];
             ClassB_MethodB.callsites.Count.Should().Be(2);
-
             ClassB_MethodB.callsites[0].calledMethod.Should().Be(MethodA);
-
             ClassB_MethodB.callsites[1].calledMethod.Should().Be(AnotherMethodB);
         }
         [Fact]
@@ -304,22 +288,22 @@ Inherited Classes:
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.Main(): void
+  Main(): void
 Inherited Classes:
 ");
             classStrings[1].Should().Be(@"Name: BaseClass
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.CommonMethod(): void
+  CommonMethod(): void
 Inherited Classes:
 ");
             classStrings[2].Should().Be(@"Name: DerivedClassA
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.MethodA(): void
-  MyNamespace.AnotherMethodA(): void
+  MethodA(): void
+  AnotherMethodA(): void
 Inherited Classes:
   BaseClass
 ");
@@ -327,46 +311,183 @@ Inherited Classes:
 Namespace: MyNamespace
 Properties:
 Methods:
-  MyNamespace.MethodB(): void
-  MyNamespace.AnotherMethodB(): void
+  MethodB(): void
+  AnotherMethodB(): void
 Inherited Classes:
   BaseClass
 ");
 
-            // TODO: Complete the other Callsites from the other Methods, not just TeamsUseCase
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            ClassEntityManager.instance.classEntities.Count.Should().Be(4);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+            var Program_Main = classEntitiesList[0].methods[0];
+            var MethodA = classEntitiesList[2].methods[0];
+            var MethodB = classEntitiesList[3].methods[0];
+            var DerivedClassA_MethodA = classEntitiesList[2].methods[0];
+            var CommonMethod = classEntitiesList[1].methods[0];
+            var AnotherMethodA = classEntitiesList[2].methods[1];
+            var ClassB_MethodB = classEntitiesList[3].methods[0];
+            var AnotherMethodB = classEntitiesList[3].methods[1];
+
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(4);
+            Program_Main.callsites[2].calledMethod.Should().Be(MethodA);
+            Program_Main.callsites[3].calledMethod.Should().Be(MethodB);
+
+            // Checking the callsites of the DervivedClassA class
+            DerivedClassA_MethodA.callsites.Count.Should().Be(2);
+            DerivedClassA_MethodA.callsites[0].calledMethod.Should().Be(CommonMethod);
+            DerivedClassA_MethodA.callsites[1].calledMethod.Should().Be(AnotherMethodA);
+
+            // Checking the callsites of the DerivedClassB class
+            ClassB_MethodB.callsites.Count.Should().Be(2);
+            ClassB_MethodB.callsites[0].calledMethod.Should().Be(CommonMethod);
+            ClassB_MethodB.callsites[1].calledMethod.Should().Be(AnotherMethodB);
+        }
+        [Fact]
+        public void MediatorCreatedComplexInstancesWithNestedMethodCalls_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\AdvTextFile1.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            //            classStrings[0].Should().Be(@"Name: Program
+            //Namespace: MyNamespace
+            //Properties:
+            //Methods:
+            //  Main(): void
+            //Inherited Classes:
+            //");
+            //            classStrings[1].Should().Be(@"Name: BaseClass
+            //Namespace: MyNamespace
+            //Properties:
+            //Methods:
+            //  CommonMethod(): void
+            //Inherited Classes:
+            //");
+            //            classStrings[2].Should().Be(@"Name: DerivedClassA
+            //Namespace: MyNamespace
+            //Properties:
+            //Methods:
+            //  MethodA(): void
+            //  AnotherMethodA(): void
+            //Inherited Classes:
+            //  BaseClass
+            //");
+            //            classStrings[3].Should().Be(@"Name: DerivedClassB
+            //Namespace: MyNamespace
+            //Properties:
+            //Methods:
+            //  MethodB(): void
+            //  AnotherMethodB(): void
+            //Inherited Classes:
+            //  BaseClass
+            //");
+
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
             ClassEntityManager.instance.classEntities.Count.Should().Be(4);
 
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
 
-            // Checking the callsites of the Program class
+            // Creating the references to the methods to be checked
             var Program_Main = classEntitiesList[0].methods[0];
-            Program_Main.callsites.Count.Should().Be(4);
+            var FunctionCall = classEntitiesList[2].methods[0];
+            var OtherFunctionCall = classEntitiesList[3].methods[0];
+            var ReturnName = classEntitiesList[1].methods[1];
+            // The "Conatins" method WON'T be defined, but the method "ReturnName" WILL be defined and appear in the callsites inside Class1
+            var FunctionCall2 = classEntitiesList[2].methods[1];
+            var Method1 = classEntitiesList[2].methods[0];
 
-            var MethodA = classEntitiesList[2].methods[0];
-            Program_Main.callsites[2].calledMethod.Should().Be(MethodA);
-
-            var MethodB = classEntitiesList[3].methods[0];
-            Program_Main.callsites[3].calledMethod.Should().Be(MethodB);
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(2);
+            Program_Main.callsites[0].calledMethod.Should().Be(FunctionCall);
+            Program_Main.callsites[1].calledMethod.Should().Be(OtherFunctionCall);
 
             // Checking the callsites of the DervivedClassA class
-            var DerivedClassA_MethodA = classEntitiesList[2].methods[0];
-            DerivedClassA_MethodA.callsites.Count.Should().Be(2);
-
-            var CommonMethod = classEntitiesList[1].methods[0];
-            DerivedClassA_MethodA.callsites[0].calledMethod.Should().Be(CommonMethod);
-
-            var AnotherMethodA = classEntitiesList[2].methods[1];
-            DerivedClassA_MethodA.callsites[1].calledMethod.Should().Be(AnotherMethodA);
+            Method1.callsites.Count.Should().Be(1);
+            Method1.callsites[0].calledMethod.Should().Be(ReturnName);
 
             // Checking the callsites of the DerivedClassB class
-            var ClassB_MethodB = classEntitiesList[3].methods[0];
-            ClassB_MethodB.callsites.Count.Should().Be(2);
+            OtherFunctionCall.callsites.Count.Should().Be(2);
+            OtherFunctionCall.callsites[0].calledMethod.Should().Be(FunctionCall2);
+            OtherFunctionCall.callsites[1].calledMethod.Should().Be(FunctionCall);
+        }
+        [Fact]
+        public void MediatorCreatedComplexInstancesWithSeveralPropertiesCalls_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\AdvTextFile2.txt", true);
 
-            ClassB_MethodB.callsites[0].calledMethod.Should().Be(CommonMethod);
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
 
-            var AnotherMethodB = classEntitiesList[3].methods[1];
-            ClassB_MethodB.callsites[1].calledMethod.Should().Be(AnotherMethodB);
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            classStrings[0].Should().Be(@"Name: Program
+Namespace: MyNamespace
+Properties:
+Methods:
+  Main(): void
+Inherited Classes:
+");
+            classStrings[1].Should().Be(@"Name: Class1
+Namespace: MyNamespace
+Properties:
+  class1Prop1: Class2
+Methods:
+  Method1(): void
+Inherited Classes:
+");
+            classStrings[2].Should().Be(@"Name: Class2
+Namespace: MyNamespace
+Properties:
+  class2Propr1: Class3
+Methods:
+Inherited Classes:
+");
+            classStrings[3].Should().Be(@"Name: Class3
+Namespace: MyNamespace
+Properties:
+  class3Propr1: Class1
+Methods:
+  FunctionCall(): Class3
+Inherited Classes:
+");
+
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            ClassEntityManager.instance.classEntities.Count.Should().Be(4);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Creating the references to the methods to be checked
+            var Program_Main = classEntitiesList[0].methods[0];
+            var Method1 = classEntitiesList[1].methods[0];
+            var FunctionCall = classEntitiesList[3].methods[0];
+
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(3);
+            Program_Main.callsites[0].calledMethod.Should().Be(null);
+            Program_Main.callsites[1].calledMethod.Should().Be(FunctionCall);
+            Program_Main.callsites[2].calledMethod.Should().Be(Method1);
         }
     }
 }

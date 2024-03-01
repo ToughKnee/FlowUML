@@ -29,6 +29,7 @@ namespace Infrastructure.Mediators
         /// able to dissambiguate between classes with the same name
         /// </summary>
         private List<string> _usedNamespaces = new List<string>();
+        private readonly string paramIdentifier = "<p>";
 
         public void DefineUndefinedMethodInstances()
         {
@@ -94,7 +95,8 @@ namespace Infrastructure.Mediators
             var parameterInstance = new Instance(identifier, type);
 
             // Add the parameter Instance with its identifier inside this method to link with future instances
-            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(identifier, parameterInstance);
+            // This also adds a string to the identfier to prevent ambiguity when there are porperties with the same identifier
+            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(paramIdentifier + identifier, parameterInstance);
         }
         public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, List<MethodCallData> methodCallAssigner)
         {
@@ -150,7 +152,15 @@ namespace Infrastructure.Mediators
 
         public void ReceiveMethodCall(List<MethodCallData> methodCallData)
         {
-            GenerateMethodInstance(methodCallData[0]);
+            if(methodCallData.Count <= 1)
+            {
+                GenerateMethodInstance(methodCallData[0]);
+            }
+            // If the data received is bigger than 1, then we have nested methodCalls and we must link the returnType of the first element as the caller class of the second element, and so forth
+            else
+            {
+
+            }
         }
 
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
@@ -164,7 +174,24 @@ namespace Infrastructure.Mediators
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
             AbstractInstance? linkedClassOrParameterInstance = null;
             List<AbstractInstance> linkedParametersNameInstance = new();
-            KindOfInstance instanceKind = KindOfInstance.Normal;
+            KindOfInstance methodInstanceKind = KindOfInstance.Normal;
+
+            // If the calledClassName has ".", then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
+            var methodInstancePropertyChain = new List<AbstractInstance>();
+            if (calledClassName != null && calledClassName.Contains("."))
+            {
+                var methodInstancePropertyChainString = calledClassName.Split(".");
+                calledClassName = methodInstancePropertyChainString[0];
+                foreach(string componentString in methodInstancePropertyChainString)
+                {
+                    if(componentString != calledClassName)
+                    {
+                        var component = new Instance(componentString);
+                        component.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+                        methodInstancePropertyChain.Add(component);
+                    }
+                }
+            }
 
             // Adding at the end the className instance
             if (calledParameters is null)
@@ -190,7 +217,7 @@ namespace Infrastructure.Mediators
                 if (i == calledParametersCount2 - 1 && isConstructor)
                 {
                     linkedClassOrParameterInstance.kind = KindOfInstance.IsConstructor;
-                    instanceKind = KindOfInstance.IsConstructor;
+                    methodInstanceKind = KindOfInstance.IsConstructor;
                     break;
                 }
                 // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
@@ -198,13 +225,18 @@ namespace Infrastructure.Mediators
                 {
                     linkedClassOrParameterInstance = knownClassInstance;
                 }
+                // Check again but adding the parameter identifier if this instance was a parameter
+                else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(paramIdentifier + currentStringInstance, out AbstractInstance knownClassInstanceParam))
+                {
+                    linkedClassOrParameterInstance = knownClassInstanceParam;
+                }
                 // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
                 else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
                 {
-                    linkedClassOrParameterInstance.kind = KindOfInstance.HasClassNameStaticOrParentProperty;
+                    linkedClassOrParameterInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
                     // We set the inheritedClasses of the component to the inheritance of this current class we are analyzing since an inherited class may contain this component as its property
                     linkedClassOrParameterInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
-                    instanceKind = KindOfInstance.HasClassNameStaticOrParentProperty;
+                    methodInstanceKind = KindOfInstance.HasClassNameStatic;
                 }
                 // If this is not empty and is the "this" and isn't the "base" keyword, then this component is of type of the class we are analyzing
                 else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance == "this")
@@ -215,7 +247,7 @@ namespace Infrastructure.Mediators
                 else if (String.IsNullOrEmpty(currentStringInstance) || currentStringInstance == "this" || currentStringInstance == "base")
                 {
                     linkedClassOrParameterInstance.kind = KindOfInstance.IsInheritedOrInThisClass;
-                    instanceKind = KindOfInstance.IsInheritedOrInThisClass;
+                    methodInstanceKind = KindOfInstance.IsInheritedOrInThisClass;
                     linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
                 }
 
@@ -235,12 +267,9 @@ namespace Infrastructure.Mediators
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, calledMethodName, linkedParametersNameInstance, callsite, instanceKind, _usedNamespaces);
+            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstancePropertyChain, calledMethodName, linkedParametersNameInstance, callsite, methodInstanceKind, _usedNamespaces);
             // If this methodCall is inherited or in this class, then we set the inheritedClass of this component since it needs the inheritance of the current class to know where this came from
-            if (instanceKind == KindOfInstance.IsInheritedOrInThisClass)
-            {
-                methodInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
-            }
+            methodInstance.SetInheritance(InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot]);
          
             return methodInstance;
         }

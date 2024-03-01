@@ -1,0 +1,38 @@
+using System;
+
+namespace MyNamespace
+{
+    public class Program
+    {
+        static void Main()
+        {
+            Class1 instance1 = new Class1();
+            instance1.class1Prop1.class2Propr1.FunctionCall();
+            instance1.class1Prop1.class2Propr1.class3Propr1.Method1();
+        }
+    }
+
+    public class Class1
+    {
+        public Class2 class1Prop1;
+
+        public void Method1()
+        {
+        }
+    }
+
+    public class Class2
+    {
+        public Class3 class2Propr1;
+    }
+
+    public class Class3
+    {
+        public Class1 class3Propr1;
+
+        public Class3 FunctionCall()
+        {
+            return new Class3();
+        }
+    }
+}

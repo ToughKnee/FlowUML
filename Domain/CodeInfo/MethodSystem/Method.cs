@@ -112,7 +112,7 @@ namespace Domain.CodeInfo.MethodSystem
 
         public override string ToString()
         {
-            return $"{belongingNamespace}.{name}({string.Join(", ", parameters.Select(p => $"{p}"))}): {returnType}";
+            return $"{name}({string.Join(", ", parameters.Select(p => $"{p}"))}): {returnType}";
         }
     }
 }

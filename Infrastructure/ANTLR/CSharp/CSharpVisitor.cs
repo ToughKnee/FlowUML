@@ -417,6 +417,10 @@ namespace Infrastructure.Antlr
             string completeFunctionString = context.GetText();
             completeFunctionString = completeFunctionString.Replace("new", "");
             var lastPeriodIndex = completeFunctionString.LastIndexOf('.');
+            if (completeFunctionString.LastIndexOf('(') < lastPeriodIndex)
+            {
+                lastPeriodIndex = -1;
+            }
             Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
             var methodName = completeFunctionString.Substring(
                 (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)

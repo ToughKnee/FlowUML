@@ -16,8 +16,10 @@ namespace Domain.CodeInfo.InstanceDefinitions
         IsConstructor,
         // This too
         IsInheritedOrInThisClass,
-        // This case may be hard, since if the className was not a Class Entity(the method was not static), then the className is a property from a inherited class and we must use a PropertyDictionary to get the type of this property
-        HasClassNameStaticOrParentProperty
+        // This too
+        HasClassNameStatic,
+        // This case is special because the className is a property from an inherited class and we must use check the properties from the ClassEntities to get the type of this property
+        IsPropertyFromInheritanceOrInThisClass
     }
 
     /// <summary>
