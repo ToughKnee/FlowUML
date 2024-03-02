@@ -6,7 +6,7 @@ namespace MyNamespace
     {
         static void Main()
         {
-            Class1 instance1 = new Class1();
+            Class1 instance1 = Class1();
             instance1.Prop1.FunctionCall().OtherFunctionCall();
         }
     }
@@ -31,7 +31,6 @@ namespace MyNamespace
 
         public Class3 FunctionCall()
         {
-            return new Class3();
         }
         public Class1 FunctionCall2(Class3 pClass, string data)
         {
@@ -42,7 +41,7 @@ namespace MyNamespace
     {
         public void OtherFunctionCall()
         {
-            var myClass = new Class2();
+            var myClass = Class2();
             myClass.FunctionCall2(myClass.class1Data.Prop1.FunctionCall(), myClass.data).Prop1.FunctionCall();
         }
     }
