@@ -18,11 +18,14 @@ namespace Infrastructure.Mediators
     {
         public string? calledClassName { get; init; }
         public string calledMethodName { get; init; }
-        public List<string>? calledParameters { get; init; }
+        /// <summary>
+        /// This list contains objects because it will hold string and MethodCallData types
+        /// </summary>
+        public List<object>? calledParameters { get; init; }
         public MethodBuilder linkedMethodBuilder { get; init; }
         public bool isConstructor { get; init; }
 
-        public MethodCallData(string calledClassName, string calledMethodName, List<string>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor)
+        public MethodCallData(string calledClassName, string calledMethodName, List<object>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor)
         {
             this.calledClassName = calledClassName;
             this.calledMethodName = calledMethodName;
@@ -31,7 +34,7 @@ namespace Infrastructure.Mediators
             this.isConstructor = isConstructor;
         }
 
-        internal void Deconstruct(out string calledClassName, out string calledMethodName, out List<string> calledParameters, out MethodBuilder linkedMethodBuilder, out bool isConstructor)
+        internal void Deconstruct(out string calledClassName, out string calledMethodName, out List<object> calledParameters, out MethodBuilder linkedMethodBuilder, out bool isConstructor)
         {
             calledClassName = this.calledClassName;
             calledMethodName = this.calledMethodName;

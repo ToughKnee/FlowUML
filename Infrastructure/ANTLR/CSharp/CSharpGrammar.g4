@@ -223,11 +223,12 @@ returnExpression
 
 // Something that returns something
 expression
-    : AWAIT? expressionMethodCall
+    : advancedIdentifier
+    | AWAIT? expressionMethodCall
     ;
 
 expressionMethodCall
-    : new? (methodCall | identifier) ('.' methodCall | '.' identifier)*
+    : (methodCall | identifier) ('.' methodCall | '.' identifier)*
     | 
     ;
 

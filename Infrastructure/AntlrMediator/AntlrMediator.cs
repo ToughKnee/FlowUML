@@ -7,6 +7,8 @@ using System;
 using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
+using static Antlr4.Runtime.Atn.SemanticContext;
 
 namespace Infrastructure.Mediators
 {
@@ -159,6 +161,23 @@ namespace Infrastructure.Mediators
             // If the data received is bigger than 1, then we have nested methodCalls and we must link the returnType of the first element as the caller class of the second element, and so forth
             else
             {
+                AbstractInstance methodCallCaller = null;
+                MethodInstance currentMethodInstance = null;
+                // Traverse the method calls, generate the methodInstnace, and link the method calls appropiately
+                for (int i = 0; i < methodCallData.Count; i++)
+                {
+                    // For the methodCalls that are after the first methodCall, then we link the caller
+                    if (i > 0)
+                    {
+                        currentMethodInstance = GenerateMethodInstance(methodCallData[i], methodCallCaller);
+                    }
+                    else
+                    {
+                        currentMethodInstance = GenerateMethodInstance(methodCallData[i]);
+                    }
+                    methodCallCaller = currentMethodInstance;
+
+                }
 
             }
         }
@@ -168,22 +187,40 @@ namespace Infrastructure.Mediators
             _usedNamespaces = (usedNamespaces is null) ? (_usedNamespaces) : (usedNamespaces);
         }
  
-        public MethodInstance GenerateMethodInstance(MethodCallData callData)
+        /// <summary>
+        /// Create a MethodInstance according to the MethodCallData
+        /// If the MethodInstance to be created is part of a MethodCallChain, then we can
+        /// link the respective MethodInstance caller with the called MethodInstance(which 
+        /// is the MehtodInstance to be created)
+        /// </summary>
+        /// <param name="callData">The MethodCall data to be used to generate the MethodInstnace</param>
+        /// <param name="linkedMethodCallCaller">The MethodInstance that has called the 
+        /// MethodInstance that is going to be generated</param>
+        /// <returns></returns>
+        public MethodInstance GenerateMethodInstance(MethodCallData callData, AbstractInstance? linkedMethodCallCaller = null)
         {
             var (calledClassName, calledMethodName, calledParameters, linkedMethodBuilder, isConstructor) = callData;
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
-            AbstractInstance? linkedClassOrParameterInstance = null;
+
+            // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
+            AbstractInstance? linkedClassOrParameterInstance = linkedMethodCallCaller;
             List<AbstractInstance> linkedParametersNameInstance = new();
             KindOfInstance methodInstanceKind = KindOfInstance.Normal;
-
-            // If the calledClassName has ".", then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
             var methodInstancePropertyChain = new List<AbstractInstance>();
-            if (calledClassName != null && calledClassName.Contains("."))
+
+            // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
+            if ((calledClassName != null && calledClassName.Contains(".")) || linkedMethodCallCaller is not null)
             {
                 var methodInstancePropertyChainString = calledClassName.Split(".");
-                calledClassName = methodInstancePropertyChainString[0];
+
+                // If there is no linkedMethodCallCaller, then the calledClass is not part of the propertyChain, otherwise then it is part of the chain
+                if (linkedMethodCallCaller is null)
+                    calledClassName = methodInstancePropertyChainString[0];
+                else
+                    calledClassName = "";
                 foreach(string componentString in methodInstancePropertyChainString)
                 {
+                    // If the current component isn't the caller class, then it is part of the propertyChain
                     if(componentString != calledClassName)
                     {
                         var component = new Instance(componentString);
@@ -193,12 +230,8 @@ namespace Infrastructure.Mediators
                 }
             }
 
-            // Adding at the end the className instance
-            if (calledParameters is null)
-            {
-                calledParameters = new List<string> { calledClassName };
-            }
-            else
+            // Adding at the end the className instance if there is no linkedMethodCallCaller, if there is then we must not add the calledClassName since it actually is the linkedMethodCallCaller
+            if (linkedMethodCallCaller is null)
             {
                 calledParameters.Add(calledClassName);
             }
@@ -207,54 +240,66 @@ namespace Infrastructure.Mediators
             int calledParametersCount2 = (calledParameters is null) ? (0) : (calledParameters.Count);
             for (int i = 0; i < calledParametersCount2; i++)
             {
-                string currentStringInstance = calledParameters[i];
+                if (calledParameters[i] is string)
+                {
+                    string currentStringInstance = (string)calledParameters[i];
 
-                linkedClassOrParameterInstance = new Instance(currentStringInstance);
-                linkedClassOrParameterInstance.inheritedClasses = null;
-                //===========================  Make the analysis just as usual
-                // TODO: Make the case when the class name or parameter is another MethodCall
-                // If this is the class name and it is a constructor, then mark the kind of the MethodInstance and set the data to match the actual Method later
-                if (i == calledParametersCount2 - 1 && isConstructor)
-                {
-                    linkedClassOrParameterInstance.kind = KindOfInstance.IsConstructor;
-                    methodInstanceKind = KindOfInstance.IsConstructor;
-                    break;
-                }
-                // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
-                if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
-                {
-                    linkedClassOrParameterInstance = knownClassInstance;
-                }
-                // Check again but adding the parameter identifier if this instance was a parameter
-                else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(paramIdentifier + currentStringInstance, out AbstractInstance knownClassInstanceParam))
-                {
-                    linkedClassOrParameterInstance = knownClassInstanceParam;
-                }
-                // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
-                else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
-                {
-                    linkedClassOrParameterInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
-                    // We set the inheritedClasses of the component to the inheritance of this current class we are analyzing since an inherited class may contain this component as its property
-                    linkedClassOrParameterInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
-                    methodInstanceKind = KindOfInstance.HasClassNameStatic;
-                }
-                // If this is not empty and is the "this" and isn't the "base" keyword, then this component is of type of the class we are analyzing
-                else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance == "this")
-                {
-                    linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
-                }
-                // If this is the called class name component, is empty or is the "this" or "base" keyword, then this method uses inheritance to get its type and we set this inheritance information
-                else if (String.IsNullOrEmpty(currentStringInstance) || currentStringInstance == "this" || currentStringInstance == "base")
-                {
-                    linkedClassOrParameterInstance.kind = KindOfInstance.IsInheritedOrInThisClass;
-                    methodInstanceKind = KindOfInstance.IsInheritedOrInThisClass;
-                    linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
-                }
+                    linkedClassOrParameterInstance = new Instance(currentStringInstance);
+                    linkedClassOrParameterInstance.inheritedClasses = null;
+                    //===========================  Make the analysis just as usual
+                    // If this is the class name and it is a constructor, then mark the kind of the MethodInstance and set the data to match the actual Method later
+                    if (i == calledParametersCount2 - 1 && isConstructor)
+                    {
+                        linkedClassOrParameterInstance.kind = KindOfInstance.IsConstructor;
+                        methodInstanceKind = KindOfInstance.IsConstructor;
+                        break;
+                    }
+                    // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
+                    if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
+                    {
+                        linkedClassOrParameterInstance = knownClassInstance;
+                    }
+                    // Check again but adding the parameter identifier if this instance was a parameter
+                    else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(paramIdentifier + currentStringInstance, out AbstractInstance knownClassInstanceParam))
+                    {
+                        linkedClassOrParameterInstance = knownClassInstanceParam;
+                    }
+                    // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
+                    else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
+                    {
+                        linkedClassOrParameterInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+                        // We set the inheritedClasses of the component to the inheritance of this current class we are analyzing since an inherited class may contain this component as its property
+                        linkedClassOrParameterInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot];
+                        methodInstanceKind = KindOfInstance.HasClassNameStatic;
+                    }
+                    // If this is not empty and is the "this" and isn't the "base" keyword, then this component is of type of the class we are analyzing
+                    else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance == "this")
+                    {
+                        linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
+                    }
+                    // If this is the called class name component, is empty or is the "this" or "base" keyword, then this method uses inheritance to get its type and we set this inheritance information
+                    else if (String.IsNullOrEmpty(currentStringInstance) || currentStringInstance == "this" || currentStringInstance == "base")
+                    {
+                        linkedClassOrParameterInstance.kind = KindOfInstance.IsInheritedOrInThisClass;
+                        methodInstanceKind = KindOfInstance.IsInheritedOrInThisClass;
+                        linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
+                    }
 
-                // If this iteration covers the properties then add the instance to the parameters list of the MethodInstance to be created
-                if (i < calledParametersCount2 - 1 && linkedClassOrParameterInstance is not null)
+                    // If this iteration covers the properties then add the instance to the parameters list of the MethodInstance to be created
+                    if (i < calledParametersCount2 - 1 && linkedClassOrParameterInstance is not null)
+                    {
+                        linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
+                    }
+                }
+                // If the parameter to manage is another MethodCall, then generate the Data and link the generated MethodInstance to this MethodCall
+                else if (calledParameters[i] is MethodCallData)
                 {
-                    linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
+                    var parameterMethodCall = GenerateMethodInstance((MethodCallData)calledParameters[i]);
+                    linkedParametersNameInstance.Add(parameterMethodCall);
+                }
+                else
+                {
+                    throw new Exception("The instance received isn't either a string nor a MethodCallData");
                 }
 
                 //======

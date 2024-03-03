@@ -363,66 +363,67 @@ Inherited Classes:
                 classStrings.Add(classEntity.ToString());
             }
             //===========================  Checking the information about the ClassEntities and their Methods
-            //            classStrings[0].Should().Be(@"Name: Program
-            //Namespace: MyNamespace
-            //Properties:
-            //Methods:
-            //  Main(): void
-            //Inherited Classes:
-            //");
-            //            classStrings[1].Should().Be(@"Name: BaseClass
-            //Namespace: MyNamespace
-            //Properties:
-            //Methods:
-            //  CommonMethod(): void
-            //Inherited Classes:
-            //");
-            //            classStrings[2].Should().Be(@"Name: DerivedClassA
-            //Namespace: MyNamespace
-            //Properties:
-            //Methods:
-            //  MethodA(): void
-            //  AnotherMethodA(): void
-            //Inherited Classes:
-            //  BaseClass
-            //");
-            //            classStrings[3].Should().Be(@"Name: DerivedClassB
-            //Namespace: MyNamespace
-            //Properties:
-            //Methods:
-            //  MethodB(): void
-            //  AnotherMethodB(): void
-            //Inherited Classes:
-            //  BaseClass
-            //");
+            classStrings[0].Should().Be(@"Name: Program
+Namespace: MyNamespace
+Properties:
+Methods:
+  Main(): void
+Inherited Classes:
+");
+            classStrings[1].Should().Be(@"Name: Class1
+Namespace: MyNamespace
+Properties:
+  Prop1: Class2
+Methods:
+  Method1(): void
+  ReturnName(): string
+Inherited Classes:
+");
+            classStrings[2].Should().Be(@"Name: Class2
+Namespace: MyNamespace
+Properties:
+  data: string
+  class1Data: Class1
+Methods:
+  FunctionCall(): Class3
+  FunctionCall2(Class3, Class2): Class1
+Inherited Classes:
+");
+            classStrings[3].Should().Be(@"Name: Class3
+Namespace: MyNamespace
+Properties:
+Methods:
+  OtherFunctionCall(): void
+Inherited Classes:
+");
 
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
             ClassEntityManager.instance.classEntities.Count.Should().Be(4);
 
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
 
-            // Creating the references to the methods to be checked
             var Program_Main = classEntitiesList[0].methods[0];
-            var FunctionCall = classEntitiesList[2].methods[0];
-            var OtherFunctionCall = classEntitiesList[3].methods[0];
+            var Method1 = classEntitiesList[1].methods[0];
             var ReturnName = classEntitiesList[1].methods[1];
-            // The "Conatins" method WON'T be defined, but the method "ReturnName" WILL be defined and appear in the callsites inside Class1
+            var FunctionCall = classEntitiesList[2].methods[0];
             var FunctionCall2 = classEntitiesList[2].methods[1];
-            var Method1 = classEntitiesList[2].methods[0];
+            var OtherFunctionCall = classEntitiesList[3].methods[0];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(2);
-            Program_Main.callsites[0].calledMethod.Should().Be(FunctionCall);
-            Program_Main.callsites[1].calledMethod.Should().Be(OtherFunctionCall);
+            Program_Main.callsites.Count.Should().Be(3);
+            Program_Main.callsites[0].calledMethod.Should().Be(null);
+            Program_Main.callsites[1].calledMethod.Should().Be(FunctionCall);
+            Program_Main.callsites[2].calledMethod.Should().Be(OtherFunctionCall);
 
-            // Checking the callsites of the DervivedClassA class
-            Method1.callsites.Count.Should().Be(1);
+            // Checking the callsites of the Class1 class
+            Method1.callsites.Count.Should().Be(2);
             Method1.callsites[0].calledMethod.Should().Be(ReturnName);
 
-            // Checking the callsites of the DerivedClassB class
-            OtherFunctionCall.callsites.Count.Should().Be(2);
-            OtherFunctionCall.callsites[0].calledMethod.Should().Be(FunctionCall2);
+            // Checking the callsites of the Class3 class
+            OtherFunctionCall.callsites.Count.Should().Be(4);
             OtherFunctionCall.callsites[1].calledMethod.Should().Be(FunctionCall);
+            OtherFunctionCall.callsites[2].calledMethod.Should().Be(FunctionCall2);
+            OtherFunctionCall.callsites[3].calledMethod.Should().Be(FunctionCall);
         }
         [Fact]
         public void MediatorCreatedComplexInstancesWithSeveralPropertiesCalls_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()

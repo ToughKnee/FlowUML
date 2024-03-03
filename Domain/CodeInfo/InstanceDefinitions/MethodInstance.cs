@@ -133,8 +133,8 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// alognside the inherited classes</param>
         public void ResolveComponentType(AbstractInstance component, string ownerClass = "")
         {
-            // If the current component of the MethodInstance already has its type defined, then we skip this component and keep going with the others
-            if (!String.IsNullOrEmpty(component.type))
+            // If the current component of the MethodInstance already has its type defined or is another MethodInstance, then we skip this component and keep going with the others
+            if (!String.IsNullOrEmpty(component.type) || component is MethodInstance)
             {
                 return;
             }
@@ -253,15 +253,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
             {
                 if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod1))
                     HandleActualMethod(actualMethod1);
-                // If the normal method failed or the alias class name is from a parent of this class and we know their types then consult the methodDictionary, which will resolve the inheritance for us
-                else if (kind == KindOfInstance.Normal || kind == KindOfInstance.IsInheritedOrInThisClass)
-                {
-                    // Consulting the Dictionary as many parents this MethodInstance knows this method has AND also itself, since the method could also be from the same class, using the GetMethodIdentifier()
-                    if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod))
-                    {
-                        HandleActualMethod(actualMethod);
-                    }
-                }
                 else if (kind == KindOfInstance.HasClassNameStatic)
                 {
                     // If is static method, we then check the Dictionary using the className as if it was its own type
