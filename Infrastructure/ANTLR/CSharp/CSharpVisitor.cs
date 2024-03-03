@@ -349,7 +349,7 @@ namespace Infrastructure.Antlr
 
             string assignerExpression = "";
             var expressionMethodCallNode = GetRuleNodeInChildren("expressionMethodCall", expressionNode);
-            // If the argumentListChild is a expressionMethodCall, visit it and get the info of the assignment
+            // If the expression is a expressionMethodCall, visit it and get the info of the assignment
             if (expressionMethodCallNode != null)
             {
                 // "Right side" of the assignment

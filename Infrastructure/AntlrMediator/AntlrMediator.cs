@@ -229,11 +229,6 @@ namespace Infrastructure.Mediators
                     }
                 }
             }
-            // If there is a linked methodInstance, then all the the calledClassName are the propertyChain and we must set that
-            else if(linkedMethodCallCaller is not null)
-            {
-
-            }
 
             // Adding at the end the className instance if there is no linkedMethodCallCaller, if there is then we must not add the calledClassName since it actually is the linkedMethodCallCaller
             if (linkedMethodCallCaller is null)
@@ -260,7 +255,7 @@ namespace Infrastructure.Mediators
                         break;
                     }
                     // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
-                    else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
+                    if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
                     {
                         linkedClassOrParameterInstance = knownClassInstance;
                     }
@@ -304,7 +299,7 @@ namespace Infrastructure.Mediators
                 }
                 else
                 {
-                    throw new Exception("The parameter received isn't either a string nor a MethodCallData");
+                    throw new Exception("The instance received isn't either a string nor a MethodCallData");
                 }
 
                 //======
