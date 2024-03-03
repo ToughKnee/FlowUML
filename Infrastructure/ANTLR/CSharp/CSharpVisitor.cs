@@ -49,10 +49,10 @@ namespace Infrastructure.Antlr
         /// MethodCalls(where if we have nested methodCalls like 
         /// "myClass.getClass2().doSomething().myProperty.function3()", then we will have a list of 
         /// 3 MethodCallData, AND also we will have each MethodCall as part of the identifier of its next MethodCall)
-        /// This will be handed to the mediator after visiting a localVariableDeclaration or visiting just the MethodCall and then emptied
+        /// This will be handed to the mediator after visiting a localVariableDeclaration or visiting just the 
+        /// MethodCall and then emptied
         /// </summary>
         private List<MethodCallData> _methodCallDataList = new();
-        private bool _isExpressionMethodCallConstructor = false;
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -349,7 +349,7 @@ namespace Infrastructure.Antlr
 
             string assignerExpression = "";
             var expressionMethodCallNode = GetRuleNodeInChildren("expressionMethodCall", expressionNode);
-            // If the expression is a expressionMethodCall, visit it and get the info of the assignment
+            // If the argumentListChild is a expressionMethodCall, visit it and get the info of the assignment
             if (expressionMethodCallNode != null)
             {
                 // "Right side" of the assignment
@@ -374,10 +374,13 @@ namespace Infrastructure.Antlr
             // Get the full text of the assignment 
             if(expressionMethodCallNode != null)
             {
-                assignmentText = Visit(expressionMethodCallNode) + separator;
+                assignmentText = Visit(expressionMethodCallNode);
+            }
+            else
+            {
+                assignmentText = context.GetText();
             }
             
-            assignmentText = assignmentText.Substring(0, assignmentText.Length - 1);
             return assignmentText;
         }
         /// <summary>
@@ -390,7 +393,6 @@ namespace Infrastructure.Antlr
         /// <returns>The whole method that may be assigning a variable</returns>
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
-            _isExpressionMethodCallConstructor = (GetRuleNodeInChildren("new", context) != null) ? (true) : (false);
             string wholeFunctionString = context.GetText().Replace("new", "");
             for (int j = 0; j < context.ChildCount; j++)
             {
@@ -414,30 +416,47 @@ namespace Infrastructure.Antlr
         public override string VisitMethodCall([NotNull] CSharpGrammarParser.MethodCallContext context)
         {
             //===========================  Getting the components of the method called
+            bool isConstructor = GetRuleNodeInChildren("new", context) != null;
             string completeFunctionString = context.GetText();
             completeFunctionString = completeFunctionString.Replace("new", "");
-            var lastPeriodIndex = completeFunctionString.LastIndexOf('.');
+            string callerComponent = completeFunctionString.Substring(0, completeFunctionString.IndexOf('(')-1);
+            var lastPeriodIndex = callerComponent.LastIndexOf('.');
             if (completeFunctionString.LastIndexOf('(') < lastPeriodIndex)
             {
                 lastPeriodIndex = -1;
             }
-            Console.WriteLine("lastPeriodIndex: " + lastPeriodIndex.ToString());
             var methodName = completeFunctionString.Substring(
                 (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
                 );
             var namespaceAndClass = (lastPeriodIndex != -1) ? (completeFunctionString.Substring(0, lastPeriodIndex)) : ("");
             var openParenIndex = methodName.IndexOf('(');
-            var closeParenIndex = methodName.IndexOf(')');
-            var parameters = methodName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Split(',');
-            List<string> parameterList = null;
-            if (!String.IsNullOrEmpty(parameters[0]))
-            {
-                parameterList = new List<string>(parameters);
-            }
+            var closeParenIndex = methodName.LastIndexOf(')');
+            List<object> parameterList = new();
             methodName = methodName.Substring(0, openParenIndex);
 
+            // Get the argumentList to visit all the arguments, if they are methodCalls then remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList
+            var argumentListNode = GetRuleNodeInChildren("argumentList", context);
+            for (int i = 0; i < argumentListNode.ChildCount; i++)
+            {
+                string expressionString = Visit(argumentListNode.GetChild(i));
+
+                // If the visited child node was a methodCall(because it contains a parenthesis), then we remove it from the _methodCallDataList and move it to the parameterList
+                if (!String.IsNullOrEmpty(expressionString) && expressionString.Contains("("))
+                {
+                    var methodCallParameter = _methodCallDataList[_methodCallDataList.Count-1];
+                    _methodCallDataList.RemoveAt(_methodCallDataList.Count - 1);
+                    parameterList.Add(methodCallParameter);
+                }
+                // If it is a normal variable, then add it to the parameterList
+                else if(!String.IsNullOrEmpty(expressionString))
+                {
+                    parameterList.Add(expressionString);
+                }
+
+            }
+
             // Save the methodCallData to the List to be passed later to the mediator
-            _methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, _currentMethodBuilder, _isExpressionMethodCallConstructor));
+            _methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, _currentMethodBuilder, isConstructor));
 
             return completeFunctionString;
         }

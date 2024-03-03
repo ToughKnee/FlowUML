@@ -33,7 +33,7 @@ namespace MyNamespace
         {
             return new Class3();
         }
-        public Class1 FunctionCall2(Class3 pClass, string data)
+        public Class1 FunctionCall2(Class3 pClass, Class2 data)
         {
         }
     }
@@ -43,7 +43,7 @@ namespace MyNamespace
         public void OtherFunctionCall()
         {
             var myClass = new Class2();
-            myClass.FunctionCall2(myClass.class1Data.Prop1.FunctionCall(), myClass.data).Prop1.FunctionCall();
+            myClass.FunctionCall2(myClass.class1Data.Prop1.FunctionCall(), myClass).Prop1.FunctionCall();
         }
     }
 }

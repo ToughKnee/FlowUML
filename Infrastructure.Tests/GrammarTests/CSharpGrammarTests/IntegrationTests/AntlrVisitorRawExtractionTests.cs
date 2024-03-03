@@ -366,7 +366,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            // Create a collection to store the captured parameters
            List<string> receivedClassNames = new List<string>();
            List<string> receivedMethodNames = new List<string>();
-           List<List<string>> receivedParameters = new List<List<string>>();
+           List<List<object>> receivedParameters = new List<List<object>>();
            List<MethodBuilder> receivedMethodBuilders= new List<MethodBuilder>();
 
             //===========================  Capturing the received info from the antlr visitor
