@@ -63,6 +63,12 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         public KindOfInstance kind;
 
+        /// <summary>
+        /// This property defines the instance that is chained to this instance, like "myProperty" 
+        /// would be the linkedInstance in "myInstance.myProperty" 
+        /// </summary>
+        public AbstractInstance? linkedInstance { get; set; }
+
         public AbstractInstance(string name, StringWrapper type)
         {   
             this.name = name;

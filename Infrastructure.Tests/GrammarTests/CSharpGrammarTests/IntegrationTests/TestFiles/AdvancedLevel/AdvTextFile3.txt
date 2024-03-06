@@ -1,0 +1,107 @@
+using System;
+
+namespace MyNamespace
+{
+    public class Program
+    {
+        static void Main()
+        {
+            Class3 instance3 = new Class3();
+            Class2 instance2 = instance3.GetClass2();
+            Class1 instance1 = instance3.GetClass1(instance2);
+
+            instance1.SomeMethod();
+            instance2.AnotherMethod(instance1);
+            Class4 instance4 = instance3.GetClass4();
+            instance3.AnotherMethod(instance3);
+            instance3.YetAnotherMethod(instance3);
+            instance4.YetAnotherMethod(instance3);
+            Class5 instance5 = instance3.GetClass5();
+            instance5.AlmostFinalMethod(instance3);
+            Class6 instance6 = instance3.GetClass6();
+            instance3.AlmostFinalMethod(instance3);
+            instance3.LastMethod(instance3);
+            instance6.LastMethod(instance3);
+        }
+    }
+
+    public class Class1
+    {
+        public void SomeMethod()
+        {
+        }
+    }
+
+    public class Class2
+    {
+        public void AnotherMethod(Class1 param)
+        {
+        }
+    }
+
+    public class Class3
+    {
+        public Class2 GetClass2()
+        {
+            return new Class2();
+        }
+
+        public Class1 GetClass1(Class2 param)
+        {
+            return new Class1();
+        }
+
+        public Class4 GetClass4()
+        {
+            return new Class4();
+        }
+
+        public Class5 GetClass5()
+        {
+            return new Class5();
+        }
+
+        public Class6 GetClass6()
+        {
+            return new Class6();
+        }
+
+        public void AnotherMethod(Class3 param)
+        {
+        }
+
+        public string YetAnotherMethod(Class3 param)
+        {
+        }
+
+        public int AlmostFinalMethod(Class3 param)
+        {
+        }
+
+        public float LastMethod(Class3 param)
+        {
+        }
+    }
+
+    public class Class4
+    {
+        public string YetAnotherMethod(Class3 param)
+        {
+        }
+    }
+
+    public class Class5
+    {
+        public int AlmostFinalMethod(Class3 param)
+        {
+        }
+    }
+
+    public class Class6
+    {
+        public float LastMethod(Class3 param)
+        {
+        }
+    }
+
+}

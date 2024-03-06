@@ -202,11 +202,10 @@ namespace Infrastructure.Mediators
             var (calledClassName, calledMethodName, calledParameters, linkedMethodBuilder, isConstructor) = callData;
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
 
-            // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
-            AbstractInstance? linkedClassOrParameterInstance = linkedMethodCallCaller;
+            AbstractInstance? linkedClassOrParameterInstance = null;
             List<AbstractInstance> linkedParametersNameInstance = new();
             KindOfInstance methodInstanceKind = KindOfInstance.Normal;
-            var methodInstancePropertyChain = new List<AbstractInstance>();
+            AbstractInstance methodInstanceLinkedInstance = null;
 
             // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
             if ((calledClassName != null && calledClassName.Contains(".")) || linkedMethodCallCaller is not null)
@@ -218,6 +217,7 @@ namespace Infrastructure.Mediators
                     calledClassName = methodInstancePropertyChainString[0];
                 else
                     calledClassName = "";
+                AbstractInstance previousInstance = null;
                 foreach(string componentString in methodInstancePropertyChainString)
                 {
                     // If the current component isn't the caller class, then it is part of the propertyChain
@@ -225,7 +225,13 @@ namespace Infrastructure.Mediators
                     {
                         var component = new Instance(componentString);
                         component.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
-                        methodInstancePropertyChain.Add(component);
+                        // If the previous component is null, then this is the first element of the propertyChain which will be received by the MethodInstance constructor
+                        if (previousInstance is null)
+                            methodInstanceLinkedInstance = component;
+                        // If not then we need to chain all the properties properly
+                        else
+                            previousInstance.linkedInstance = component;
+                        previousInstance = component;
                     }
                 }
             }
@@ -242,6 +248,10 @@ namespace Infrastructure.Mediators
             {
                 if (calledParameters[i] is string)
                 {
+                    // TODO: Check if there are parameters that are a propertyChain, and if so, mark its kind and set the information for the MethodInstance to solve their type later
+
+
+
                     string currentStringInstance = (string)calledParameters[i];
 
                     linkedClassOrParameterInstance = new Instance(currentStringInstance);
@@ -307,12 +317,16 @@ namespace Infrastructure.Mediators
             }
             //======
 
+            // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
+            if (linkedMethodCallCaller is not null)
+                linkedClassOrParameterInstance = linkedMethodCallCaller;
+
             // Make the callsite for the method
             var callsite = new Callsite(null);
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstancePropertyChain, calledMethodName, linkedParametersNameInstance, callsite, methodInstanceKind, _usedNamespaces);
+            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstanceLinkedInstance, calledMethodName, linkedParametersNameInstance, callsite, methodInstanceKind, _usedNamespaces);
             // If this methodCall is inherited or in this class, then we set the inheritedClass of this component since it needs the inheritance of the current class to know where this came from
             methodInstance.SetInheritance(InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot]);
          

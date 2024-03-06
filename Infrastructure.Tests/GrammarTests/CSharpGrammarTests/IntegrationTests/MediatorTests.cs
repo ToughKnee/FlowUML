@@ -426,7 +426,7 @@ Inherited Classes:
             OtherFunctionCall.callsites[3].calledMethod.Should().Be(FunctionCall);
         }
         [Fact]
-        public void MediatorCreatedComplexInstancesWithSeveralPropertiesCalls_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        public void MediatorCreatedComplexInstancesWithSeveralProperties_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
         {
             // Arrange
             var mediator = new AntlrMediator();
@@ -489,6 +489,101 @@ Inherited Classes:
             Program_Main.callsites[0].calledMethod.Should().Be(null);
             Program_Main.callsites[1].calledMethod.Should().Be(FunctionCall);
             Program_Main.callsites[2].calledMethod.Should().Be(Method1);
+        }
+        [Fact]
+        public void MediatorCreatedInstancesWithSharingALocalVariableComponentAndRepeatedMethodFromDifferentClasses_MediatorStartsBuildingClassEntities_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\AdvTextFile3.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            classStrings[0].Should().Be(@"Name: Program
+Namespace: MyNamespace
+Properties:
+Methods:
+  Main(): void
+Inherited Classes:
+");
+            classStrings[1].Should().Be(@"Name: Class1
+Namespace: MyNamespace
+Properties:
+Methods:
+  SomeMethod(): void
+Inherited Classes:
+");
+            classStrings[2].Should().Be(@"Name: Class2
+Namespace: MyNamespace
+Properties:
+Methods:
+  AnotherMethod(Class1): void
+Inherited Classes:
+");
+            classStrings[3].Should().Be(@"Name: Class3
+Namespace: MyNamespace
+Properties:
+Methods:
+  GetClass2(): Class2
+  GetClass1(Class2): Class1
+  GetClass4(): Class4
+  GetClass5(): Class5
+  GetClass6(): Class6
+  AnotherMethod(Class3): void
+  YetAnotherMethod(Class3): string
+  AlmostFinalMethod(Class3): int
+  LastMethod(Class3): float
+Inherited Classes:
+");
+
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            ClassEntityManager.instance.classEntities.Count.Should().Be(7);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Creating the references to the methods to be checked
+            var Program_Main = classEntitiesList[0].methods[0];
+            var GetClass2 = classEntitiesList[3].methods[0];
+            var GetClass1 = classEntitiesList[3].methods[1];
+            var SomeMethod = classEntitiesList[1].methods[0];
+            var Class2_AnotherMethod = classEntitiesList[2].methods[0];
+            var GetClass4 = classEntitiesList[3].methods[2];
+            var Class3_AnotherMethod = classEntitiesList[3].methods[5];
+            var Class3_YetAnotherMethod = classEntitiesList[3].methods[6];
+            var Class4_YetAnotherMethod = classEntitiesList[4].methods[0];
+            var GetClass5 = classEntitiesList[3].methods[3];
+            var Class5_AlmostFinalMethod = classEntitiesList[5].methods[0];
+            var GetClass6 = classEntitiesList[3].methods[4];
+            var Class3_AlmostFinalMethod = classEntitiesList[3].methods[7];
+            var Class3_LastMethod = classEntitiesList[3].methods[8];
+            var Class6_LastMethod = classEntitiesList[6].methods[0];
+
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(15);
+            Program_Main.callsites[0].calledMethod.Should().Be(null);
+            Program_Main.callsites[1].calledMethod.Should().Be(GetClass2);
+            Program_Main.callsites[2].calledMethod.Should().Be(GetClass1);
+            Program_Main.callsites[3].calledMethod.Should().Be(SomeMethod);
+            Program_Main.callsites[4].calledMethod.Should().Be(Class2_AnotherMethod);
+            Program_Main.callsites[5].calledMethod.Should().Be(GetClass4);
+            Program_Main.callsites[6].calledMethod.Should().Be(Class3_AnotherMethod);
+            Program_Main.callsites[7].calledMethod.Should().Be(Class3_YetAnotherMethod);
+            Program_Main.callsites[8].calledMethod.Should().Be(Class4_YetAnotherMethod);
+            Program_Main.callsites[9].calledMethod.Should().Be(GetClass5);
+            Program_Main.callsites[10].calledMethod.Should().Be(Class5_AlmostFinalMethod);
+            Program_Main.callsites[11].calledMethod.Should().Be(GetClass6);
+            Program_Main.callsites[12].calledMethod.Should().Be(Class3_AlmostFinalMethod);
+            Program_Main.callsites[13].calledMethod.Should().Be(Class3_LastMethod);
+            Program_Main.callsites[14].calledMethod.Should().Be(Class6_LastMethod);
         }
     }
 }
