@@ -65,9 +65,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
         /// <summary>
         /// This property defines the instance that is chained to this instance, like "myProperty" 
-        /// would be the linkedInstance in "myInstance.myProperty" 
+        /// would be the chainedInstance in "myInstance.myProperty" 
         /// </summary>
-        public AbstractInstance? linkedInstance { get; set; }
+        public AbstractInstance? chainedInstance { get; set; }
 
         public AbstractInstance(string name, StringWrapper type)
         {   
@@ -81,6 +81,17 @@ namespace Domain.CodeInfo.InstanceDefinitions
         }
         public AbstractInstance()
         {
+        }
+        public static AbstractInstance? GetLastChainedInstance(AbstractInstance instance)
+        {
+            AbstractInstance nextInstance = instance;
+            AbstractInstance previousInstance = nextInstance;
+            while (nextInstance is not null)
+            {
+                previousInstance = nextInstance;
+                nextInstance = nextInstance.chainedInstance;
+            }
+            return previousInstance;
         }
 
         public static bool operator ==(AbstractInstance obj1, AbstractInstance obj2)

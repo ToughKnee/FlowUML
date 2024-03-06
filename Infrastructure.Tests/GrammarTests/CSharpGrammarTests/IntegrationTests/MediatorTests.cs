@@ -386,7 +386,7 @@ Properties:
   class1Data: Class1
 Methods:
   FunctionCall(): Class3
-  FunctionCall2(Class3, Class2): Class1
+  FunctionCall2(Class3, string): Class1
 Inherited Classes:
 ");
             classStrings[3].Should().Be(@"Name: Class3

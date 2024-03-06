@@ -186,7 +186,39 @@ namespace Infrastructure.Mediators
         {
             _usedNamespaces = (usedNamespaces is null) ? (_usedNamespaces) : (usedNamespaces);
         }
- 
+        /// <summary>
+        /// Generate the whole propertyChain from the provided strings, and it avoids to put inside 
+        /// the propertyChain the class that owns the propertyChain
+        /// </summary>
+        /// <param name="ownerName">The name of the Instance that will be the
+        /// head of this propertyChain</param>
+        /// <param name="propertyChainString">The text that represents the whole propertyChain as 
+        /// a raw string, which will be converted into multiple chained AbstractInstances</param>
+        /// <returns>The first Instance that has all the other properties chained</returns>
+        public AbstractInstance GeneratePropertyChain(string ownerName, string propertyChainString)
+        {
+            var methodInstancePropertyChainString = propertyChainString.Split(".");
+            AbstractInstance previousInstance = null;
+            AbstractInstance firstChainedInstance = null;
+            foreach (string componentString in methodInstancePropertyChainString)
+            {
+                // If the current component isn't the caller class, then it is part of the propertyChain
+                if (componentString != ownerName)
+                {
+                    var component = new Instance(componentString);
+                    component.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+                    // If the previous component is null, then this is the first element of the propertyChain which will be received by the MethodInstance constructor
+                    if (previousInstance is null)
+                        firstChainedInstance = component;
+                    // If not then we need to chain all the properties properly
+                    else
+                        previousInstance.chainedInstance = component;
+                    previousInstance = component;
+                }
+            }
+            return firstChainedInstance;
+        }
+
         /// <summary>
         /// Create a MethodInstance according to the MethodCallData
         /// If the MethodInstance to be created is part of a MethodCallChain, then we can
@@ -210,31 +242,15 @@ namespace Infrastructure.Mediators
             // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
             if ((calledClassName != null && calledClassName.Contains(".")) || linkedMethodCallCaller is not null)
             {
-                var methodInstancePropertyChainString = calledClassName.Split(".");
+                // If there is a linkedMethodCallCaller, then the calledClass is part of the propertyChain and it must be specified to the GeneratePropertyChain function, otherwise then it is not part of the chain
+                string classOwner = calledClassName.Split(".")[0];
+                if (linkedMethodCallCaller is not null)
+                    classOwner = "";
 
-                // If there is no linkedMethodCallCaller, then the calledClass is not part of the propertyChain, otherwise then it is part of the chain
-                if (linkedMethodCallCaller is null)
-                    calledClassName = methodInstancePropertyChainString[0];
-                else
-                    calledClassName = "";
-                AbstractInstance previousInstance = null;
-                foreach(string componentString in methodInstancePropertyChainString)
-                {
-                    // If the current component isn't the caller class, then it is part of the propertyChain
-                    if(componentString != calledClassName)
-                    {
-                        var component = new Instance(componentString);
-                        component.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
-                        // If the previous component is null, then this is the first element of the propertyChain which will be received by the MethodInstance constructor
-                        if (previousInstance is null)
-                            methodInstanceLinkedInstance = component;
-                        // If not then we need to chain all the properties properly
-                        else
-                            previousInstance.linkedInstance = component;
-                        previousInstance = component;
-                    }
-                }
+                methodInstanceLinkedInstance = GeneratePropertyChain(classOwner, calledClassName);
+                calledClassName = classOwner;
             }
+
 
             // Adding at the end the className instance if there is no linkedMethodCallCaller, if there is then we must not add the calledClassName since it actually is the linkedMethodCallCaller
             if (linkedMethodCallCaller is null)
@@ -248,11 +264,15 @@ namespace Infrastructure.Mediators
             {
                 if (calledParameters[i] is string)
                 {
-                    // TODO: Check if there are parameters that are a propertyChain, and if so, mark its kind and set the information for the MethodInstance to solve their type later
-
-
-
                     string currentStringInstance = (string)calledParameters[i];
+                    string currentStringInstancePropertyChain = "";
+
+                    // Check if there are parameters that are a propertyChain, and if so, mark its kind and set the information for the MethodInstance to solve their types
+                    if (currentStringInstance.Contains("."))
+                    {
+                        currentStringInstancePropertyChain = currentStringInstance;
+                        currentStringInstance = currentStringInstance.Split(".")[0];
+                    }
 
                     linkedClassOrParameterInstance = new Instance(currentStringInstance);
                     linkedClassOrParameterInstance.inheritedClasses = null;
@@ -300,6 +320,9 @@ namespace Infrastructure.Mediators
                     {
                         linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
                     }
+                    // After the current Instance has been properly set, then generate its propertyChain
+                    if (!String.IsNullOrEmpty(currentStringInstancePropertyChain))
+                        linkedClassOrParameterInstance.chainedInstance = GeneratePropertyChain(currentStringInstance, currentStringInstancePropertyChain);
                 }
                 // If the parameter to manage is another MethodCall, then generate the Data and link the generated MethodInstance to this MethodCall
                 else if (calledParameters[i] is MethodCallData)
