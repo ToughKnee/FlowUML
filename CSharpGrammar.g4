@@ -228,12 +228,16 @@ expression
     ;
 
 expressionMethodCall
-    : (methodCall | identifier) ('.' methodCall | '.' identifier)*
+    : (methodCall | identifier) ('.' methodCall)*
     | 
     ;
 
 methodCall
-    : new? advancedIdentifier '(' argumentList ')'
+    : new? advancedIdentifier '(' argumentList ')' chainedProperties?
+    ;
+
+chainedProperties
+    : ('.' identifier)+
     ;
 
 argumentList

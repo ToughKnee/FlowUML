@@ -39,20 +39,20 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         public bool methodIsUnknown { get; private set; } = true;
         /// <summary>
-        /// Alias of the name the class is known by its alias
+        /// Caller class of this MethodCall
         /// The refType of this property is NEVER modified unless it is not a normal Instance,
         /// if this MethodInstance is of a special kind like static or constrctor, then we can modify the 
         /// refType of this property
         /// </summary>
-        public AbstractInstance? aliasClassName;
+        public AbstractInstance? callerClass;
         /// <summary>
         /// Name of the method which does not have alias
         /// </summary>
         public string methodName;
         /// <summary>
-        /// The parameters of the method used in the call known by their aliases
+        /// The parameters of the method used in the method call 
         /// </summary>
-        public List<AbstractInstance> aliasParameters { get; private set; } = new List<AbstractInstance>();
+        public List<AbstractInstance> calledParameters { get; private set; } = new List<AbstractInstance>();
         /// <summary>
         /// The identifier to be used when this Method must be added to the methodDictionary
         /// </summary>
@@ -64,19 +64,19 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// because since they are linked directly to this MethodInstance, they must share the inheritanceList 
         /// with the one this MethodInstance has unless the instance already has inheritance
         /// </summary>
-        /// <param name="aliasClassName"></param>
+        /// <param name="calledClass"></param>
         /// <param name="methodName"></param>
         /// <param name="aliasParams"></param>
         /// <param name="linkedCallsite"></param>
         /// <param name="kind"></param>
-        public MethodInstance(AbstractInstance? aliasClassName, AbstractInstance? linkedInstance, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, KindOfInstance kind, List<string> usedNamespaces)
+        public MethodInstance(AbstractInstance? calledClass, AbstractInstance? chainedInstance, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, KindOfInstance kind, List<string> usedNamespaces)
         {
             this.refType = new StringWrapper();
-            this.aliasClassName = aliasClassName;
-            this.chainedInstance = linkedInstance;
+            this.callerClass = calledClass;
+            this.chainedInstance = chainedInstance;
 
             this.methodName = methodName;
-            this.aliasParameters = aliasParams;
+            this.calledParameters = aliasParams;
             this.linkedCallsite = linkedCallsite;
             this.kind = kind;
             RegisterToTheMethodInstancesList(this);
@@ -97,15 +97,15 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public void SetInheritance(IReadOnlyList<string> inheritance)
         {
             this.inheritedClasses = inheritance;
-            if (aliasClassName is not null && aliasClassName.inheritedClasses is null)
+            if (callerClass is not null && callerClass.inheritedClasses is null)
             {
-                aliasClassName.inheritedClasses = inheritedClasses;
+                callerClass.inheritedClasses = inheritedClasses;
             }
-            for (int i = 0; i < aliasParameters.Count; i++)
+            for (int i = 0; i < calledParameters.Count; i++)
             {
-                if (aliasParameters[i].inheritedClasses is null)
+                if (calledParameters[i].inheritedClasses is null)
                 {
-                    aliasParameters[i].inheritedClasses = inheritedClasses;
+                    calledParameters[i].inheritedClasses = inheritedClasses;
                 }
             }
         }
@@ -118,6 +118,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             this.refType.data = actualMethod.returnType;
             this.linkedCallsite.calledMethod = actualMethod;
             methodInstancesWithUndefinedCallsite.Remove(this);
+            ResolveChainedInstanceType(this);
         }
         /// <summary>
         /// This method resolves the type of a given component of this MethodInstance
@@ -167,25 +168,17 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
         }
         /// <summary>
-        /// Gets the type of all the linked instances, which represents the propertyChain
-        /// This uses the chainedInstance of this MethodInstance if we are trying to find the types of the
-        /// property chain from the alias class name, but if we are looking for the types of the property 
-        /// chain from a parameter instead, then we need to use the parameter's chainedInstance
+        /// Gets the type of all the chained instances from a given Instance, and this represents the propertyChain
         /// </summary>
         /// <param name="ownerInstance"></param>
-        /// <param name="isParameter"></param>
-        public void ResolveChainedInstanceType(AbstractInstance ownerInstance, bool isParameter = false)
+        public void ResolveChainedInstanceType(AbstractInstance ownerInstance)
         {
             // If this is not a parameter and the MehtodInstance does not have a chainedInstance then do nothing, or if this is a parameter and the parameter does not have a chainedInstance then do nothing, or if the ownerInstnace is another MehtodInstance and it is a parameter then do nothing
-            if((!isParameter && chainedInstance is null) || isParameter && ownerInstance.chainedInstance is null || (ownerInstance is MethodInstance && isParameter))
+            if(ownerInstance.chainedInstance is null)
             {
                 return;
             }
-            AbstractInstance nextInstance = null;
-            if (isParameter)
-                nextInstance = ownerInstance.chainedInstance;
-            else
-                nextInstance = this.chainedInstance;
+            AbstractInstance nextInstance = ownerInstance;
             AbstractInstance previousInstance = ownerInstance;
             nextInstance.inheritedClasses = this.inheritedClasses;
             string currentOwnerClass = ownerInstance.type;
@@ -214,23 +207,24 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         public void SolveTypesOfAliases()
         {
-            // Get the inheritance of the aliasClassName if its type is known to process the cases where this MethodInstance is a normal kind or a kind that involves inheritance
-            if (aliasClassName is not null && !String.IsNullOrEmpty(aliasClassName.type))
+            // Get the inheritance of the callerClass if its type is known to process the cases where this MethodInstance is a normal kind or a kind that involves inheritance
+            if (callerClass is not null && !String.IsNullOrEmpty(callerClass.type))
             {
-                if(InheritanceDictionaryManager.instance.inheritanceDictionary.TryGetValue(aliasClassName.type, out List<string> inheritance))
+                if(InheritanceDictionaryManager.instance.inheritanceDictionary.TryGetValue(callerClass.type, out List<string> inheritance))
                 {
                     this.inheritedClasses = inheritance;
 
-                    // If the inheritance of this class has been resolved, then get the inheritance for the next property in the property chain if this MethodInstance has any
-                    ResolveChainedInstanceType(aliasClassName);
+                    // If the inheritance of this class has been resolved and the callerClass is NOT a MethodInstance, then get the inheritance for the next property in the property chain if this MethodInstance has any
+                    if(callerClass is not MethodInstance)
+                        ResolveChainedInstanceType(callerClass);
                 }
             }
 
-            // Then we resolve the parameters and class name if them are of a special kind of instance, and then we go through all of these components, and check their types, if they are missing then we get their types
+            // Then we resolve the parameters and class name if they are of a special kind of instance, and then we go through all of these components, and check their types, if the types are missing then we get the types
             // Putting all the components of this MethodInstance into a List to traverse them and resolve their types
-            var methodInstanceComponents = new List<AbstractInstance>(aliasParameters);
-            if (aliasClassName is not null)
-                methodInstanceComponents.Add(aliasClassName);
+            var methodInstanceComponents = new List<AbstractInstance>(calledParameters);
+            if (callerClass is not null)
+                methodInstanceComponents.Add(callerClass);
             for (int i = 0; i < methodInstanceComponents.Count; i++)
             {
                 var currentMethodComponent = methodInstanceComponents[i];
@@ -239,65 +233,55 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
             // Check if this MethodInstance knows the class parameters types, if so then proceed to find the actual Method, if not then do nothing
             bool areParametersTypeKnown = true;
-            for (int i = 0; i < aliasParameters.Count; i++)
+            for (int i = 0; i < calledParameters.Count; i++)
             {
-                // If this property has a chained Instance, then we must find the types of all the chained instances
-                if (aliasParameters[i].chainedInstance is not null)
+                // If this parameter has a chained Instance, then we must find the types of all the chained instances, unless it is another MethodInstance
+                if (calledParameters[i].chainedInstance is not null)
                 {
-                    ResolveChainedInstanceType(aliasParameters[i], true);
-                    if (String.IsNullOrEmpty(GetLastChainedInstance(aliasParameters[i]).type))
+                    // If this parameter is another MehtodInstance, then do nothing
+                    if (calledParameters[i] is not MethodInstance)
+                        ResolveChainedInstanceType(calledParameters[i]);
+                    // Check if the last element has its type defined, if not then the parameters type are not known
+                    if (String.IsNullOrEmpty(GetLastChainedInstance(calledParameters[i]).type))
                         areParametersTypeKnown = false;
                 }
 
-                if (String.IsNullOrEmpty(aliasParameters[i].type))
+                if (String.IsNullOrEmpty(calledParameters[i].type))
                 {
                     areParametersTypeKnown = false;
                 }
             }
 
-            bool areCallerComponentsTypeKnown = true;
-            AbstractInstance nextInstance = chainedInstance;
-            while (nextInstance is not null)
-            {
-                if (String.IsNullOrEmpty(nextInstance.type))
-                {
-                    areCallerComponentsTypeKnown = false;
-                    break;
-                }
-
-                nextInstance = nextInstance.chainedInstance;
-            }
-
             // If the parameters type and the types of the components of the caller are known, then look into the methodDictionary the actual Method and get the return type, and also define the linkedCallsite with the actual Method
-            if (areParametersTypeKnown && areCallerComponentsTypeKnown)
+            if (areParametersTypeKnown)
             {
                 if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod1))
                     HandleActualMethod(actualMethod1);
                 else if (kind == KindOfInstance.HasClassNameStatic)
                 {
                     // If is static method, we then check the Dictionary using the className as if it was its own type
-                    aliasClassName.refType.data = aliasClassName.name;
+                    callerClass.refType.data = callerClass.name;
                     if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod2))
                     {
                         HandleActualMethod(actualMethod2);
                     }
                     else
                     {
-                        aliasClassName.refType.data = null;
+                        callerClass.refType.data = null;
                     }
                 }
                 else if (kind == KindOfInstance.IsConstructor)
                 {
                     // We convert the alias class name the same as the methodName
-                    this.aliasClassName.refType.data = methodName;
+                    this.callerClass.refType.data = methodName;
 
                     // And we check if there is a constructor Method tht matches this MethodINstance in the methodDictionary
                     if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod))
                         HandleActualMethod(actualMethod);
                     // If the constructor method wasn't found, and if the parameter list has 0 elements, then this methodInstance is the default constructor and we must set the refType
-                    else if(this.aliasParameters.Count == 0)
+                    else if(this.calledParameters.Count == 0)
                     {
-                        this.refType.data = this.aliasClassName.type;
+                        this.refType.data = this.callerClass.type;
                         methodInstancesWithUndefinedCallsite.Remove(this);
                     }
                 }
@@ -317,15 +301,15 @@ namespace Domain.CodeInfo.InstanceDefinitions
         {
             string result = "";
             // Getting the className identification of this MethodInstance
-            if(aliasClassName is not null)
+            if(callerClass is not null)
             {
-                if (!String.IsNullOrEmpty(aliasClassName.type))
+                if (!String.IsNullOrEmpty(callerClass.type))
                 {
-                    result += aliasClassName.type;
+                    result += callerClass.type;
                 }
                 else
                 {
-                    result += aliasClassName.name;
+                    result += callerClass.name;
                 }
                 result += ".";
             }
@@ -333,9 +317,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
             result += "(";
             // Getting the parameters identification of this MethodInstance
-            if(aliasParameters.Count > 0)
+            if(calledParameters.Count > 0)
             {
-                foreach(var param in aliasParameters)
+                foreach(var param in calledParameters)
                 {
                     if (!String.IsNullOrEmpty(param.type))
                     {
@@ -365,10 +349,10 @@ namespace Domain.CodeInfo.InstanceDefinitions
             // Setting the parameters of the MethodIdentifier to request the actual Method to the methodDictionary
             var methodIdentifier = new MethodIdentifier();
             var parameters = new List<string>();
-            foreach(var param in aliasParameters)
+            foreach(var param in calledParameters)
             {
                 // If this param has a chainedInstance, then replace the type of the param with the type of the Last chainedInstance
-                parameters.Add((param.chainedInstance is not null && param is not MethodInstance) ? (GetLastChainedInstance(param).type) : (param.type));
+                parameters.Add((param.chainedInstance is not null) ? (GetLastChainedInstance(param).type) : (param.type));
             }
             methodIdentifier.methodParameters = parameters;
             if(this.inheritedClasses is not null)
@@ -380,12 +364,12 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 methodIdentifier.ownerClassNameAndInheritedClasses = new();
             }
             // If there is a propertyChain, then use the type of the last property from the propertyChain, else then use the type of the class name
-            if(chainedInstance is not null)
+            if(callerClass.chainedInstance is not null)
             {
-                methodIdentifier.ownerClassNameAndInheritedClasses.Add(GetLastChainedInstance(chainedInstance).type);
+                methodIdentifier.ownerClassNameAndInheritedClasses.Add(GetLastChainedInstance(callerClass.chainedInstance).type);
             }
             else
-                methodIdentifier.ownerClassNameAndInheritedClasses.Add((String.IsNullOrEmpty(aliasClassName.type)) ? (aliasClassName.name) : (aliasClassName.type));
+                methodIdentifier.ownerClassNameAndInheritedClasses.Add((String.IsNullOrEmpty(callerClass.type)) ? (callerClass.name) : (callerClass.type));
             methodIdentifier.methodName = methodName;
             methodIdentifier.methodInstanceCandidateNamespaces = this.candidateNamespaces;
 

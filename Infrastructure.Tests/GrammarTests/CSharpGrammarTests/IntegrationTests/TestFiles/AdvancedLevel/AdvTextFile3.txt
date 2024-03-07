@@ -23,11 +23,21 @@ namespace MyNamespace
             instance3.LastMethod(instance3);
             instance6.LastMethod(instance3);
         }
+        public void Main2()
+        {
+            Class3 otherInstance3 = new Class3();
+            otherInstance3.GetClass1(otherInstance3.GetClass2()).SomeOtherMethod(
+                otherInstance3.GetClass6().data5, otherInstance3.data6.data5.data4.YetSomeAnotherMethod(otherInstance3).data6
+                );
+        }
     }
 
     public class Class1
     {
         public void SomeMethod()
+        {
+        }
+        public Class3 SomeOtherMethod(Class5 class5, Class6 class6)
         {
         }
     }
@@ -41,6 +51,8 @@ namespace MyNamespace
 
     public class Class3
     {
+        public Class6 data6;
+
         public Class2 GetClass2()
         {
             return new Class2();
@@ -88,10 +100,14 @@ namespace MyNamespace
         public string YetAnotherMethod(Class3 param)
         {
         }
+        public Class3 YetSomeAnotherMethod(Class3 param)
+        {
+        }
     }
 
     public class Class5
     {
+        public Class4 data4;
         public int AlmostFinalMethod(Class3 param)
         {
         }
@@ -99,6 +115,7 @@ namespace MyNamespace
 
     public class Class6
     {
+        public Class5 data5;
         public float LastMethod(Class3 param)
         {
         }
