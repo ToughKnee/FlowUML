@@ -513,6 +513,7 @@ Namespace: MyNamespace
 Properties:
 Methods:
   Main(): void
+  Main2(): void
 Inherited Classes:
 ");
             classStrings[1].Should().Be(@"Name: Class1
@@ -520,6 +521,7 @@ Namespace: MyNamespace
 Properties:
 Methods:
   SomeMethod(): void
+  SomeOtherMethod(Class5, Class6): Class3
 Inherited Classes:
 ");
             classStrings[2].Should().Be(@"Name: Class2
@@ -532,6 +534,7 @@ Inherited Classes:
             classStrings[3].Should().Be(@"Name: Class3
 Namespace: MyNamespace
 Properties:
+  data6: Class6
 Methods:
   GetClass2(): Class2
   GetClass1(Class2): Class1
@@ -552,6 +555,7 @@ Inherited Classes:
 
             // Creating the references to the methods to be checked
             var Program_Main = classEntitiesList[0].methods[0];
+            var Program_Main2 = classEntitiesList[0].methods[1];
             var GetClass2 = classEntitiesList[3].methods[0];
             var GetClass1 = classEntitiesList[3].methods[1];
             var SomeMethod = classEntitiesList[1].methods[0];
@@ -560,12 +564,15 @@ Inherited Classes:
             var Class3_AnotherMethod = classEntitiesList[3].methods[5];
             var Class3_YetAnotherMethod = classEntitiesList[3].methods[6];
             var Class4_YetAnotherMethod = classEntitiesList[4].methods[0];
+            var Class4_YetSomeAnotherMethod = classEntitiesList[4].methods[1];
             var GetClass5 = classEntitiesList[3].methods[3];
             var Class5_AlmostFinalMethod = classEntitiesList[5].methods[0];
             var GetClass6 = classEntitiesList[3].methods[4];
             var Class3_AlmostFinalMethod = classEntitiesList[3].methods[7];
             var Class3_LastMethod = classEntitiesList[3].methods[8];
             var Class6_LastMethod = classEntitiesList[6].methods[0];
+
+            var SomeOtherMethod = classEntitiesList[1].methods[1];
 
             // Checking the callsites of the Program class
             Program_Main.callsites.Count.Should().Be(15);
@@ -584,6 +591,14 @@ Inherited Classes:
             Program_Main.callsites[12].calledMethod.Should().Be(Class3_AlmostFinalMethod);
             Program_Main.callsites[13].calledMethod.Should().Be(Class3_LastMethod);
             Program_Main.callsites[14].calledMethod.Should().Be(Class6_LastMethod);
+
+            Program_Main2.callsites.Count.Should().Be(6);
+            Program_Main2.callsites[0].calledMethod.Should().Be(null);
+            Program_Main2.callsites[1].calledMethod.Should().Be(GetClass2);
+            Program_Main2.callsites[2].calledMethod.Should().Be(GetClass1);
+            Program_Main2.callsites[3].calledMethod.Should().Be(GetClass6);
+            Program_Main2.callsites[4].calledMethod.Should().Be(Class4_YetSomeAnotherMethod);
+            Program_Main2.callsites[5].calledMethod.Should().Be(SomeOtherMethod);
         }
     }
 }

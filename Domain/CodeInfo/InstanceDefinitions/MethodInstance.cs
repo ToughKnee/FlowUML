@@ -69,11 +69,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// <param name="aliasParams"></param>
         /// <param name="linkedCallsite"></param>
         /// <param name="kind"></param>
-        public MethodInstance(AbstractInstance? aliasClassName, AbstractInstance? linkedInstance, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, KindOfInstance kind, List<string> usedNamespaces)
+        public MethodInstance(AbstractInstance? aliasClassName, AbstractInstance? chainedInstance, string methodName, List<AbstractInstance> aliasParams, Callsite linkedCallsite, KindOfInstance kind, List<string> usedNamespaces)
         {
             this.refType = new StringWrapper();
             this.aliasClassName = aliasClassName;
-            this.chainedInstance = linkedInstance;
+            this.chainedInstance = chainedInstance;
 
             this.methodName = methodName;
             this.aliasParameters = aliasParams;
@@ -118,6 +118,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             this.refType.data = actualMethod.returnType;
             this.linkedCallsite.calledMethod = actualMethod;
             methodInstancesWithUndefinedCallsite.Remove(this);
+            ResolveChainedInstanceType(this);
         }
         /// <summary>
         /// This method resolves the type of a given component of this MethodInstance
@@ -174,6 +175,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         /// <param name="ownerInstance"></param>
         /// <param name="isParameter"></param>
+        //===========================  TODO: REFACTOR this method by removing the optional boolean parameter
         public void ResolveChainedInstanceType(AbstractInstance ownerInstance, bool isParameter = false)
         {
             // If this is not a parameter and the MehtodInstance does not have a chainedInstance then do nothing, or if this is a parameter and the parameter does not have a chainedInstance then do nothing, or if the ownerInstnace is another MehtodInstance and it is a parameter then do nothing
@@ -222,7 +224,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
                     this.inheritedClasses = inheritance;
 
                     // If the inheritance of this class has been resolved, then get the inheritance for the next property in the property chain if this MethodInstance has any
-                    ResolveChainedInstanceType(aliasClassName);
+                    ResolveChainedInstanceType(aliasClassName, true);
                 }
             }
 
@@ -255,21 +257,8 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 }
             }
 
-            bool areCallerComponentsTypeKnown = true;
-            AbstractInstance nextInstance = chainedInstance;
-            while (nextInstance is not null)
-            {
-                if (String.IsNullOrEmpty(nextInstance.type))
-                {
-                    areCallerComponentsTypeKnown = false;
-                    break;
-                }
-
-                nextInstance = nextInstance.chainedInstance;
-            }
-
             // If the parameters type and the types of the components of the caller are known, then look into the methodDictionary the actual Method and get the return type, and also define the linkedCallsite with the actual Method
-            if (areParametersTypeKnown && areCallerComponentsTypeKnown)
+            if (areParametersTypeKnown)
             {
                 if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod1))
                     HandleActualMethod(actualMethod1);
@@ -368,7 +357,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             foreach(var param in aliasParameters)
             {
                 // If this param has a chainedInstance, then replace the type of the param with the type of the Last chainedInstance
-                parameters.Add((param.chainedInstance is not null && param is not MethodInstance) ? (GetLastChainedInstance(param).type) : (param.type));
+                parameters.Add((param.chainedInstance is not null) ? (GetLastChainedInstance(param).type) : (param.type));
             }
             methodIdentifier.methodParameters = parameters;
             if(this.inheritedClasses is not null)
@@ -380,9 +369,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 methodIdentifier.ownerClassNameAndInheritedClasses = new();
             }
             // If there is a propertyChain, then use the type of the last property from the propertyChain, else then use the type of the class name
-            if(chainedInstance is not null)
+            if(aliasClassName.chainedInstance is not null)
             {
-                methodIdentifier.ownerClassNameAndInheritedClasses.Add(GetLastChainedInstance(chainedInstance).type);
+                methodIdentifier.ownerClassNameAndInheritedClasses.Add(GetLastChainedInstance(aliasClassName.chainedInstance).type);
             }
             else
                 methodIdentifier.ownerClassNameAndInheritedClasses.Add((String.IsNullOrEmpty(aliasClassName.type)) ? (aliasClassName.name) : (aliasClassName.type));

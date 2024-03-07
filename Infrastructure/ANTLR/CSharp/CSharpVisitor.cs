@@ -455,8 +455,13 @@ namespace Infrastructure.Antlr
 
             }
 
+            // Get the raw propertyChain to be sent to the Mediator
+            var chainedPropertiesNode = GetRuleNodeInChildren("chainedProperties", context);
+            string propertyChainString = (chainedPropertiesNode is not null) ? (chainedPropertiesNode.GetText()) : ("");
+            propertyChainString = (propertyChainString.Length > 1) ? (propertyChainString.Substring(1, propertyChainString.Length - 1)) : (propertyChainString);
+
             // Save the methodCallData to the List to be passed later to the mediator
-            _methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, _currentMethodBuilder, isConstructor));
+            _methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, propertyChainString, _currentMethodBuilder, isConstructor));
 
             return completeFunctionString;
         }

@@ -231,13 +231,14 @@ namespace Infrastructure.Mediators
         /// <returns></returns>
         public MethodInstance GenerateMethodInstance(MethodCallData callData, AbstractInstance? linkedMethodCallCaller = null)
         {
-            var (calledClassName, calledMethodName, calledParameters, linkedMethodBuilder, isConstructor) = callData;
+            var (calledClassName, calledMethodName, calledParameters, propertyChainString, linkedMethodBuilder, isConstructor) = callData;
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
 
             AbstractInstance? linkedClassOrParameterInstance = null;
             List<AbstractInstance> linkedParametersNameInstance = new();
             KindOfInstance methodInstanceKind = KindOfInstance.Normal;
-            AbstractInstance methodInstanceLinkedInstance = null;
+            AbstractInstance classCallerChainedInstance = null;
+            AbstractInstance methodInstanceChainedInstance = null;
 
             // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
             if ((calledClassName != null && calledClassName.Contains(".")) || linkedMethodCallCaller is not null)
@@ -247,10 +248,12 @@ namespace Infrastructure.Mediators
                 if (linkedMethodCallCaller is not null)
                     classOwner = "";
 
-                methodInstanceLinkedInstance = GeneratePropertyChain(classOwner, calledClassName);
+                classCallerChainedInstance = GeneratePropertyChain(classOwner, calledClassName);
                 calledClassName = classOwner;
             }
 
+            // Generate the propertyChain of the MehtodInstance
+            methodInstanceChainedInstance = GeneratePropertyChain("", propertyChainString);
 
             // Adding at the end the className instance if there is no linkedMethodCallCaller, if there is then we must not add the calledClassName since it actually is the linkedMethodCallCaller
             if (linkedMethodCallCaller is null)
@@ -287,12 +290,12 @@ namespace Infrastructure.Mediators
                     // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
                     if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
                     {
-                        linkedClassOrParameterInstance = knownClassInstance;
+                        linkedClassOrParameterInstance.refType = knownClassInstance.refType;
                     }
                     // Check again but adding the parameter identifier if this instance was a parameter
                     else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(paramIdentifier + currentStringInstance, out AbstractInstance knownClassInstanceParam))
                     {
-                        linkedClassOrParameterInstance = knownClassInstanceParam;
+                        linkedClassOrParameterInstance.refType = knownClassInstanceParam.refType;
                     }
                     // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
                     else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
@@ -315,8 +318,8 @@ namespace Infrastructure.Mediators
                         linkedClassOrParameterInstance.refType.data = _currentClassNameWithoutDot;
                     }
 
-                    // If this iteration covers the properties then add the instance to the parameters list of the MethodInstance to be created
-                    if (i < calledParametersCount2 - 1 && linkedClassOrParameterInstance is not null)
+                    // If this iteration covers the properties(i. e. isn't the last element, which is the caller class, but if the caller class is another MethodCall then all the elements are parameters) then add the instance to the parameters list of the MethodInstance to be created
+                    if ((i < calledParametersCount2 - 1 || linkedMethodCallCaller is not null) && linkedClassOrParameterInstance is not null)
                     {
                         linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
                     }
@@ -344,12 +347,16 @@ namespace Infrastructure.Mediators
             if (linkedMethodCallCaller is not null)
                 linkedClassOrParameterInstance = linkedMethodCallCaller;
 
+            // Adding the propertyChain to the class caller IF the caller class is not another MethodInstance
+            if (linkedMethodCallCaller is null)
+                linkedClassOrParameterInstance.chainedInstance = classCallerChainedInstance;
+
             // Make the callsite for the method
             var callsite = new Callsite(null);
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstanceLinkedInstance, calledMethodName, linkedParametersNameInstance, callsite, methodInstanceKind, _usedNamespaces);
+            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstanceChainedInstance, calledMethodName, linkedParametersNameInstance, callsite, methodInstanceKind, _usedNamespaces);
             // If this methodCall is inherited or in this class, then we set the inheritedClass of this component since it needs the inheritance of the current class to know where this came from
             methodInstance.SetInheritance(InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot]);
          

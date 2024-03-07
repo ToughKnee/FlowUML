@@ -22,23 +22,26 @@ namespace Infrastructure.Mediators
         /// This list contains objects because it will hold string and MethodCallData types
         /// </summary>
         public List<object>? calledParameters { get; init; }
+        public string? propertyChain { get; init; }
         public MethodBuilder linkedMethodBuilder { get; init; }
         public bool isConstructor { get; init; }
 
-        public MethodCallData(string calledClassName, string calledMethodName, List<object>? calledParameters, MethodBuilder linkedMethodBuilder, bool isConstructor)
+        public MethodCallData(string calledClassName, string calledMethodName, List<object>? calledParameters, string propertyChain, MethodBuilder linkedMethodBuilder, bool isConstructor)
         {
             this.calledClassName = calledClassName;
             this.calledMethodName = calledMethodName;
             this.calledParameters = calledParameters;
+            this.propertyChain = propertyChain;
             this.linkedMethodBuilder = linkedMethodBuilder;
             this.isConstructor = isConstructor;
         }
 
-        internal void Deconstruct(out string calledClassName, out string calledMethodName, out List<object> calledParameters, out MethodBuilder linkedMethodBuilder, out bool isConstructor)
+        internal void Deconstruct(out string calledClassName, out string calledMethodName, out List<object> calledParameters, out string propertyChain, out MethodBuilder linkedMethodBuilder, out bool isConstructor)
         {
             calledClassName = this.calledClassName;
             calledMethodName = this.calledMethodName;
             calledParameters = this.calledParameters;
+            propertyChain = this.propertyChain;
             linkedMethodBuilder = this.linkedMethodBuilder;
             isConstructor = this.isConstructor;
         }
