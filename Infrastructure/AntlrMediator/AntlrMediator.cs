@@ -226,26 +226,26 @@ namespace Infrastructure.Mediators
         /// is the MehtodInstance to be created)
         /// </summary>
         /// <param name="callData">The MethodCall data to be used to generate the MethodInstnace</param>
-        /// <param name="linkedMethodCallCaller">The MethodInstance that has called the 
+        /// <param name="callerMethodInstance">The MethodInstance that has called the 
         /// MethodInstance that is going to be generated</param>
         /// <returns></returns>
-        public MethodInstance GenerateMethodInstance(MethodCallData callData, AbstractInstance? linkedMethodCallCaller = null)
+        public MethodInstance GenerateMethodInstance(MethodCallData callData, AbstractInstance? callerMethodInstance = null)
         {
             var (calledClassName, calledMethodName, calledParameters, propertyChainString, linkedMethodBuilder, isConstructor) = callData;
             //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
 
             AbstractInstance? linkedClassOrParameterInstance = null;
-            List<AbstractInstance> linkedParametersNameInstance = new();
+            List<AbstractInstance> calledParametersInstances = new();
             KindOfInstance methodInstanceKind = KindOfInstance.Normal;
             AbstractInstance classCallerChainedInstance = null;
             AbstractInstance methodInstanceChainedInstance = null;
 
             // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
-            if ((calledClassName != null && calledClassName.Contains(".")) || linkedMethodCallCaller is not null)
+            if ((calledClassName != null && calledClassName.Contains(".")) || callerMethodInstance is not null)
             {
-                // If there is a linkedMethodCallCaller, then the calledClass is part of the propertyChain and it must be specified to the GeneratePropertyChain function, otherwise then it is not part of the chain
+                // If there is a callerMethodInstance, then the calledClass is part of the propertyChain and it must be specified to the GeneratePropertyChain function, otherwise then it is not part of the chain
                 string classOwner = calledClassName.Split(".")[0];
-                if (linkedMethodCallCaller is not null)
+                if (callerMethodInstance is not null)
                     classOwner = "";
 
                 classCallerChainedInstance = GeneratePropertyChain(classOwner, calledClassName);
@@ -255,15 +255,15 @@ namespace Infrastructure.Mediators
             // Generate the propertyChain of the MehtodInstance
             methodInstanceChainedInstance = GeneratePropertyChain("", propertyChainString);
 
-            // Adding at the end the className instance if there is no linkedMethodCallCaller, if there is then we must not add the calledClassName since it actually is the linkedMethodCallCaller
-            if (linkedMethodCallCaller is null)
+            // Adding at the end the className instance if there is no callerMethodInstance, if there is then we must not add the calledClassName since it actually is the callerMethodInstance
+            if (callerMethodInstance is null)
             {
                 calledParameters.Add(calledClassName);
             }
 
             // Process each parameter and class name according to what it is(based on its position in the List, all but the last one are parameters, the last element is the class name)
-            int calledParametersCount2 = (calledParameters is null) ? (0) : (calledParameters.Count);
-            for (int i = 0; i < calledParametersCount2; i++)
+            int calledParametersCount = calledParameters.Count;
+            for (int i = 0; i < calledParametersCount; i++)
             {
                 if (calledParameters[i] is string)
                 {
@@ -281,7 +281,7 @@ namespace Infrastructure.Mediators
                     linkedClassOrParameterInstance.inheritedClasses = null;
                     //===========================  Make the analysis just as usual
                     // If this is the class name and it is a constructor, then mark the kind of the MethodInstance and set the data to match the actual Method later
-                    if (i == calledParametersCount2 - 1 && isConstructor)
+                    if (i == calledParametersCount - 1 && isConstructor)
                     {
                         linkedClassOrParameterInstance.kind = KindOfInstance.IsConstructor;
                         methodInstanceKind = KindOfInstance.IsConstructor;
@@ -319,9 +319,9 @@ namespace Infrastructure.Mediators
                     }
 
                     // If this iteration covers the properties(i. e. isn't the last element, which is the caller class, but if the caller class is another MethodCall then all the elements are parameters) then add the instance to the parameters list of the MethodInstance to be created
-                    if ((i < calledParametersCount2 - 1 || linkedMethodCallCaller is not null) && linkedClassOrParameterInstance is not null)
+                    if ((i < calledParametersCount - 1 || callerMethodInstance is not null) && linkedClassOrParameterInstance is not null)
                     {
-                        linkedParametersNameInstance.Add(linkedClassOrParameterInstance);
+                        calledParametersInstances.Add(linkedClassOrParameterInstance);
                     }
                     // After the current Instance has been properly set, then generate its propertyChain
                     if (!String.IsNullOrEmpty(currentStringInstancePropertyChain))
@@ -331,7 +331,7 @@ namespace Infrastructure.Mediators
                 else if (calledParameters[i] is MethodCallData)
                 {
                     var parameterMethodCall = GenerateMethodInstance((MethodCallData)calledParameters[i]);
-                    linkedParametersNameInstance.Add(parameterMethodCall);
+                    calledParametersInstances.Add(parameterMethodCall);
                 }
                 else
                 {
@@ -344,11 +344,11 @@ namespace Infrastructure.Mediators
             //======
 
             // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
-            if (linkedMethodCallCaller is not null)
-                linkedClassOrParameterInstance = linkedMethodCallCaller;
+            if (callerMethodInstance is not null)
+                linkedClassOrParameterInstance = callerMethodInstance;
 
             // Adding the propertyChain to the class caller IF the caller class is not another MethodInstance
-            if (linkedMethodCallCaller is null)
+            if (callerMethodInstance is null)
                 linkedClassOrParameterInstance.chainedInstance = classCallerChainedInstance;
 
             // Make the callsite for the method
@@ -356,7 +356,7 @@ namespace Infrastructure.Mediators
             linkedMethodBuilder.AddCallsite(callsite);
 
             // Put the MethodInstance created in a property to be passed to the ReceiveLocalVariableDeclaration
-            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstanceChainedInstance, calledMethodName, linkedParametersNameInstance, callsite, methodInstanceKind, _usedNamespaces);
+            var methodInstance = new MethodInstance(linkedClassOrParameterInstance, methodInstanceChainedInstance, calledMethodName, calledParametersInstances, callsite, methodInstanceKind, _usedNamespaces);
             // If this methodCall is inherited or in this class, then we set the inheritedClass of this component since it needs the inheritance of the current class to know where this came from
             methodInstance.SetInheritance(InheritanceDictionaryManager.instance.inheritanceDictionary[_currentClassNameWithoutDot]);
          

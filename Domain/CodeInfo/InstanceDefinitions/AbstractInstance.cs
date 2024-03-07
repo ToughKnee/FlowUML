@@ -59,7 +59,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         public StringWrapper refType { get; set; }
         /// <summary>
-        /// This bool represents wether this MethodCall does not have an aliasClassName and must come from 
+        /// This bool represents wether this MethodCall does not have an callerClass and must come from 
         /// </summary>
         public KindOfInstance kind;
 
