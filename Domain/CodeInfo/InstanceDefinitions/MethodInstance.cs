@@ -246,7 +246,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
                         areParametersTypeKnown = false;
                 }
 
-                if (String.IsNullOrEmpty(calledParameters[i].type))
+                else if (String.IsNullOrEmpty(calledParameters[i].type))
                 {
                     areParametersTypeKnown = false;
                 }

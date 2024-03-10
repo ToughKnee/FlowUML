@@ -393,7 +393,7 @@ namespace Infrastructure.Antlr
         /// <returns>The whole method that may be assigning a variable</returns>
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
-            string wholeFunctionString = context.GetText().Replace("new", "");
+            string wholeFunctionString = context.GetText().Replace("await", "");
             for (int j = 0; j < context.ChildCount; j++)
             {
                 // Check each part of the expressionMethodCall, if there are nested methodCalls, then we visit each of them to be extract the information
@@ -436,7 +436,8 @@ namespace Infrastructure.Antlr
 
             // Get the argumentList to visit all the arguments, if they are methodCalls then remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList
             var argumentListNode = GetRuleNodeInChildren("argumentList", context);
-            for (int i = 0; i < argumentListNode.ChildCount; i++)
+            int argumentListNodeChildrenCount = (argumentListNode is not null) ? (argumentListNode.ChildCount) : (0);
+            for (int i = 0; i < argumentListNodeChildrenCount; i++)
             {
                 string expressionString = Visit(argumentListNode.GetChild(i));
 

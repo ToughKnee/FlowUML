@@ -1,6 +1,8 @@
 // TODO: Cover the Constructors methods AND the 'new' keyword when called inside a methodBody
 grammar CSharpGrammar;
 WS  :   [ \t\n\r]+ -> skip ;
+COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
 
 //===========================//===========================  Lexer
 //===========================  Generic grammar
@@ -29,12 +31,32 @@ new: NEW;
 
 RETURN: 'return';
 
+OPERATORS
+    : '=='
+    | '||'
+    | '!='
+    | '&&'
+    | 'is not'
+    | 'is'
+    ;
+
+STRING 
+    : '"' .*? '"' 
+    | '\'' .*? '\'' 
+    ;
+string: STRING ;
+
+NUMBER 
+    : '-'? [0-9]+ ('.' [0-9]+)? 
+    ;
+number: NUMBER ;
+
 // Covers optional MODIFIERS for some properties, variables, classes and such that they could have like readonly or the attributes, like [Theory] for xUnit
 MODIFIERS
     : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
     ;
 
-modifiers: MODIFIERS;
+modifiers: NEW | MODIFIERS;
 
 ACCESS_MODIFIER
     : 'public'
@@ -45,42 +67,19 @@ ACCESS_MODIFIER
 
 accessModifier: ACCESS_MODIFIER;
 
-// Covers types which may or may not have generic types with them
-// TODO: Add the primitive types in here
-PRIMITIVE_TYPE_NAME
-    : 'string'
-    | 'char'
-    | 'bool'
-    | 'int'
-    | 'uint'
-    | 'float'
-    | 'long'
-    | 'ulong'
-    | 'short'
-    | 'ushort'
-    | 'byte'
-    | 'decimal'
-    | 'var'
-    | 'object'
-    | 'dynamic'
-    ;
-
-primitiveTypeName: PRIMITIVE_TYPE_NAME;
-
 advancedTypeName
     : identifier ('<' genericType (',' genericType)* '>')?
     ;
 
 genericType
     : advancedTypeName
-    | primitiveTypeName
     | genericType '<' genericType (',' genericType)* '>'
     ;
     
-// Words that may be anything like a property declaration, varaible declaration, etc, which ends with ' ; '
-// TODO: Check if removing the '('?'*)' would still take what we need from a thing with a type like 'List<Team?>', and check if it gets 'List<Team>' wothout the '?' sign
+// Words that may be anything like a property declaration, variable declaration, etc
 IDENTIFIER
-    : [a-zA-Z_] [a-zA-Z0-9_]*('?'?)
+// The unicode values correspond to '[' and ']'
+    : [a-zA-Z_] [a-zA-Z0-9_]*('\u005B' '\u005D')? ('?')?
     ;
 
 identifier
@@ -91,7 +90,7 @@ advancedIdentifier
     ;
 
 type
-    : (primitiveTypeName | advancedTypeName)
+    : advancedTypeName
     ;
 
 //===========================  File grammar
@@ -156,18 +155,18 @@ classContent
     ;
 
     property
-        : attributes? accessModifier? modifiers? type identifier SEMICOLON
+        : (attributes | accessModifier | modifiers )* type identifier SEMICOLON
         ;
 
     method
         :    
         // Normal method syntax
-        attributes? accessModifier? modifiers* type identifier 
+        (attributes | accessModifier | modifiers)* type identifier 
         '(' parameterList? ')'
         methodBodyContent
         |
         // Constructor syntax
-        attributes? accessModifier? modifiers* identifier 
+        (attributes | accessModifier | modifiers)* identifier 
         '(' parameterList? ')'
         methodBodyContent
 
@@ -199,10 +198,10 @@ parameter
     : type identifier
     ;
 
-//===========================  Local variables grammar
+//===========================  Method content grammar
 methodContent
     : valueAssignment ';'
-    | functionCall ';'
+    | expression ';'
     | localVariableDeclaration ';'
     | returnExpression ';'
     ;
@@ -215,25 +214,30 @@ valueAssignment
     : advancedIdentifier '=' expression
     ;
 
-functionCall: expression;
-
 returnExpression
     : RETURN (identifier | expression)
     ;
 
 // Something that returns something
 expression
-    : advancedIdentifier
-    | AWAIT? expressionMethodCall
+    : 
+    ternaryOperatorExpression
+    | expressionMethodCall
+    | STRING
+    | NUMBER
+    | comparisonExpression
+    | advancedIdentifier
+    // TODO: Do the following features AND make sure to put the optional parentheses around them
+    // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
+    // Make the rule for the ternary operator, and make sure it also captures other expression rules
     ;
 
 expressionMethodCall
-    : (methodCall | identifier) ('.' methodCall)*
-    | 
+    : AWAIT? methodCall ('.' methodCall)*
     ;
 
 methodCall
-    : new? advancedIdentifier '(' argumentList ')' chainedProperties?
+    : new? advancedIdentifier '(' argumentList? ')' chainedProperties?
     ;
 
 chainedProperties
@@ -243,3 +247,77 @@ chainedProperties
 argumentList
     : (expression | identifier) ( ',' (expression | identifier) )*
     ;
+    
+// Gibberish here refers to things that we are not interested in like expressions enclosed in braces
+// The logic is to basically state that 'if the thing we are currently looking at(while parsing text) is not something important(like an expression), then it is rubbish and we don't care'
+gibberish: ('<' 
+    | '{' 
+    | '}' 
+    | '[' 
+    | '!' 
+    | '#' 
+    | '$' 
+    | '%' 
+    | '&' 
+    | '\'' 
+    | '*' 
+    | '+' 
+    | ',' 
+    | '-' 
+    | '.' 
+    | '/' 
+    | '=' 
+    | '>' 
+    | '?' 
+    | '@' 
+    | '^' 
+    | '_' 
+    | '`' 
+    | '~'
+    | NUMBER
+    | STRING
+    | OPERATORS
+    )+;
+
+// In order to implement a way to recognize nested rules, like the ternary operator, we must create 3 rules, the normal rule which captures the cases where the is NO  nesting(which usually does not have special characters like '()', which must be used when we want to nest values) -- After that we need a component rule which basically has everythig that will be in the rule normally, BUT it must not include the previous rule, which would be itself, but this alone would leave us without nesting, so we need the last rule -- Which represents the case where there IS nesting, it would look the same as the first rule structurally, but it will differ at being able to be composed of the second rule AND the first rule also, ONLY IF we start the rule with another rule that MUST be present, like 'nestedTernaryOperator' having a '(' without the question mark, while the 'ternaryOperatorExpression' starts with '('?, including the question mark, and if that quesiton mark wasn't there in the third rule then ANTLR marks it as left recursion which can't be handled
+//===========================  Ternary operataor nesting rules
+ternaryOperatorExpression
+    : '('? ternaryOperatorComponent* ')'?
+    '?' '('? ternaryOperatorComponent* ')'?
+    ':' '('? ternaryOperatorComponent* ')'?
+    ;
+
+ternaryOperatorComponent
+    : nestedTernaryOperator
+    | comparisonExpression
+    | expressionMethodCall
+    | advancedIdentifier
+    | comparisonExpression
+    | gibberish
+    ;
+
+nestedTernaryOperator
+    : '(' (expression | gibberish)* ')'
+    '?' '('? (expression | gibberish)* ')'?
+    ':' '('? (expression | gibberish)* ')'?
+    ;
+//======
+
+//===========================  Comparison nesting rules
+comparisonExpression
+    : '('? comparisonExpressionComponent (OPERATORS comparisonExpressionComponent)+ ')'? 
+    ;
+
+comparisonExpressionComponent
+    : nestedTernaryOperator
+    | nestedComparisonExpression
+    | expressionMethodCall
+    | advancedIdentifier
+    | gibberish
+    ;
+
+nestedComparisonExpression
+    : '(' (expression | gibberish) (OPERATORS (expression | gibberish))* ')'
+    ;
+
+//======

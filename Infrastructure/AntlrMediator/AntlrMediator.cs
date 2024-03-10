@@ -337,9 +337,6 @@ namespace Infrastructure.Mediators
                 {
                     throw new Exception("The instance received isn't either a string nor a MethodCallData");
                 }
-
-                //======
-
             }
             //======
 

@@ -76,53 +76,55 @@ Result:
 -Drawbacks
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//===========================  
-//===========================  「 Feature 」     ※ InstancesManager
+//===========================   「 Feature 」     ※ MethodInstance: record type
         Responsibilities(+|-):
-+Decoupled way to handle the info and then convert the info to instanceManager info
++Special lookup when MethodInstance requests the actual Method to the InstancesManager
 -Drawbacks
 
-
-「 Scenario 」     ※ Assign Method to almost complete MethodInstances
+「 Scenario 」     ※ Initialization
 Given:
-        -The analysis of the files has been completed
-        -ALL methodBuilders built all the Methods
-        -The Methods built registered themselves in a Dictionary<string, Method> where the key is the method identification for the instancesManager(classOwner, methodName, params) and the value is the Method itself
-        -The instancesManager cleaned the instancesDictionary from aliases at least once
-
+        -The ANTLR Visitor found a class definition for a record
 When:
-        -There are MethodInstances that are clear from aliases and just need the actual Method
-        -These MethodInstances register themselves to the List which contains MethodInstances that only need the actual Method
+        -
 Then:
-        -The instancesManager goes through all the list of almost complete MethodInstances and makes them compare their method identifiers with the Dictionary<string, Method>
-        -If there is a match, use the Method to make the callsite and set return type in the instancesDictionary, and remove itself from the List of almost complete MethodInstances
-        -If not do nothing 
+        -
+
+「 Scenario 」     ※ Linkage with Instance at 'Deconstruct' assignment
+-This refers to the case when the ANTLR Visitor found an assignment like 'var (calledClassName, calledMethodName, calledParameters, propertyChainString, linkedMethodBuilder, isConstructor) = callData;', where 'callData' is a record, and we need to assign to EACH identifier inside the parentheses the value defined in the 'Deconstruct' method of the record class
+Given:
+        -The ANTLR Visitor found the described local variable assignment
+When:
+        -Mediator is creating the Instances for all the new variables and the MethodInstance
+Then:
+        -The Mediator must use something that creates and links the Instances with the MethodInstance that will give the type to each Instance to be linked
+        -(TODO)Make the MethodInstance have a new class that will take care of the Instances
+
+「 Scenario 」     ※ Type resolution for 'Deconstruct' MethodInstances
+Given:
+        -ANTLR Visitor finished analysis
+        -The MethodInstance class is linked to each 
+When:
+        -
+Then:
+        -
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
