@@ -76,19 +76,6 @@ Result:
 -Drawbacks
 
 
-//===========================   「 Feature 」     ※ MethodInstance: record type
-        Responsibilities(+|-):
-+Special lookup when MethodInstance requests the actual Method to the InstancesManager
--Drawbacks
-
-「 Scenario 」     ※ Initialization
-Given:
-        -The ANTLR Visitor found a class definition for a record
-When:
-        -
-Then:
-        -
-
 「 Scenario 」     ※ Linkage with Instance at 'Deconstruct' assignment
 -This refers to the case when the ANTLR Visitor found an assignment like 'var (calledClassName, calledMethodName, calledParameters, propertyChainString, linkedMethodBuilder, isConstructor) = callData;', where 'callData' is a record, and we need to assign to EACH identifier inside the parentheses the value defined in the 'Deconstruct' method of the record class
 Given:
@@ -102,12 +89,29 @@ Then:
 「 Scenario 」     ※ Type resolution for 'Deconstruct' MethodInstances
 Given:
         -ANTLR Visitor finished analysis
-        -The MethodInstance class is linked to each 
+        -The MethodInstance knows when it is of type Deconstruct and 
+        -The MethodInstance class is linked to each Instance
 When:
         -
 Then:
         -
 
+
+「 Feature 」     ※ MethodInstance Lists recognition?????????????????
+        Responsibilities(+|-):
++Benefits
+-Drawbacks
+
+
+「 Scenario 」     ※ Found new Collection Instance  
+This Instance could be like "var myList = new List<int>()", or "var myDict = new Dictionary<string, int>()"
+Given:
+        -Antlr Visitor is performing analysis
+        -Antlr Visitor finds a Collection Instance declaration
+When:
+        -Mediator receives from the Antlr Visitor the Collection Instance declaration
+Then:
+        -Mediator sets the kind of the MethodInstance and sends it to the MethodInstance which manages it
 
 
 
@@ -134,7 +138,7 @@ Then:
 +Represent objects used in the analyzed code like variables and methodCalls
 +Lets us identify the objects a Class or Method manage
 +Lets us recognize who is the instance that assigned another instance
-++For MethodInstances; since Methods are created AFTER the analysis of the code is finished, there is no need for Method declaration to register into the instancesDictionary*
+++For MethodInstances; since Methods are created AFTER the analysis of the code is finished, there is no need for Method declaration to register into an instances dictionary*
 -Drawbacks
 
 *Because we needed that when a Method Instance created itself before the Method declaration
@@ -150,20 +154,3 @@ Then:
         -We check into the instancesDictionary to see if the assigner or components of the methodCall have already been 
         identified(only used to link the new instance with the instance that is assigning a value)
         -If there is no instance that matched the assigner or components of the methodCall, we must add the assigne and assigner, or just the methodCall, to the instancesDictionary, in order to later identify them
-
-
-「 Scenario 」     ※ Get the last assigner of an instance
-This aims to check when an instance has been assigned a value by another instance, like "team = manager.CreateTeam()", and "manager = CreateManager()"
-Given:
-        -AntlrVisitor finished analysing the code
-        -instancesDictionary has been filled
-        -
-When:
-        -We need to clean aliases
-Then:
-        -
-
-
-
-namespace.(class1,class2,class3).property : int
-myNum : namespace2.(class0, class1).property

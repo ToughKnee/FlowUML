@@ -348,15 +348,20 @@ namespace Infrastructure.Antlr
             var identifierNode = GetRuleNodeInChildren("identifier", context);
 
             string assignerExpression = "";
-            var expressionMethodCallNode = GetRuleNodeInChildren("expressionMethodCall", expressionNode);
+            IParseTree expressionChildNode;
             // If the expression is a expressionMethodCall, visit it and get the info of the assignment
-            if (expressionMethodCallNode != null)
+            if ((expressionChildNode = GetRuleNodeInChildren("expressionMethodCall", expressionNode)) != null)
             {
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
              
                 // Gets the Assignee and the Assigner and returns them
                 return identifierNode.GetText() + separator + assignerExpression;
+            }
+            // If the expression is another identifier of another variable, or field of a class, then get the info and return it
+            else if((expressionChildNode = GetRuleNodeInChildren("advancedIdentifier", expressionNode)) is not null)
+            {
+                return identifierNode.GetText() + separator + expressionChildNode.GetText();
             }
             return assignerExpression;
         }
@@ -393,7 +398,7 @@ namespace Infrastructure.Antlr
         /// <returns>The whole method that may be assigning a variable</returns>
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
-            string wholeFunctionString = context.GetText().Replace("await", "");
+            string wholeFunctionString = context.GetText().Replace("await", "").Replace("new", "");
             for (int j = 0; j < context.ChildCount; j++)
             {
                 // Check each part of the expressionMethodCall, if there are nested methodCalls, then we visit each of them to be extract the information
@@ -417,22 +422,32 @@ namespace Infrastructure.Antlr
         {
             //===========================  Getting the components of the method called
             bool isConstructor = GetRuleNodeInChildren("new", context) != null;
-            string completeFunctionString = context.GetText();
+            string completeFunctionString = context.GetText(), namespaceAndClass = "", methodName = "";
             completeFunctionString = completeFunctionString.Replace("new", "");
-            string callerComponent = completeFunctionString.Substring(0, completeFunctionString.IndexOf('(')-1);
-            var lastPeriodIndex = callerComponent.LastIndexOf('.');
-            if (completeFunctionString.LastIndexOf('(') < lastPeriodIndex)
-            {
-                lastPeriodIndex = -1;
-            }
-            var methodName = completeFunctionString.Substring(
-                (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
-                );
-            var namespaceAndClass = (lastPeriodIndex != -1) ? (completeFunctionString.Substring(0, lastPeriodIndex)) : ("");
-            var openParenIndex = methodName.IndexOf('(');
-            var closeParenIndex = methodName.LastIndexOf(')');
+            int firstParenthesesIndex = completeFunctionString.IndexOf('(');
             List<object> parameterList = new();
-            methodName = methodName.Substring(0, openParenIndex);
+            if(firstParenthesesIndex > 0)
+            {
+
+                string callerComponent = completeFunctionString.Substring(0, firstParenthesesIndex-1);
+                var lastPeriodIndex = callerComponent.LastIndexOf('.');
+                if (completeFunctionString.LastIndexOf('(') < lastPeriodIndex)
+                {
+                    lastPeriodIndex = -1;
+                }
+                methodName = completeFunctionString.Substring(
+                    (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
+                    );
+                namespaceAndClass = (lastPeriodIndex != -1) ? (completeFunctionString.Substring(0, lastPeriodIndex)) : ("");
+                var openParenIndex = methodName.IndexOf('(');
+                var closeParenIndex = methodName.LastIndexOf(')');
+                methodName = methodName.Substring(0, openParenIndex);
+            }
+            // If there are no parentheses, then this must be a custom constructor of a class or a collection data initializer
+            else
+            {
+                methodName = completeFunctionString;
+            }
 
             // Get the argumentList to visit all the arguments, if they are methodCalls then remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList
             var argumentListNode = GetRuleNodeInChildren("argumentList", context);

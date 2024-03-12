@@ -106,7 +106,8 @@ namespace Infrastructure.Mediators
             Instance instanceAssignee;
 
             // If the assigner is a method call...
-            if (assigner.Contains("("))
+            // TODO:FIRST, check if this new copmarison inside the if statement works with all the tests, after that, inside the if statement make a new if statement where you check if the "assigner" IS A COLLECTION, and if it is then mark the future assignee instance with the proper data which will represent a list, then read the comments in the Instance.cs file
+            if (methodCallAssigner.Count > 0)
             {
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
@@ -115,7 +116,21 @@ namespace Infrastructure.Mediators
                 methodInstanceAssigner.refType = returnType;
                 instanceAssignee.refType = methodInstanceAssigner.refType;
             }
-            // IF the declaration is simple
+            // If the assigner is the element of an indexed collection...
+            else if (assigner.Contains("["))
+            {
+                // TODO: Complete this case
+                // Mark this Instance as 
+                instanceAssignee = new Instance(assignee);
+            }
+            // If the assigner is a method call, then create the instances and link them
+            else if (methodCallAssigner.Count > 0)
+            {
+                // TODO: Complete this case
+                // Mark this Instance as 
+                instanceAssignee = new Instance(assignee);
+            }
+            // If the declaration is simple
             else
             {
                 // Make the new instance and link it to an existing instance
@@ -124,7 +139,7 @@ namespace Infrastructure.Mediators
                 // Check in the known instances the assigner and make the link between these 2 instances
                 if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(assigner, out AbstractInstance knownAssignerInstance))
                 {
-                    instanceAssignee.refType.data = knownAssignerInstance.type;
+                    instanceAssignee.refType = knownAssignerInstance.refType;
                 }
                 // If unknown, then the assigner must be a property from a parent class, and then we must add this assignment to the instancesDictionary
                 else
@@ -133,8 +148,6 @@ namespace Infrastructure.Mediators
                     var unknownAssignerInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + assigner);
                 }
 
-                // Add the new instance to the known instances dictionary and the instancesDictionary
-                //_knsownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
             }
 
             // Add the new instance to the known instances dictionary
@@ -338,7 +351,6 @@ namespace Infrastructure.Mediators
                     throw new Exception("The instance received isn't either a string nor a MethodCallData");
                 }
             }
-            //======
 
             // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
             if (callerMethodInstance is not null)

@@ -1,14 +1,1 @@
-public async Task<Team> RemovePlayerFromTeamAsync(string teamName, string playerName)
-{
-    var teamId = TeamName.Create(teamName);
-
-    var team = await _teamsRepository.GetByIdAsync(teamId);
-
-    var playerId = UserName.Create(playerName);
-
-    team.RemovePlayer(playerId);
-
-    await _teamsRepository.UpdateTeamAsync(team);
-
-    return team;
-}
+        int listFirstIndexedElement = intList[0];

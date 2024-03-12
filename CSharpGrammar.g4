@@ -31,11 +31,15 @@ new: NEW;
 
 RETURN: 'return';
 
-OPERATORS
+operators
     : '=='
     | '||'
     | '!='
     | '&&'
+    | '<'
+    | '>'
+    | '<='
+    | '>='
     | 'is not'
     | 'is'
     ;
@@ -86,7 +90,7 @@ identifier
     : IDENTIFIER
     ;
 advancedIdentifier
-    : identifier ('.' identifier)*
+    : identifier ('.' identifier)* ('\u005B' gibberish+ '\u005D')?
     ;
 
 type
@@ -198,16 +202,42 @@ parameter
     : type identifier
     ;
 
+statements
+    : statement+ 
+    ;
+statement
+    : whileLoopStatement 
+    ;  // otherStatement represents all other kinds of statements in your language
+whileLoopStatement
+    : 'while' '(' (comparisonExpression | advancedIdentifier) ')'
+    methodBodyContent
+    ;  // condition represents the while loop condition
+
 //===========================  Method content grammar
 methodContent
     : valueAssignment ';'
     | expression ';'
+    | statement
     | localVariableDeclaration ';'
+    | variableDefinition ';'
     | returnExpression ';'
     ;
 
 localVariableDeclaration
-    : type identifier '=' expression
+    : type identifier assigner expression ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    ;
+
+variableDefinition
+    : advancedIdentifier assigner expression
+    | advancedIdentifier ('++' | '--')
+    ;
+
+assigner
+    : '='
+    | '+='
+    | '-='
+    | '*='
+    | '/='
     ;
 
 valueAssignment
@@ -223,10 +253,10 @@ expression
     : 
     ternaryOperatorExpression
     | expressionMethodCall
-    | STRING
-    | NUMBER
     | comparisonExpression
     | advancedIdentifier
+    | string
+    | number
     // TODO: Do the following features AND make sure to put the optional parentheses around them
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     // Make the rule for the ternary operator, and make sure it also captures other expression rules
@@ -237,7 +267,8 @@ expressionMethodCall
     ;
 
 methodCall
-    : new? advancedIdentifier '(' argumentList? ')' chainedProperties?
+    : new? (advancedIdentifier | type) ('(' argumentList? ')') chainedProperties?
+    | new type ('[' argumentList? ']')? chainedProperties?
     ;
 
 chainedProperties
@@ -245,7 +276,12 @@ chainedProperties
     ;
 
 argumentList
-    : (expression | identifier) ( ',' (expression | identifier) )*
+    : (outParameter | expression) ( ',' (outParameter | expression) )*
+    | gibberish
+    ;
+
+outParameter
+    : 'out' type identifier
     ;
     
 // Gibberish here refers to things that we are not interested in like expressions enclosed in braces
@@ -276,7 +312,7 @@ gibberish: ('<'
     | '~'
     | NUMBER
     | STRING
-    | OPERATORS
+    | operators
     )+;
 
 // In order to implement a way to recognize nested rules, like the ternary operator, we must create 3 rules, the normal rule which captures the cases where the is NO  nesting(which usually does not have special characters like '()', which must be used when we want to nest values) -- After that we need a component rule which basically has everythig that will be in the rule normally, BUT it must not include the previous rule, which would be itself, but this alone would leave us without nesting, so we need the last rule -- Which represents the case where there IS nesting, it would look the same as the first rule structurally, but it will differ at being able to be composed of the second rule AND the first rule also, ONLY IF we start the rule with another rule that MUST be present, like 'nestedTernaryOperator' having a '(' without the question mark, while the 'ternaryOperatorExpression' starts with '('?, including the question mark, and if that quesiton mark wasn't there in the third rule then ANTLR marks it as left recursion which can't be handled
@@ -293,7 +329,7 @@ ternaryOperatorComponent
     | expressionMethodCall
     | advancedIdentifier
     | comparisonExpression
-    | gibberish
+    // | gibberish
     ;
 
 nestedTernaryOperator
@@ -305,7 +341,7 @@ nestedTernaryOperator
 
 //===========================  Comparison nesting rules
 comparisonExpression
-    : '('? comparisonExpressionComponent (OPERATORS comparisonExpressionComponent)+ ')'? 
+    : '('? comparisonExpressionComponent (operators comparisonExpressionComponent)+ ')'? 
     ;
 
 comparisonExpressionComponent
@@ -313,11 +349,12 @@ comparisonExpressionComponent
     | nestedComparisonExpression
     | expressionMethodCall
     | advancedIdentifier
-    | gibberish
+    | number
+    | string
     ;
 
 nestedComparisonExpression
-    : '(' (expression | gibberish) (OPERATORS (expression | gibberish))* ')'
+    : '(' (expression | gibberish) (operators (expression | gibberish))* ')'
     ;
 
 //======

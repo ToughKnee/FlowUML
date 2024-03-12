@@ -8,7 +8,8 @@ namespace MyNamespace
         {
             Class3 instance3 = new Class3();
             Class2 instance2 = instance3.GetClass2();
-            Class1 instance1 = instance3.GetClass1(instance2);
+            var instance22 = instance2;
+            Class1 instance1 = instance3.GetClass1(instance22);
 
             instance1.SomeMethod();
             instance2.AnotherMethod(instance1);

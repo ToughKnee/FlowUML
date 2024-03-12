@@ -6,6 +6,9 @@ namespace MyNamespace
     {
         static void Main()
         {
+            List<int> list = new List<int> {4, 5, 6};
+            int[] array = new int[3] {1, 2, 3};
+            var listFirstElement = list[0];
             Class1 instance1 = new Class1();
             FunctionWithComplexCalls(instance1.class1Prop1.class2Propr1.FunctionCall());
             instance1.class1Prop1.class2Propr1.class3Propr1.Method1(instance1.class1Prop1.FunctionCall());
