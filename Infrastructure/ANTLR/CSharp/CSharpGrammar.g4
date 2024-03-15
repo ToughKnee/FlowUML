@@ -90,7 +90,7 @@ identifier
     : IDENTIFIER
     ;
 advancedIdentifier
-    : identifier ('.' identifier)*
+    : identifier ('.' identifier)* ('[' (string | number | advancedIdentifier) ']')?
     ;
 
 type

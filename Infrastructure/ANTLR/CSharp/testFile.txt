@@ -1,1 +1,51 @@
-        int listFirstIndexedElement = intList[0];
+using System;
+
+namespace MyNamespace
+{
+    public class Program
+    {
+        static void Main()
+        {
+            List<int> list = new List<int> {4, 5, 6};
+            int[] array = new int[3] {1, 2, 3};
+            var listFirstElement = list[0];
+            Class1 instance1 = new Class1();
+            FunctionWithComplexCalls(instance1.class1Prop1.class2Propr1.FunctionCall());
+            instance1.class1Prop1.class2Propr1.class3Propr1.Method1(instance1.class1Prop1.FunctionCall());
+        }
+
+        static void FunctionWithComplexCalls(Class3 param)
+        {
+            param.Method1();
+        }
+    }
+
+    public class Class1
+    {
+        public Class2 class1Prop1;
+
+        public void Method1()
+        {
+        }
+    }
+
+    public class Class2
+    {
+        public Class3 class2Propr1;
+    }
+
+    public class Class3
+    {
+        public Class1 class3Propr1;
+
+        public Class3 FunctionCall()
+        {
+            return new Class3();
+        }
+
+        public void Method1(Class1 param)
+        {
+            param.Method1();
+        }
+    }
+}

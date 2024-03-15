@@ -352,6 +352,8 @@ namespace Infrastructure.Mediators
                 }
             }
 
+            // TODO: In here, make a new method where we manage the calledMethodName, which contains the normal method name, BUT in other cases the calledMethod could be a class with TEMPLATE TYPE, like "List<int>", and we must generate the MethodInstance with 
+
             // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
             if (callerMethodInstance is not null)
                 linkedClassOrParameterInstance = callerMethodInstance;

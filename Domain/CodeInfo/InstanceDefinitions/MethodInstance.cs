@@ -115,6 +115,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         }
         public void HandleActualMethod(Method actualMethod)
         {
+            // TODO: Make an if statement which checks if the "actualMethod.returnType == <TYPENAME>T", where the thing in diamonds will represent the identifier for return types that are TEMPLATES TYPES, while the single 'T' represents the real typename from the definition of the method or class
             this.refType.data = actualMethod.returnType;
             this.linkedCallsite.calledMethod = actualMethod;
             methodInstancesWithUndefinedCallsite.Remove(this);

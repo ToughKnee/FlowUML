@@ -90,7 +90,7 @@ identifier
     : IDENTIFIER
     ;
 advancedIdentifier
-    : identifier ('.' identifier)* ('\u005B' gibberish+ '\u005D')?
+    : identifier ('.' identifier)* ('[' (string | number | advancedIdentifier) ']')?
     ;
 
 type
