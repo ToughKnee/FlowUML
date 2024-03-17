@@ -40,6 +40,12 @@ namespace Domain.CodeInfo.MethodSystem
         /// This way we will create an entire flow from a class to all other places of the code, regardless of the depth of the calls
         /// </summary>
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
+        /// <summary>
+        /// This list represents the typenames this method has, where a method like "public SNodeMyMethod<T, R>()"
+        /// would mean a List with T and R respectively, this property may be assigned or modified by the class owner 
+        /// if the class owner also has typenames
+        /// </summary>
+        public List<Typename>? typenames { get; set; }
 
         public Method(string belongingNamespace, string name, List<string> parameters, string retType, List<Callsite> callsites)
         {

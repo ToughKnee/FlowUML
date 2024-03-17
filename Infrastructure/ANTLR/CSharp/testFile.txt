@@ -2,50 +2,52 @@ using System;
 
 namespace MyNamespace
 {
+    public class SNode<T, R>
+    {
+        public SNode<T, R> Next;
+        public T Value;
+        public R RValue;
+        public SNode(T value)
+        {
+            Value = value;
+        }
+        public SNode()
+        {
+        }
+        public T GetValue()
+        {
+            return Value;
+        }
+        public R GetRValue()
+        {
+            return RValue;
+        }
+    }
+
     public class Program
     {
         static void Main()
         {
+            var node1 = new SNode<int, string>();
+            var node2 = new SNode<int, string>();
+            var nodeStr = new SNode<string, string>();
+            node1.Next = node2;
+            node1.Value = 1;
+            node2.Value = 2;
+            nodeStr.Value = "asd";
+            SNodeIntOperation(node1.GetValue(), node1.GetRValue(), node2, nodeStr);
+            
             List<int> list = new List<int> {4, 5, 6};
             int[] array = new int[3] {1, 2, 3};
             var listFirstElement = list[0];
             Class1 instance1 = new Class1();
-            FunctionWithComplexCalls(instance1.class1Prop1.class2Propr1.FunctionCall());
-            instance1.class1Prop1.class2Propr1.class3Propr1.Method1(instance1.class1Prop1.FunctionCall());
         }
 
-        static void FunctionWithComplexCalls(Class3 param)
+        static void SNodeIntOperation(int number, string text, SNode<int, string> nodeParam, SNode<string, string> stringNode)
         {
-            param.Method1();
-        }
-    }
-
-    public class Class1
-    {
-        public Class2 class1Prop1;
-
-        public void Method1()
-        {
-        }
-    }
-
-    public class Class2
-    {
-        public Class3 class2Propr1;
-    }
-
-    public class Class3
-    {
-        public Class1 class3Propr1;
-
-        public Class3 FunctionCall()
-        {
-            return new Class3();
-        }
-
-        public void Method1(Class1 param)
-        {
-            param.Method1();
+            nodeParam.Value = number;
+            stringNode.Value = text;
+            nodeParam.RValue = text;
         }
     }
 }

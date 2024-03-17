@@ -41,11 +41,10 @@ namespace Infrastructure.Mediators
         /// are going to be identified with</param>
         public void ReceiveNamespace(string? belongingNamespace);
         /// <summary>
-        /// Receive the class name from which the instances to be recieved are going to be identified with
-        /// using also the naemspace
+        /// Receive the class name and inheritance to manage it
         /// </summary>
-        /// <param name="className">Class' name which all the instances to be received 
-        /// are going to be identified with</param>
+        /// <param name="classAndInheritanceNames">Class' name including the inheritance of this class 
+        /// from the code files</param>
         public void ReceiveClassNameAndInheritance(string? classAndInheritanceNames);
         /// <summary>
         /// Receives a property inside a class to be managed

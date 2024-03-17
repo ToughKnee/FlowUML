@@ -27,6 +27,12 @@ namespace Domain.CodeInfo
         /// of this class and also its own class name, provided by the inheritanceDictionary
         /// </summary>
         public IReadOnlyCollection<string> inheritedClasses { get; set; }
+        /// <summary>
+        /// This list represents the typenames this class has, where a class like "public class SNode<T, R>"
+        /// would mean a List with T and R respectively, and also this list is going to be passed to 
+        /// the Methods this class owns
+        /// </summary>
+        public List<Typename>? typenames { get; set; }
 
         public ClassEntity(string name, string belongingNamepsace, List<Property> properties, List<Method> methods)
         {

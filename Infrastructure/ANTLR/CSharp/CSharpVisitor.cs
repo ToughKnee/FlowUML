@@ -169,7 +169,6 @@ namespace Infrastructure.Antlr
                 {
                     _currentClassBuilder = new ClassEntityBuilder();
                     _classBuilders.Add(_currentClassBuilder);
-                    // TODO: Send the inheritance of this class to the ClassBuilder
                     _currentClassBuilder.SetNamespace(_currentNamespace);
                     var classDeclarationNode = GetRuleNodeInChildren("classDeclaration", classDeclarationsNode, i);
 
@@ -182,6 +181,14 @@ namespace Infrastructure.Antlr
                     }
 
                     _mediator.ReceiveClassNameAndInheritance(classNameAndInheritance);
+
+                    var templateTypeNameNode = GetRuleNodeInChildren("templateTypeName", classDeclarationNode, i);
+                    // Look for the typenames this class has and if it does, then add them to the current class builder
+                    if (templateTypeNameNode != null)
+                    {
+                        CustomVisitTemplateTypeName(templateTypeNameNode, true);
+                    }
+
                     // Visit the "classDeclaration"
                     Visit(classDeclarationNode);
                 }
@@ -196,7 +203,24 @@ namespace Infrastructure.Antlr
             {
                 return namespaceIdentifierNode.GetText();
             }
-            return null;
+            return "";
+        }
+        /// <summary>
+        /// This method traverses the templateTypeName node if there are typenames present in the class or
+        /// method declaration and sets them to the correspondent current builder
+        /// </summary>
+        /// <param name="context">The node that has the templateTypeName as a child</param>
+        /// <param name="useClassBuilder">This boolean is set according to the context from which this
+        /// method was called, if it was called at the class declaration node, then it is true,
+        /// if it was called in the method declaration, then false</param>
+        /// <returns></returns>
+        public string CustomVisitTemplateTypeName(IParseTree context, bool useClassBuilder)
+        {
+            if (useClassBuilder)
+                _currentClassBuilder.SetTypename(Typename.GetTypenameList(context.GetText()));
+            else
+                _currentMethodBuilder.SetTypename(Typename.GetTypenameList(context.GetText()));
+            return "";
         }
         /// <summary>
         /// This handles things like "methods, properties, constructors" and all the things that a class may have
@@ -310,6 +334,7 @@ namespace Infrastructure.Antlr
                     _methodCallDataList.Clear();
                 }
             }
+            // TODO: Use the "CustomVisitTemplateTypeName" to be able to define methods with template typenames
             _mediator.ReceiveMethodAnalysisEnd();
             return "";
         }

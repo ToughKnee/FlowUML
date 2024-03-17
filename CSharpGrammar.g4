@@ -135,7 +135,7 @@ classDeclarations
     ;
 
 classDeclaration
-    : attributes? accessModifier? 'class' identifier classHeritage?
+    : attributes? accessModifier? 'class' identifier templateTypeName? classHeritage?
         classBodyContent?
     ;
 
@@ -151,6 +151,10 @@ classHeritage
     : ':' type (',' type)*
     ;
 
+templateTypeName
+    : '<' identifier (',' identifier)* '>'
+    ;
+
 //===========================  Class properties grammar
 classContent
     // Syntax for property declaration
@@ -164,16 +168,9 @@ classContent
 
     method
         :    
-        // Normal method syntax
-        (attributes | accessModifier | modifiers)* type identifier 
+        (attributes | accessModifier | modifiers)* type? identifier templateTypeName?
         '(' parameterList? ')'
         methodBodyContent
-        |
-        // Constructor syntax
-        (attributes | accessModifier | modifiers)* identifier 
-        '(' parameterList? ')'
-        methodBodyContent
-
         ;
 
 attributeIdentifier

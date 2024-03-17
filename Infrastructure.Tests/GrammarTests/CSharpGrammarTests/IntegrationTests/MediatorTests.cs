@@ -618,28 +618,39 @@ Inherited Classes:
                 classStrings.Add(classEntity.ToString());
             }
             //===========================  Checking the information about the ClassEntities and their Methods
-            classStrings[0].Should().Be(@"Name: Program
+            classStrings[0].Should().Be(@"Name: SNode
 Namespace: MyNamespace
+Properties:
+  Next: SNode<T,R>
+  Value: T
+  RValue: R
+Methods:
+  SNode(T): SNode
+  SNode(): SNode
+  GetValue(): T
+  GetRValue(): R
+Inherited Classes:
 ");
 
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
-            ClassEntityManager.instance.classEntities.Count.Should().Be(7);
+            ClassEntityManager.instance.classEntities.Count.Should().Be(2);
 
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
 
             // Creating the references to the methods to be checked
-            var Program_Main = classEntitiesList[0].methods[0];
-            var Program_Main2 = classEntitiesList[0].methods[1];
-            var GetClass2 = classEntitiesList[3].methods[0];
-            var SomeOtherMethod = classEntitiesList[1].methods[1];
+            var Program_Main = classEntitiesList[1].methods[0];
+            var GetValue = classEntitiesList[0].methods[2];
+            var GetRValue = classEntitiesList[0].methods[3];
+            var SNodeIntOperation = classEntitiesList[1].methods[1];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(15);
+            Program_Main.callsites.Count.Should().Be(8);
             Program_Main.callsites[0].calledMethod.Should().Be(null);
-            
-
-            Program_Main2.callsites.Count.Should().Be(6);
-            Program_Main2.callsites[0].calledMethod.Should().Be(null);
+            Program_Main.callsites[1].calledMethod.Should().Be(null);
+            Program_Main.callsites[2].calledMethod.Should().Be(null);
+            Program_Main.callsites[3].calledMethod.Should().Be(GetValue);
+            Program_Main.callsites[4].calledMethod.Should().Be(GetRValue);
+            Program_Main.callsites[5].calledMethod.Should().Be(SNodeIntOperation);
         }
     }
 }

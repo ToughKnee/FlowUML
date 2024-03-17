@@ -1,0 +1,99 @@
+using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Array
+        int[] array = new int[3] {1, 2, 3};
+        Console.WriteLine("Array:");
+        foreach (var item in array)
+        {
+            Console.WriteLine(item);
+        }
+
+        // List
+        List<int> list = new List<int> {4, 5, 6};
+        Console.WriteLine("\nList:");
+        foreach (var item in list)
+        {
+            Console.WriteLine(item);
+        }
+
+        // Dictionary
+        Dictionary<string, int> dictionary = new Dictionary<string, int>
+        {
+            {"Alice", 23},
+            {"Bob", 27}
+        };
+        Console.WriteLine("\nDictionary:");
+        foreach (var item in dictionary)
+        {
+            Console.WriteLine($"Key: {item.Key}, Value: {item.Value}");
+        }
+
+        // HashSet
+        HashSet<int> hashSet = new HashSet<int> {7, 8, 9};
+        Console.WriteLine("\nHashSet:");
+        foreach (var item in hashSet)
+        {
+            Console.WriteLine(item);
+        }
+
+        // Queue
+        Queue<int> queue = new Queue<int>();
+        queue.Enqueue(10);
+        queue.Enqueue(11);
+        queue.Enqueue(12);
+        Console.WriteLine("\nQueue:");
+        while (queue.Count > 0)
+        {
+            Console.WriteLine(queue.Dequeue());
+        }
+
+        // Stack
+        Stack<int> stack = new Stack<int>();
+        stack.Push(13);
+        stack.Push(14);
+        stack.Push(15);
+        Console.WriteLine("\nStack:");
+        while (stack.Count > 0)
+        {
+            Console.WriteLine(stack.Pop());
+        }
+    }
+    public static void simplerCode()
+    {
+        // List
+        List<int> list = new List<int> {4, 5, 6};
+        Console.WriteLine("\nList:");
+        foreach (var item in list)
+        {
+            Console.WriteLine(item);
+        }
+
+        // Cast List to IEnumerable and use lambda to access elements
+        IEnumerable<int> enumerable = list.AsEnumerable();
+        Console.WriteLine("\nIEnumerable from List:");
+        enumerable.ToList().ForEach(item => Console.WriteLine(item));
+
+        // Dictionary
+        Dictionary<string, int> dictionary = new Dictionary<string, int>
+        {
+            {"Alice", 23},
+            {"Bob", 27}
+        };
+        Console.WriteLine("\nDictionary:");
+        foreach (var item in dictionary)
+        {
+            Console.WriteLine($"Key: {item.Key}, Value: {item.Value}");
+        }
+
+        // Cast Dictionary to IEnumerable and use lambda to access elements
+        IEnumerable<KeyValuePair<string, int>> dictEnumerable = dictionary.AsEnumerable();
+        Console.WriteLine("\nIEnumerable from Dictionary:");
+        dictEnumerable.ToList().ForEach(item => Console.WriteLine($"Key: {item.Key}, Value: {item.Value}"));
+    }
+
+}

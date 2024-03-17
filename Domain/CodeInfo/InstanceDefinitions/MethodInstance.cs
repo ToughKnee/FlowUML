@@ -118,6 +118,32 @@ namespace Domain.CodeInfo.InstanceDefinitions
             // TODO: Make an if statement which checks if the "actualMethod.returnType == <TYPENAME>T", where the thing in diamonds will represent the identifier for return types that are TEMPLATES TYPES, while the single 'T' represents the real typename from the definition of the method or class
             this.refType.data = actualMethod.returnType;
             this.linkedCallsite.calledMethod = actualMethod;
+            // Check if the actualMethod or if the owner class of the actualMethod has typename parameters
+            if(actualMethod.typenames is not null || (actualMethod.ownerClass is not null && actualMethod.ownerClass.typenames is not null))
+            {
+                bool typenameFound = false;
+                var callerClassTypenameParameters = Typename.GetTypenameList(callerClass.type);
+                // Look for the typename parameter in the actualMethod typename, if the typename was there, then set the real return type
+                for (int i = 0; actualMethod.typenames != null && i < actualMethod.typenames.Count; i++)
+                {
+                    if (refType.data == actualMethod.typenames[i].name)
+                    {
+                        refType.data = callerClassTypenameParameters[i].name;
+                        typenameFound = true;
+                        break;
+                    }
+                }
+                // If the typename parameter wasn't found in the actualMethod, then look for it in the owner class
+                if (typenameFound == false)
+                for (int i = 0; i < actualMethod.ownerClass.typenames.Count; i++)
+                {
+                    if (refType.data == actualMethod.ownerClass.typenames[i].name)
+                    {
+                        refType.data = callerClassTypenameParameters[i].name;
+                        break;
+                    }
+                }
+            }
             methodInstancesWithUndefinedCallsite.Remove(this);
             ResolveChainedInstanceType(this);
         }
@@ -370,7 +396,21 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 methodIdentifier.ownerClassNameAndInheritedClasses.Add(GetLastChainedInstance(callerClass.chainedInstance).type);
             }
             else
-                methodIdentifier.ownerClassNameAndInheritedClasses.Add((String.IsNullOrEmpty(callerClass.type)) ? (callerClass.name) : (callerClass.type));
+            {
+                // If the type of the caller class type is unknown, then use the caller class as the type
+                if(String.IsNullOrEmpty(callerClass.type))
+                {
+                    methodIdentifier.ownerClassNameAndInheritedClasses.Add(callerClass.name);
+                }
+                else
+                {
+                    // If we have the type of the caller class then check if it has template typename, if so, then remove the part of the typename in order to be able to match this MethodInstance with the actual Method at the MethodIdentifier equals from the Dictionary lookup
+                    int typenameCharactersIndex = callerClass.type.IndexOf("<");
+                    methodIdentifier.ownerClassNameAndInheritedClasses.Add(
+                        (typenameCharactersIndex > 0) ? (callerClass.type.Substring(0, typenameCharactersIndex)) : (callerClass.type)
+                        );
+                }
+            }
             methodIdentifier.methodName = methodName;
             methodIdentifier.methodInstanceCandidateNamespaces = this.candidateNamespaces;
 

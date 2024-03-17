@@ -1,4 +1,5 @@
-﻿using Domain.CodeInfo;
+﻿using Antlr4.Runtime.Tree;
+using Domain.CodeInfo;
 using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
 
@@ -14,6 +15,7 @@ namespace Infrastructure.Builders
         public string? belongingNamespace { get; private set; } = null;
         public List<Property> properties { get; private set; } = new List<Property>();
         public List<MethodBuilder> methodBuilders { get; private set; } = new List<MethodBuilder>();
+        public List<Typename>? typenames { get; private set; } = null;
 
         /// <summary>
         /// Creates the ClassEntity alognside the correspondent Methods from 
@@ -30,6 +32,9 @@ namespace Infrastructure.Builders
                 builtClass.inheritedClasses = inheritedClasses.AsReadOnly();
             else
                 builtClass.inheritedClasses = new List<string>();
+
+            // Setting the typenames if any
+            builtClass.typenames = this.typenames;
 
             // Building all the Methods from this ClassEntity
             foreach (var methodBuilder in methodBuilders)
@@ -60,6 +65,11 @@ namespace Infrastructure.Builders
         public ClassEntityBuilder AddMethod(MethodBuilder methodBuilder)
         {
             this.methodBuilders.Add(methodBuilder);
+            return this;
+        }
+        public ClassEntityBuilder SetTypename(List<Typename> typenameList)
+        {
+            typenames = typenameList;
             return this;
         }
     }
