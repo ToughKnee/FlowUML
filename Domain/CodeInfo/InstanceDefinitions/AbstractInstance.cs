@@ -19,7 +19,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
         // This too
         HasClassNameStatic,
         // This case is special because the className is a property from an inherited class and we must use check the properties from the ClassEntities to get the type of this property
-        IsPropertyFromInheritanceOrInThisClass
+        IsPropertyFromInheritanceOrInThisClass,
+        // If this element comes from an indexed collection(array, list or dictionary) then the type of this instance is actually the typename that the actual collection holds
+        IsElementFromCollection
     }
 
     /// <summary>

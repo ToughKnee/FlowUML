@@ -118,7 +118,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             // TODO: Make an if statement which checks if the "actualMethod.returnType == <TYPENAME>T", where the thing in diamonds will represent the identifier for return types that are TEMPLATES TYPES, while the single 'T' represents the real typename from the definition of the method or class
             this.refType.data = actualMethod.returnType;
             this.linkedCallsite.calledMethod = actualMethod;
-            // Check if the actualMethod or if the owner class of the actualMethod has typename parameters
+            // Check if the actualMethod or if the owner class of the actualMethod has typename parameters, if so, then look for the correct type used when instantiated
             if(actualMethod.typenames is not null || (actualMethod.ownerClass is not null && actualMethod.ownerClass.typenames is not null))
             {
                 bool typenameFound = false;
@@ -157,41 +157,63 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// alognside the inherited classes</param>
         public void ResolveComponentType(AbstractInstance component, string ownerClass = "")
         {
-            // If the current component of the MethodInstance already has its type defined or is another MethodInstance, then we skip this component and keep going with the others
+            // If this component is an element from an indexed collection and it knows the type of the collection, then we assign its type to the type contained in the indexed collection
+            if (component.kind == KindOfInstance.IsElementFromCollection && !String.IsNullOrEmpty(component.type) && (component.type.Contains("<") || component.type.Contains("[")))
+            {
+                var newRefType = new StringWrapper();
+                newRefType.data = component.type;
+                int firstCharacterIndex = 0;
+                int lastCharacterIndex = 0;
+                // If the type is an array, then get rid of the brackets to leave the type of the elements
+                if (component.type.Contains("["))
+                {
+                    firstCharacterIndex = component.type.IndexOf('[') + 1;
+                    newRefType.data = newRefType.data.Substring(0, firstCharacterIndex - 1);
+                    component.refType = newRefType;
+                }
+                // If the indexed collection has diamonds with the type of the elements inside them, then get the contents of the diamonds
+                else if (component.type.Contains("<"))
+                {
+                    firstCharacterIndex = component.type.IndexOf('<') + 1;
+                    lastCharacterIndex = component.type.IndexOf('>');
+                    newRefType.data = newRefType.data.Substring(firstCharacterIndex, lastCharacterIndex - firstCharacterIndex);
+                    component.refType = newRefType;
+                }
+                else
+                    throw new Exception("The indexed collection did not contain any bracket or diamond to be able to get the type of the contained elements");
+                return;
+            }
+            // If the current component of the MethodInstance already has its type defined or is another MethodInstance, then we ignore this component
             if (!String.IsNullOrEmpty(component.type) || component is MethodInstance)
             {
                 return;
             }
-
-            if (component is not null && component.type is null)
+            // If this component is a property from a parent then we must use the inherited classes from this component, and check all the classes for a property that matches the name of this component
+            if (component.inheritedClasses is not null && component.kind == KindOfInstance.IsPropertyFromInheritanceOrInThisClass)
             {
-                // If this component is a property from a parent then we must use the inherited classes from this component, and check all the classes for a property that matches the name of this component
-                if (component.inheritedClasses is not null && component.kind == KindOfInstance.IsPropertyFromInheritanceOrInThisClass)
+                // Traversing each inherited class
+                var componentIheritance = component.inheritedClasses.ToList();
+                componentIheritance.Add(ownerClass);
+                for (int i = 0; i < componentIheritance.Count; i++)
                 {
-                    // Traversing each inherited class
-                    var componentIheritance = component.inheritedClasses.ToList();
-                    componentIheritance.Add(ownerClass);
-                    for (int i = 0; i < componentIheritance.Count; i++)
+                    if (component.type is null && component.inheritedClasses is not null
+                    && ClassEntityManager.instance.classEntities.TryGetValue(componentIheritance[i], out ClassEntity parentClass))
                     {
-                        if (component.type is null && component.inheritedClasses is not null
-                        && ClassEntityManager.instance.classEntities.TryGetValue(componentIheritance[i], out ClassEntity parentClass))
+                        // Traversing each property of the inherited class
+                        for (int i2 = 0; i2 < parentClass.properties.Count; i2++)
                         {
-                            // Traversing each property of the inherited class
-                            for (int i2 = 0; i2 < parentClass.properties.Count; i2++)
+                            if (parentClass.properties[i2].name == component.name)
                             {
-                                if (parentClass.properties[i2].name == component.name)
-                                {
-                                    component.refType.data = parentClass.properties[i2].type;
-                                    break;
-                                }
+                                component.refType.data = parentClass.properties[i2].type;
+                                break;
                             }
                         }
-                        if (component.type is not null)
-                            break;
                     }
+                    if (component.type is not null)
+                        break;
                 }
-
             }
+
 
         }
         /// <summary>
@@ -201,7 +223,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public void ResolveChainedInstanceType(AbstractInstance ownerInstance)
         {
             // If this is not a parameter and the MehtodInstance does not have a chainedInstance then do nothing, or if this is a parameter and the parameter does not have a chainedInstance then do nothing, or if the ownerInstnace is another MehtodInstance and it is a parameter then do nothing
-            if(ownerInstance.chainedInstance is null)
+            if (ownerInstance.chainedInstance is null)
             {
                 return;
             }
@@ -234,6 +256,15 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         public void SolveTypesOfAliases()
         {
+            // If this method is actually an array of a class, then define its type as the array correctly
+            if (this.methodName.Contains("["))
+            {
+                this.refType.data = this.methodName;
+                this.refType.data = this.refType.data.Substring(0, refType.data.IndexOf("[") + 1) + "]";
+                methodInstancesWithUndefinedCallsite.Remove(this);
+                ResolveChainedInstanceType(this);
+                return;
+            }
             // Get the inheritance of the callerClass if its type is known to process the cases where this MethodInstance is a normal kind or a kind that involves inheritance
             if (callerClass is not null && !String.IsNullOrEmpty(callerClass.type))
             {

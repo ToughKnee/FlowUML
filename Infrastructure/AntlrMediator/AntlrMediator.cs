@@ -105,8 +105,7 @@ namespace Infrastructure.Mediators
             // Create the instance assignee to be defined
             Instance instanceAssignee;
 
-            // If the assigner is a method call...
-            // TODO:FIRST, check if this new copmarison inside the if statement works with all the tests, after that, inside the if statement make a new if statement where you check if the "assigner" IS A COLLECTION, and if it is then mark the future assignee instance with the proper data which will represent a list, then read the comments in the Instance.cs file
+            // If the assigner is a method call, then create the instances and link them
             if (methodCallAssigner.Count > 0)
             {
                 // Create the instance and assign the type of the new instance the return type of the methodCall
@@ -116,19 +115,16 @@ namespace Infrastructure.Mediators
                 methodInstanceAssigner.refType = returnType;
                 instanceAssignee.refType = methodInstanceAssigner.refType;
             }
-            // If the assigner is the element of an indexed collection...
+            // If the assigner is the element of an indexed collection, create the instance and assign the kind of element from a collection
             else if (assigner.Contains("["))
             {
-                // TODO: Complete this case
-                // Mark this Instance as 
+                string assignerWithoutBrackets = assigner.Substring(0, assigner.IndexOf("["));
                 instanceAssignee = new Instance(assignee);
-            }
-            // If the assigner is a method call, then create the instances and link them
-            else if (methodCallAssigner.Count > 0)
-            {
-                // TODO: Complete this case
-                // Mark this Instance as 
-                instanceAssignee = new Instance(assignee);
+                instanceAssignee.kind = KindOfInstance.IsElementFromCollection;
+
+                // Check in the known instances the assigner without the brackets and make the link between these 2 instances
+                AbstractInstance knownAssignerInstance = _knownInstancesDeclaredInCurrentMethodAnalysis[assignerWithoutBrackets];
+                instanceAssignee.refType = knownAssignerInstance.refType;
             }
             // If the declaration is simple
             else
@@ -304,11 +300,13 @@ namespace Infrastructure.Mediators
                     if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
                     {
                         linkedClassOrParameterInstance.refType = knownClassInstance.refType;
+                        linkedClassOrParameterInstance.kind = knownClassInstance.kind;
                     }
                     // Check again but adding the parameter identifier if this instance was a parameter
                     else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(paramIdentifier + currentStringInstance, out AbstractInstance knownClassInstanceParam))
                     {
                         linkedClassOrParameterInstance.refType = knownClassInstanceParam.refType;
+                        linkedClassOrParameterInstance.kind = knownClassInstanceParam.kind;
                     }
                     // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
                     else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
