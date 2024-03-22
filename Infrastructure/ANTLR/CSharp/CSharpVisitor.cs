@@ -453,7 +453,6 @@ namespace Infrastructure.Antlr
             List<object> parameterList = new();
             if(firstParenthesesIndex > 0)
             {
-
                 string callerComponent = completeFunctionString.Substring(0, firstParenthesesIndex-1);
                 var lastPeriodIndex = callerComponent.LastIndexOf('.');
                 if (completeFunctionString.LastIndexOf('(') < lastPeriodIndex)
@@ -472,6 +471,7 @@ namespace Infrastructure.Antlr
             else
             {
                 methodName = completeFunctionString;
+                throw new NotImplementedException();
             }
 
             // Get the argumentList to visit all the arguments, if they are methodCalls then remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList

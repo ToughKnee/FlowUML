@@ -90,7 +90,7 @@ identifier
     : IDENTIFIER
     ;
 advancedIdentifier
-    : identifier ('.' identifier)* ('[' (string | number | advancedIdentifier) ']')?
+    : identifier ('.' identifier)*
     ;
 
 type
@@ -248,10 +248,10 @@ returnExpression
 // Something that returns something
 expression
     : 
-    ternaryOperatorExpression
+    ternaryOperatorExpression bracketsIndexer?
     | expressionMethodCall
     | comparisonExpression
-    | advancedIdentifier
+    | advancedIdentifier bracketsIndexer?
     | string
     | number
     // TODO: Do the following features AND make sure to put the optional parentheses around them
@@ -259,20 +259,24 @@ expression
     // Make the rule for the ternary operator, and make sure it also captures other expression rules
     ;
 
+bracketsIndexer
+    : ('[' (string | number | advancedIdentifier) ']')+ chainedProperties?
+    ;
+
 expressionMethodCall
     : AWAIT? methodCall ('.' methodCall)*
     ;
 
 methodCall
-    : new? (advancedIdentifier | type) ('(' argumentList? ')') chainedProperties?
-    | new type ('[' argumentList? ']')? chainedProperties?
+    : new? (advancedIdentifier | type) ('(' argumentList? ')') bracketsIndexer? chainedProperties?
+    | new type ('[' argumentList? ']')? bracketsIndexer? chainedProperties?
     ;
 
 chainedProperties
-    : ('.' identifier)+
+    : ('.' methodCall | '.' identifier)+ bracketsIndexer?
     ;
 
-argumentList
+argumentList    
     : (outParameter | expression) ( ',' (outParameter | expression) )*
     | gibberish
     ;

@@ -147,6 +147,31 @@ namespace Domain.CodeInfo.InstanceDefinitions
             methodInstancesWithUndefinedCallsite.Remove(this);
             ResolveChainedInstanceType(this);
         }
+        public void ResolveCollectionInstanceType(AbstractInstance instance)
+        {
+            var newRefType = new StringWrapper();
+            newRefType.data = instance.type;
+            int firstCharacterIndex = 0;
+            int lastCharacterIndex = 0;
+
+            // If the type is an array, then get rid of the brackets to leave the type of the elements
+            if (instance.type.Contains("["))
+            {
+                firstCharacterIndex = instance.type.IndexOf('[') + 1;
+                newRefType.data = newRefType.data.Substring(0, firstCharacterIndex - 1);
+                instance.refType = newRefType;
+            }
+            // If the indexed collection has diamonds with the type of the elements inside them, then get the contents of the diamonds
+            else if (instance.type.Contains("<"))
+            {
+                firstCharacterIndex = instance.type.IndexOf('<') + 1;
+                lastCharacterIndex = instance.type.IndexOf('>');
+                newRefType.data = newRefType.data.Substring(firstCharacterIndex, lastCharacterIndex - firstCharacterIndex);
+                instance.refType = newRefType;
+            }
+            else
+                throw new Exception("The indexed collection did not contain any bracket or diamond to be able to get the type of the contained elements");
+        }
         /// <summary>
         /// This method resolves the type of a given component of this MethodInstance
         /// It also takes an extra parameter if we want to look for the type of this Instance
@@ -160,27 +185,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             // If this component is an element from an indexed collection and it knows the type of the collection, then we assign its type to the type contained in the indexed collection
             if (component.kind == KindOfInstance.IsElementFromCollection && !String.IsNullOrEmpty(component.type) && (component.type.Contains("<") || component.type.Contains("[")))
             {
-                var newRefType = new StringWrapper();
-                newRefType.data = component.type;
-                int firstCharacterIndex = 0;
-                int lastCharacterIndex = 0;
-                // If the type is an array, then get rid of the brackets to leave the type of the elements
-                if (component.type.Contains("["))
-                {
-                    firstCharacterIndex = component.type.IndexOf('[') + 1;
-                    newRefType.data = newRefType.data.Substring(0, firstCharacterIndex - 1);
-                    component.refType = newRefType;
-                }
-                // If the indexed collection has diamonds with the type of the elements inside them, then get the contents of the diamonds
-                else if (component.type.Contains("<"))
-                {
-                    firstCharacterIndex = component.type.IndexOf('<') + 1;
-                    lastCharacterIndex = component.type.IndexOf('>');
-                    newRefType.data = newRefType.data.Substring(firstCharacterIndex, lastCharacterIndex - firstCharacterIndex);
-                    component.refType = newRefType;
-                }
-                else
-                    throw new Exception("The indexed collection did not contain any bracket or diamond to be able to get the type of the contained elements");
+                ResolveCollectionInstanceType(component);
                 return;
             }
             // If the current component of the MethodInstance already has its type defined or is another MethodInstance, then we ignore this component
@@ -343,8 +348,13 @@ namespace Domain.CodeInfo.InstanceDefinitions
                         methodInstancesWithUndefinedCallsite.Remove(this);
                     }
                 }
-
             }
+            // If this method call returned an indexed collection, and it was called with "[]" after it, then this method call must return the type of the elements in the collection
+            if (kind == KindOfInstance.IsElementFromCollection)
+            {
+                ResolveCollectionInstanceType(this);
+            }
+
         }
 
         /// <summary>

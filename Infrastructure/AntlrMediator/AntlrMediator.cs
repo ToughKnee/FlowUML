@@ -118,6 +118,7 @@ namespace Infrastructure.Mediators
             // If the assigner is the element of an indexed collection, create the instance and assign the kind of element from a collection
             else if (assigner.Contains("["))
             {
+                // instanceAssignee.MakeInstanceInformationBasedFromString(assigner);
                 string assignerWithoutBrackets = assigner.Substring(0, assigner.IndexOf("["));
                 instanceAssignee = new Instance(assignee);
                 instanceAssignee.kind = KindOfInstance.IsElementFromCollection;
@@ -296,8 +297,18 @@ namespace Infrastructure.Mediators
                         methodInstanceKind = KindOfInstance.IsConstructor;
                         break;
                     }
+                    // If the current instance is an element from an indexed list, then remove the part with brackets and look for the collection type in the known instances
+                    else if (currentStringInstance.Contains("["))
+                    {
+                        currentStringInstance = currentStringInstance.Substring(0, currentStringInstance.IndexOf("["));
+                        if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
+                        {
+                        linkedClassOrParameterInstance.refType = knownClassInstance.refType;
+                        linkedClassOrParameterInstance.kind = KindOfInstance.IsElementFromCollection;
+                        }
+                    }
                     // If we already registered an instance with the same name of the className or parameter, then we link that instance to this method
-                    if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
+                    else if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(currentStringInstance, out AbstractInstance knownClassInstance))
                     {
                         linkedClassOrParameterInstance.refType = knownClassInstance.refType;
                         linkedClassOrParameterInstance.kind = knownClassInstance.kind;
@@ -349,8 +360,6 @@ namespace Infrastructure.Mediators
                     throw new Exception("The instance received isn't either a string nor a MethodCallData");
                 }
             }
-
-            // TODO: In here, make a new method where we manage the calledMethodName, which contains the normal method name, BUT in other cases the calledMethod could be a class with TEMPLATE TYPE, like "List<int>", and we must generate the MethodInstance with 
 
             // If there is a linked methodCall caller(which means that this MethodInstance caller is another MethodInstance), then we link the data accordingly
             if (callerMethodInstance is not null)

@@ -20,6 +20,7 @@ namespace Infrastructure.Mediators
         public string calledMethodName { get; init; }
         /// <summary>
         /// This list contains objects because it will hold string and MethodCallData types
+        // TODO: Make a MethodInstanceBuilder, and send to the builder the data ALREADY segmented for each component of any methodinstace, this is making properties in here exclusively for "chainedProperties", "bracketIndexer", caller class propertyChain, bwing part of another propertyChain(this would remove the list of MethodCallData sent to the mediator), and others that are relevant components of the MethodInstance
         /// </summary>
         public List<object>? calledParameters { get; init; }
         public string? propertyChain { get; init; }

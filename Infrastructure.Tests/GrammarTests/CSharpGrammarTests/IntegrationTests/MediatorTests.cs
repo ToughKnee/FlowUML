@@ -682,11 +682,13 @@ Inherited Classes:
             var AssignCollectionsMethod = classEntitiesList[0].methods[2];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(4);
+            Program_Main.callsites.Count.Should().Be(6);
             Program_Main.callsites[0].calledMethod.Should().Be(null);
             Program_Main.callsites[1].calledMethod.Should().Be(null);
-            Program_Main.callsites[2].calledMethod.Should().Be(AssignMethod);
-            Program_Main.callsites[3].calledMethod.Should().Be(AssignCollectionsMethod);
+            Program_Main.callsites[2].calledMethod.Should().Be(null);
+            Program_Main.callsites[3].calledMethod.Should().Be(AssignMethod);
+            Program_Main.callsites[4].calledMethod.Should().Be(AssignMethod);
+            Program_Main.callsites[5].calledMethod.Should().Be(AssignCollectionsMethod);
         }
     }
 }
