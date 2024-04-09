@@ -51,8 +51,8 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                {
                    receivedParameters.Add((param1, param2));
                });
-           mediatorMock.Setup(x => x.ReceiveLocalVariableDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<MethodCallData>>()))
-               .Callback<string, string, List<MethodCallData>>((param1, param2, methodCallDataList) =>
+           mediatorMock.Setup(x => x.ReceiveLocalVariableDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AbstractBuilder<MethodInstance>>()))
+               .Callback<string, string, AbstractBuilder<MethodInstance>>((param1, param2, methodCallBuilder) =>
                {
                    receivedLocalVariables.Add((param1, param2));
                });
@@ -330,6 +330,15 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            mediatorMock.Verify(m => m.ReceiveMethodAnalysisEnd(), Times.Exactly(9));
        }
 
+        public List<object> GetParametersListAsString(List<AbstractInstance> parameters)
+        {
+            var result = new List<object>();
+            foreach (var instance in parameters)
+            {
+                result.Add(instance.name);
+            }
+            return result;
+        }
        public static IEnumerable<object[]> MediatorCallsiteIfnoExpectations
        {
            get
@@ -355,7 +364,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                };
            }
        }
-
        [Theory]
        [MemberData(nameof(MediatorCallsiteIfnoExpectations))]
        public void AnalyzeBasicClassDeclaration_MediatorMethodReceivesAnalysisEnd_CallsiteInfoReceivedAtTheCorrectTime(List<string> expClassNames, List<string> expMethodNames, List<List<string>> expParameters, List<string> expBuilderMethodsNames)
@@ -367,24 +375,28 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            List<string> receivedClassNames = new List<string>();
            List<string> receivedMethodNames = new List<string>();
            List<List<object>> receivedParameters = new List<List<object>>();
-           List<MethodBuilder> receivedMethodBuilders= new List<MethodBuilder>();
+           List<MethodBuilder> receivedMethodBuilders = new List<MethodBuilder>();
 
             //===========================  Capturing the received info from the antlr visitor
-            mediatorMock.Setup(x => x.ReceiveMethodCall(It.IsAny<List<MethodCallData>>()))
-                .Callback<List<MethodCallData>>((methodCallDataList) =>
+            mediatorMock.Setup(x => x.ReceiveMethodCall(It.IsAny<AbstractBuilder<MethodInstance>>()))
+                .Callback<AbstractBuilder<MethodInstance>>((methodCallBuilder) =>
                 {
-                    receivedClassNames.Add(methodCallDataList[0].calledClassName);
-                    receivedMethodNames.Add(methodCallDataList[0].calledMethodName);
-                    receivedParameters.Add(methodCallDataList[0].calledParameters);
-                    receivedMethodBuilders.Add(methodCallDataList[0].linkedMethodBuilder);
+                    var convertedMethodCallBuilder = (MethodInstanceBuilder) methodCallBuilder;
+                    var methodInstance = methodCallBuilder.Build();
+                    receivedClassNames.Add(methodInstance.callerClass.name);
+                    receivedMethodNames.Add(methodInstance.methodName);
+                    receivedParameters.Add(GetParametersListAsString(methodInstance.calledParameters));
+                    receivedMethodBuilders.Add(convertedMethodCallBuilder.linkedMethodBuilder);
                 });
-            mediatorMock.Setup(x => x.ReceiveLocalVariableDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<MethodCallData>>()))
-                .Callback<string, string, List<MethodCallData>>((param1, param2, methodCallDataList) =>
+            mediatorMock.Setup(x => x.ReceiveLocalVariableDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AbstractBuilder<MethodInstance>>()))
+                .Callback<string, string, AbstractBuilder<MethodInstance>>((param1, param2, methodCallBuilder) =>
                 {
-                    receivedClassNames.Add(methodCallDataList[0].calledClassName);
-                    receivedMethodNames.Add(methodCallDataList[0].calledMethodName);
-                    receivedParameters.Add(methodCallDataList[0].calledParameters);
-                    receivedMethodBuilders.Add(methodCallDataList[0].linkedMethodBuilder);
+                    var convertedMethodCallBuilder = (MethodInstanceBuilder) methodCallBuilder;
+                    var methodInstance = methodCallBuilder.Build();
+                    receivedClassNames.Add(methodInstance.callerClass.name);
+                    receivedMethodNames.Add(methodInstance.methodName);
+                    receivedParameters.Add(GetParametersListAsString(methodInstance.calledParameters));
+                    receivedMethodBuilders.Add(convertedMethodCallBuilder.linkedMethodBuilder);
                 });
 
             // Creating the antlr visitor

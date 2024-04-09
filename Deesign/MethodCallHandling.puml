@@ -1,0 +1,69 @@
+@startuml
+skinparam MaxMessageSize 30
+'skinparam Ranksep 45
+Skinparam backgroundColor #EEEBDC
+skinparam wrapWidth 450
+skinparam activity {
+ArrowColor Maroon
+LifeLineBackgroundColor #EEEBDC
+LifeLineBorderColor Maroon
+GroupBackgroundColor #EEEBDC
+ParticipantBackgroundColor #EEEBDC
+BorderColor Maroon
+BackgroundColor  #fefece
+}
+'squence diagram skin
+
+
+
+start
+fork
+:**MethodNode** visiting a local variable declaration 
+with a methodCall or lone methodCall
+==== paramList type is List<object>|
+:MethodCallFound;
+:=ProcessMethodCall|
+:Get the components of the methodCall|
+if (Parameters found?) is (no) then
+else (yes)
+package ProcessParameters #daa {
+  if (Parameter is a ...) is (Normal Instance) then
+    :Add it to the paramList;
+  else (MethodCall)
+    :Process MethodCall|
+    note right
+    This adds the methoddCall to the list from the Visitor,
+    where the MethodInstanceBuilder is going to be 
+    removed by the owner methodCall
+    end note
+    :Remove the last element from the list of 
+    **MethodInstanceBuilders** and move it to the parametersList>
+  endif
+}
+endif
+if (Has expressionChain?) is (no) then
+else (yes)
+package ProcessExpressionChain #add {
+  if (expressionChain is a ...) is (Normal Instance) then
+    :Add it to the current methodInstanceBuilder;
+  else (MethodCall)
+    :Process MethodCall|
+    note right
+    This adds the methoddCall to the list from the Visitor, 
+    where the MethodInstanceBuilder is going to be 
+    removed by the owner methodCall
+    end note
+    :Remove the last element from the list of 
+    **MethodInstanceBuilders** and move it to the parametersList>
+  endif
+}
+endif
+
+:Put **MethodInstanceBuilder generated** into List;
+
+'//===========================  Process MethodCall
+fork again
+:=ProcessMethodCall|
+:;
+
+@enduml

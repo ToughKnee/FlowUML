@@ -1,6 +1,8 @@
 ﻿using Domain.CodeInfo;
+using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
 using Infrastructure.Builders;
+using System.Collections.ObjectModel;
 
 namespace Infrastructure.Mediators
 {
@@ -10,6 +12,24 @@ namespace Infrastructure.Mediators
     /// </summary>
     public interface IMediator
     {
+        /// <summary>
+        /// Returns the dictionary that the mediator is using to store known instances, so that other 
+        /// classes can access it and read it
+        /// </summary>
+        /// <returns></returns>
+        public ReadOnlyDictionary<string, AbstractInstance> GetKnownInstancesDeclaredInCurrentMethodAnalysis();
+        /// <summary>
+        /// Returns the current analyzed class in the mediator
+        /// </summary>
+        /// <returns></returns>
+        public string GetCurrentAnalyzedClassName();
+        /// <summary>
+        /// Returns the namespaces in use in the current code file being analyzed, used by classes
+        /// that need to know the candidate namespaces when creating the MethodInstance to be able
+        /// to dissambiguate and match the MethodInstances with the actual Methods
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetUsedNamespaces();
         /// <summary>
         /// This will start defining the undefined MethodInstances that require knowing the 
         /// types of its components(the class name and the parameters)
@@ -65,8 +85,8 @@ namespace Infrastructure.Mediators
         /// </summary>
         /// <param name="assigner">The "right part" of an assignment</param>
         /// <param name="assignee">The "left part" of an assignment</param>
-        /// <param name="methodCallAssigner">The info of the MethodCall if the assigner is a methodCall</param>
-        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, List<MethodCallData> methodCallAssigner);
+        /// <param name="methodCallAssigner">The linked methodInstanceBuilder if the assigner is a methodCall</param>
+        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<MethodInstance> methodCallAssigner);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
         /// should start processing the parameters and local variables received
@@ -81,7 +101,7 @@ namespace Infrastructure.Mediators
         /// is in this parameter which has the info for the method that made this callsite, 
         /// to be able to set the callsite generated and let the builder be able to add this 
         /// callsite to the Method class to be built</param>
-        public void ReceiveMethodCall(List<MethodCallData> methodCallData);
+        public void ReceiveMethodCall(AbstractBuilder<MethodInstance> methodCallBuilder);
         /// <summary>
         /// Receive the usedNamespaces to be able to disambiguate between classes with the same name
         /// Intended to be used after the ReceiveMethodCall was made

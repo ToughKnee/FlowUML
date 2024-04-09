@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using Castle.Components.DictionaryAdapter.Xml;
 using Domain.CodeInfo.MethodSystem;
 
 namespace Domain.CodeInfo.InstanceDefinitions
@@ -33,11 +34,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// know the method when it is known, thus we don't need to 
         /// </summary>
         public Callsite? linkedCallsite { get; set; }
-        /// <summary>
-        /// If this is not false, then this MethodInstance has a Callsite which has the definition 
-        /// of a Method that came from a ClassEntity being defined
-        /// </summary>
-        public bool methodIsUnknown { get; private set; } = true;
         /// <summary>
         /// Caller class of this MethodCall
         /// The refType of this property is NEVER modified unless it is not a normal Instance,
@@ -86,7 +82,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public MethodInstance(Method method)
         {
             this.linkedCallsite = new Callsite(method);
-            methodIsUnknown = false;
             RegisterToTheMethodInstancesList(this);
         }
         /// <summary>
@@ -246,6 +241,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
                 // Then resolve the type of this nextInstance
                 ResolveComponentType(nextInstance, currentOwnerClass);
+                // If the current component does not have a type yet of kind "IsFromLinkedMethodInstance", then set the type right away
+                if (String.IsNullOrEmpty(nextInstance.refType.data) && nextInstance.kind == KindOfInstance.IsFromLinkedMethodInstance)
+                    nextInstance.refType.data = currentOwnerClass;
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
             }

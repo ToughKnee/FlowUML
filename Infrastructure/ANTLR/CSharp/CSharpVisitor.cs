@@ -45,14 +45,18 @@ namespace Infrastructure.Antlr
         /// </summary>
         private readonly string separator = "-";
         /// <summary>
-        /// Property that gets filled whenever a MethodCall or set of MethodCalls if there were nested 
-        /// MethodCalls(where if we have nested methodCalls like 
-        /// "myClass.getClass2().doSomething().myProperty.function3()", then we will have a list of 
-        /// 3 MethodCallData, AND also we will have each MethodCall as part of the identifier of its next MethodCall)
-        /// This will be handed to the mediator after visiting a localVariableDeclaration or visiting just the 
-        /// MethodCall and then emptied
+        /// TODO: CORRECT this info
+        /// List that represents the method calls that are parameters for other method calls
+        /// A value is added whenever the VisitMethodCall function finds parameters that are methodCalls
+        /// and we immediately visit this new methodCall, pausing the processing of the methodCall that was 
+        /// being built, this can be thought of as pre order tree traversal
         /// </summary>
-        private List<MethodCallData> _methodCallDataList = new();
+        private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
+        /// <summary>
+        /// See the documentation of the "_parameterMethodInstanceBuilders" property form this class
+        /// </summary>
+        private List<MethodInstanceBuilder> _chainedMethodInstanceBuilders = new();
+        private MethodInstanceBuilder _currentMethodInstanceBuilder;
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -317,8 +321,9 @@ namespace Infrastructure.Antlr
                     if(localVariableText.Contains('-'))
                     {
                         string[] assignmentValues = localVariableText.Split("-");
-                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1], new List<MethodCallData>(_methodCallDataList));
-                        _methodCallDataList.Clear();
+                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1], _currentMethodInstanceBuilder);
+                        _currentMethodInstanceBuilder = null;
+                        //_methodCallDataList.Clear();
                     }
                 }
                 else
@@ -328,10 +333,11 @@ namespace Infrastructure.Antlr
                 }
 
                 // Check if the methodCall data has been sent to the mediator by the local variable if statement, if not then send it right now
-                if(_methodCallDataList.Count > 0)
+                if(_currentMethodInstanceBuilder != null)
                 {
-                    _mediator.ReceiveMethodCall(new List<MethodCallData>(_methodCallDataList));
-                    _methodCallDataList.Clear();
+                    _mediator.ReceiveMethodCall(_currentMethodInstanceBuilder);
+                    _currentMethodInstanceBuilder = null;
+                    //_methodCallDataList.Clear();
                 }
             }
             // TODO: Use the "CustomVisitTemplateTypeName" to be able to define methods with template typenames
@@ -424,12 +430,14 @@ namespace Infrastructure.Antlr
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
             string wholeFunctionString = context.GetText().Replace("await", "").Replace("new", "");
+            // TODO: REMOVE this loop since it is no longer necessary to look for more methodCalls, since the expressionChain already takes care of that
             for (int j = 0; j < context.ChildCount; j++)
             {
                 // Check each part of the expressionMethodCall, if there are nested methodCalls, then we visit each of them to be extract the information
                 if(ChildRuleNameIs("methodCall", context, j))
                 {
-                   var methodCallNode = GetRuleNodeInChildren("methodCall", context, j);
+                    // TODO: =================  FIXME: Since we have new grammar, Fix problem of having chained methodCalls and being able to manage them(the test with the advancedTextFile3 is not detecting the "SomeOtherMethod" chained methodCall, because now this instead of being a child of the expression method call, it is a child of a new rule called "methodChain")
+                    var methodCallNode = GetRuleNodeInChildren("methodCall", context, j);
                    Visit(methodCallNode);
                 }
             }
@@ -445,6 +453,9 @@ namespace Infrastructure.Antlr
         /// <returns></returns>
         public override string VisitMethodCall([NotNull] CSharpGrammarParser.MethodCallContext context)
         {
+            // Create a new methodInstanceBuilder
+            MethodInstanceBuilder methodInstanceBuilder = new(this._mediator);
+
             //===========================  Getting the components of the method called
             bool isConstructor = GetRuleNodeInChildren("new", context) != null;
             string completeFunctionString = context.GetText(), namespaceAndClass = "", methodName = "";
@@ -471,39 +482,56 @@ namespace Infrastructure.Antlr
             else
             {
                 methodName = completeFunctionString;
+                // TODO: Finish the logic to handle this case
                 throw new NotImplementedException();
             }
+            //=====
 
-            // Get the argumentList to visit all the arguments, if they are methodCalls then remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList
+            // Get the argumentList to visit all the arguments, if they are methodCalls then visit them and remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList normally
             var argumentListNode = GetRuleNodeInChildren("argumentList", context);
             int argumentListNodeChildrenCount = (argumentListNode is not null) ? (argumentListNode.ChildCount) : (0);
             for (int i = 0; i < argumentListNodeChildrenCount; i++)
             {
                 string expressionString = Visit(argumentListNode.GetChild(i));
 
-                // If the visited child node was a methodCall(because it contains a parenthesis), then we remove it from the _methodCallDataList and move it to the parameterList
+                // If the visited child node was a methodCall(because it contains a parenthesis), then we remove it from the Stack of method instance builders and move it to the parameterList
                 if (!String.IsNullOrEmpty(expressionString) && expressionString.Contains("("))
                 {
-                    var methodCallParameter = _methodCallDataList[_methodCallDataList.Count-1];
-                    _methodCallDataList.RemoveAt(_methodCallDataList.Count - 1);
-                    parameterList.Add(methodCallParameter);
+                    parameterList.Add(_methodInstanceBuildersStack.Pop());
                 }
                 // If it is a normal variable, then add it to the parameterList
                 else if(!String.IsNullOrEmpty(expressionString))
                 {
                     parameterList.Add(expressionString);
                 }
-
             }
 
-            // Get the raw propertyChain to be sent to the Mediator
-            var chainedPropertiesNode = GetRuleNodeInChildren("chainedProperties", context);
-            string propertyChainString = (chainedPropertiesNode is not null) ? (chainedPropertiesNode.GetText()) : ("");
-            propertyChainString = (propertyChainString.Length > 1) ? (propertyChainString.Substring(1, propertyChainString.Length - 1)) : (propertyChainString);
+            //===========================  Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call
+            var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
 
-            // Save the methodCallData to the List to be passed later to the mediator
-            _methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, propertyChainString, _currentMethodBuilder, isConstructor));
+            // If there is another methodCall chained, then visit that too, which will put the chained methodCall into the Stack of MethodInstanceBuilders and be retrieved after the visited chained methodCall finishes being processed and then set it to the methodInstanceBuilder
+            if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1) != null)
+            {
+                Visit(expressionChainNode.GetChild(1));
+                methodInstanceBuilder.SetMethodCallChainedInstance(_methodInstanceBuildersStack.Pop());
+            }
+            // If its a normal instance of an object, then get the string and add it to the methodInstanceBuilder
+            else if(expressionChainNode != null && ChildRuleNameIs("advancedIdentifier", expressionChainNode, 1) != null)
+            {
+                methodInstanceBuilder.SetNormalInstanceChainedInstance(expressionChainNode.GetChild(1).GetText());
+            }
+            //=======
 
+            // Set the remaining data of the methodCall and put it into the methodInstanceBuilder
+            methodInstanceBuilder.SetMethodName(methodName);
+            methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
+            methodInstanceBuilder.SetConstructorMethodKind(isConstructor);
+            methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
+            methodInstanceBuilder.SetParameters(parameterList);
+            //_methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, propertyChainString, _currentMethodBuilder, isConstructor));
+            _methodInstanceBuildersStack.Push(methodInstanceBuilder);
+
+            _currentMethodInstanceBuilder = methodInstanceBuilder;
             return completeFunctionString;
         }
     }

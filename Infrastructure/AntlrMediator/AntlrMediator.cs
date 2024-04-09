@@ -4,6 +4,7 @@ using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
 using Infrastructure.Builders;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -100,18 +101,18 @@ namespace Infrastructure.Mediators
             // This also adds a string to the identfier to prevent ambiguity when there are porperties with the same identifier
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(paramIdentifier + identifier, parameterInstance);
         }
-        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, List<MethodCallData> methodCallAssigner)
+        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<MethodInstance> methodCallAssigner)
         {
             // Create the instance assignee to be defined
             Instance instanceAssignee;
 
             // If the assigner is a method call, then create the instances and link them
-            if (methodCallAssigner.Count > 0)
+            if (assigner.Contains("("))
             {
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
                 var returnType = new StringWrapper();
-                var methodInstanceAssigner = GenerateMethodInstance(methodCallAssigner[0]);
+                var methodInstanceAssigner = methodCallAssigner.Build();
                 methodInstanceAssigner.refType = returnType;
                 instanceAssignee.refType = methodInstanceAssigner.refType;
             }
@@ -162,36 +163,10 @@ namespace Infrastructure.Mediators
             }
         }
 
-        public void ReceiveMethodCall(List<MethodCallData> methodCallData)
+        public void ReceiveMethodCall(AbstractBuilder<MethodInstance> methodCallBuilder)
         {
-            if(methodCallData.Count <= 1)
-            {
-                GenerateMethodInstance(methodCallData[0]);
-            }
-            // If the data received is bigger than 1, then we have nested methodCalls and we must link the returnType of the first element as the caller class of the second element, and so forth
-            else
-            {
-                AbstractInstance methodCallCaller = null;
-                MethodInstance currentMethodInstance = null;
-                // Traverse the method calls, generate the methodInstnace, and link the method calls appropiately
-                for (int i = 0; i < methodCallData.Count; i++)
-                {
-                    // For the methodCalls that are after the first methodCall, then we link the caller
-                    if (i > 0)
-                    {
-                        currentMethodInstance = GenerateMethodInstance(methodCallData[i], methodCallCaller);
-                    }
-                    else
-                    {
-                        currentMethodInstance = GenerateMethodInstance(methodCallData[i]);
-                    }
-                    methodCallCaller = currentMethodInstance;
-
-                }
-
-            }
+            methodCallBuilder.Build();
         }
-
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
         {
             _usedNamespaces = (usedNamespaces is null) ? (_usedNamespaces) : (usedNamespaces);
@@ -242,15 +217,13 @@ namespace Infrastructure.Mediators
         public MethodInstance GenerateMethodInstance(MethodCallData callData, AbstractInstance? callerMethodInstance = null)
         {
             var (calledClassName, calledMethodName, calledParameters, propertyChainString, linkedMethodBuilder, isConstructor) = callData;
-            //===========================  Get the components of this methodCall(methodName, className, properties) and get the linked instances for the components
-
             AbstractInstance? linkedClassOrParameterInstance = null;
             List<AbstractInstance> calledParametersInstances = new();
             KindOfInstance methodInstanceKind = KindOfInstance.Normal;
             AbstractInstance classCallerChainedInstance = null;
             AbstractInstance methodInstanceChainedInstance = null;
 
-            // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind Property
+            // If the calledClassName has "." or there is a linkedMethodCaller, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind PropertyFromInheritanceOrThisClass
             if ((calledClassName != null && calledClassName.Contains(".")) || callerMethodInstance is not null)
             {
                 // If there is a callerMethodInstance, then the calledClass is part of the propertyChain and it must be specified to the GeneratePropertyChain function, otherwise then it is not part of the chain
@@ -319,7 +292,7 @@ namespace Infrastructure.Mediators
                         linkedClassOrParameterInstance.refType = knownClassInstanceParam.refType;
                         linkedClassOrParameterInstance.kind = knownClassInstanceParam.kind;
                     }
-                    // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static method and we must set that state using the HasClassNameStaticOrParentProperty enum
+                    // If that component wasn't in that dictionary, isn't empty and isn't the "this" nor "base" keyword, then this instance may come from a property of a parent class or is a static property and we must set that state using the HasClassNameStaticOrParentProperty kind
                     else if (!String.IsNullOrEmpty(currentStringInstance) && currentStringInstance != "this" && currentStringInstance != "base")
                     {
                         linkedClassOrParameterInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
@@ -380,5 +353,18 @@ namespace Infrastructure.Mediators
          
             return methodInstance;
         }
+        public ReadOnlyDictionary<string, AbstractInstance> GetKnownInstancesDeclaredInCurrentMethodAnalysis()
+        {
+            return this._knownInstancesDeclaredInCurrentMethodAnalysis.AsReadOnly();
+        }
+        public string GetCurrentAnalyzedClassName()
+        {
+            return _currentClassNameWithoutDot;
+        }
+        public List<string> GetUsedNamespaces()
+        {
+            return _usedNamespaces;
+        }
+
     }
 }   

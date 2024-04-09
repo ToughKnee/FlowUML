@@ -89,6 +89,7 @@ IDENTIFIER
 identifier
     : IDENTIFIER
     ;
+    
 advancedIdentifier
     : identifier ('.' identifier)*
     ;
@@ -248,32 +249,33 @@ returnExpression
 // Something that returns something
 expression
     : 
-    ternaryOperatorExpression bracketsIndexer?
+    ternaryOperatorExpression indexRetrieval?
     | expressionMethodCall
     | comparisonExpression
-    | advancedIdentifier bracketsIndexer?
+    | advancedIdentifier indexRetrieval?
     | string
     | number
     // TODO: Do the following features AND make sure to put the optional parentheses around them
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
-    // Make the rule for the ternary operator, and make sure it also captures other expression rules
     ;
 
-bracketsIndexer
-    : ('[' (string | number | advancedIdentifier) ']')+ chainedProperties?
+indexRetrieval
+    : ('[' (string | number | advancedIdentifier) ']')+ expressionChain?
     ;
 
+// TODO: Remove "('.' methodCall)*", because it isn't necessary to catch methodCalls since the expressionChain already does that
 expressionMethodCall
     : AWAIT? methodCall ('.' methodCall)*
     ;
 
 methodCall
-    : new? (advancedIdentifier | type) ('(' argumentList? ')') bracketsIndexer? chainedProperties?
-    | new type ('[' argumentList? ']')? bracketsIndexer? chainedProperties?
+    : new? (advancedIdentifier | type) ('(' argumentList? ')') indexRetrieval? expressionChain?
+    | new type ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 
-chainedProperties
-    : ('.' methodCall | '.' identifier)+ bracketsIndexer?
+// This rule denotes the properties or methods from other complex expressions like methods or a value from a collection retrieved with indexers, simple properties chains like "myClass.myProp1.myProp2" are covered by the "advancedIdentifier" rule 
+expressionChain
+    : ('.' methodCall | '.' advancedIdentifier)+ indexRetrieval?
     ;
 
 argumentList    

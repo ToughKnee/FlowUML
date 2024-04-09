@@ -1,1 +1,8 @@
-caller.callerChain.GetMyList().methodInstanceChain[0][1].listChain.myFuncCall().prop1.prop2.listProp[1].prop999.propdnc()
+  public class Class3
+  {
+      public void OtherFunctionCall()
+      {
+          var myClass = new Class2();
+          myClass.FunctionCall2(myClass.class1Data.Prop1.FunctionCall(), myClass.data).Prop1.FunctionCall().InstantlyChainedMethod();
+      }
+  }

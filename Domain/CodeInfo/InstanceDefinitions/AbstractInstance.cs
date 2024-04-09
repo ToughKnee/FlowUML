@@ -21,7 +21,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
         // This case is special because the className is a property from an inherited class and we must use check the properties from the ClassEntities to get the type of this property
         IsPropertyFromInheritanceOrInThisClass,
         // If this element comes from an indexed collection(array, list or dictionary) then the type of this instance is actually the typename that the actual collection holds
-        IsElementFromCollection
+        IsElementFromCollection,
+        // This applies to normal caller class Instaance types, if there is a methodCall that is part of a chain from another methodCall, then the caller class automatically is assigned this type, only for info purposes
+        IsFromLinkedMethodInstance
     }
 
     /// <summary>
@@ -64,12 +66,16 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// This bool represents wether this MethodCall does not have an callerClass and must come from 
         /// </summary>
         public KindOfInstance kind;
-
         /// <summary>
         /// This property defines the instance that is chained to this instance, like "myProperty" 
         /// would be the chainedInstance in "myInstance.myProperty" 
         /// </summary>
-        public AbstractInstance? chainedInstance { get; set; }
+        public AbstractInstance? chainedInstance { get; set; } = null;
+        /// <summary>
+        /// This represents the case when the instance is an indexed collection and it is retrieving an element from it,
+        /// like "GetMyList()[0]" would result in a MethodInstance class with this property present and not null
+        /// </summary>
+        public AbstractInstance? indexRetrievedInstance { get; set; } = null;
 
         public AbstractInstance(string name, StringWrapper type)
         {   
@@ -94,22 +100,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 nextInstance = nextInstance.chainedInstance;
             }
             return previousInstance;
-        }
-
-        public static bool operator ==(AbstractInstance obj1, AbstractInstance obj2)
-        {
-            if (obj1.type == obj2.type || obj1.name == obj2.name)
-                return true;
-
-            return false;
-        }
-
-        public static bool operator !=(AbstractInstance obj1, AbstractInstance obj2)
-        {
-            if (obj1.type == obj2.type || obj1.name == obj2.name)
-                return false;
-
-            return true;
         }
 
         //public override bool Equals(object obj)
