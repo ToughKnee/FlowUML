@@ -75,6 +75,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// This represents the case when the instance is an indexed collection and it is retrieving an element from it,
         /// like "GetMyList()[0]" would result in a MethodInstance class with this property present and not null
         /// </summary>
+        // TODO: Implement the functionality to use this property
         public AbstractInstance? indexRetrievedInstance { get; set; } = null;
 
         public AbstractInstance(string name, StringWrapper type)

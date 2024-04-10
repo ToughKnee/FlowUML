@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using Castle.Components.DictionaryAdapter.Xml;
 using Domain.CodeInfo.MethodSystem;
 
 namespace Domain.CodeInfo.InstanceDefinitions
@@ -241,7 +240,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
                 // Then resolve the type of this nextInstance
                 ResolveComponentType(nextInstance, currentOwnerClass);
-                // If the current component does not have a type yet of kind "IsFromLinkedMethodInstance", then set the type right away
+                // If the current component does not have a type and is of kind "IsFromLinkedMethodInstance", then set the type right away
                 if (String.IsNullOrEmpty(nextInstance.refType.data) && nextInstance.kind == KindOfInstance.IsFromLinkedMethodInstance)
                     nextInstance.refType.data = currentOwnerClass;
                 previousInstance = nextInstance;

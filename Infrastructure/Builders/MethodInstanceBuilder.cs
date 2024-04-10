@@ -9,11 +9,19 @@ namespace Infrastructure.Builders
     {
         private string _methodName;
         private AbstractInstance? _callerClass = null;
-        private List<AbstractInstance> _calledParametersInstances = new();
+        /// <summary>
+        /// List of objects that represents the parameters, which can only be of kind "Instance"
+        /// or "MethodInstanceBuilder", this is like this to be able to place the parameters
+        /// in the correct order in the Callsites of the Methods when we are defining all the callsites, 
+        /// following the order where parameters are placed first, then the method that owns the params,
+        /// and finally the chained methodCall if present
+        /// </summary>
+        private List<object> _calledParametersObjects = new();
         private AbstractInstance? _callerClassChainedInstance = null;
         private AbstractInstance? _ownedChainedInstance = null;
         private MethodInstanceBuilder? _ownedChainedMethodInstanceBuilder = null;
         public MethodBuilder linkedMethodBuilder;
+        private Callsite _linkedCallsite;
         private KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
         public bool isConstructor = false;
         private readonly string _paramIdentifier = "<p>";
@@ -22,7 +30,6 @@ namespace Infrastructure.Builders
         /// needed to build the methodInstance
         /// </summary>
         private IMediator _mediator;
-
         /// <summary>
         /// Reado only dictionary from the mediator, used to know when there are instances with their defined type used 
         /// in a method and we must identify it
@@ -40,20 +47,29 @@ namespace Infrastructure.Builders
             if (isConstructor)
                 _methodInstanceKind = KindOfInstance.IsConstructor;
 
-            // Make the callsite for the method
-            var callsite = new Callsite(null);
-            linkedMethodBuilder.AddCallsite(callsite);
-
             // Seting the chained instance of the caller class
             if(_callerClass != null)
                 _callerClass.chainedInstance = _callerClassChainedInstance;
 
+            // Converting the object parameters into Instances, and building the methodCalls to follow the correct order of callsites
+            List<AbstractInstance> parametersInstances = new();
+            foreach(var objectParam in _calledParametersObjects)
+            {
+                if (objectParam is Instance)
+                    parametersInstances.Add((Instance)objectParam);
+                else if(objectParam is MethodInstanceBuilder)
+                    parametersInstances.Add(((MethodInstanceBuilder)objectParam).Build());
+            }
+
+            // Make the callsite for the method
+            _linkedCallsite = new Callsite(null);
+            linkedMethodBuilder.AddCallsite(_linkedCallsite);
+
             var methodInstance = new MethodInstance(_callerClass
-                // TODO: CHECK if the "_ownedChainedMethodInstanceBuilder.Build().callerClass" works when the 1st methodCall found its actual function and now has to set the type of the caller class of the chained MethodCall
                 , (_ownedChainedMethodInstanceBuilder != null) ? (_ownedChainedMethodInstanceBuilder.Build().callerClass) : ((_ownedChainedInstance != null) ? (_ownedChainedInstance) : (null))
                 , _methodName
-                , _calledParametersInstances
-                , callsite
+                , parametersInstances
+                , _linkedCallsite
                 , _methodInstanceKind
                 , _mediator.GetUsedNamespaces());
             return methodInstance;
@@ -92,19 +108,17 @@ namespace Infrastructure.Builders
             return firstChainedInstance;
         }
 
-        public MethodInstanceBuilder SetCallerClassName(string callerClassName, bool methodInstanceIsPartOfAnotherChain = false)
+        public MethodInstanceBuilder SetCallerClassName(string callerClassName)
         {
             if(callerClassName == null)
             {
                 return this;
             }
-            // If the callerClassName has "." {TODO:Remove this{or there is a linkedMethodCaller}}, then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind PropertyFromInheritanceOrThisClass
-            if ((callerClassName != null && callerClassName.Contains(".")) || methodInstanceIsPartOfAnotherChain)
+            // If the callerClassName has ".", then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind PropertyFromInheritanceOrThisClass
+            if ((callerClassName != null && callerClassName.Contains(".")))
             {
                 // If there is a callerMethodInstance, then the calledClass is part of the propertyChain and it must be specified to the GeneratePropertyChain function, otherwise then it is not part of the chain
                 string classOwner = callerClassName.Split(".")[0];
-                if (methodInstanceIsPartOfAnotherChain)
-                    classOwner = "";
 
                 // Setting the chainedInstance of the CALLER CLASS instance
                 _callerClassChainedInstance = GeneratePropertyChain(classOwner, callerClassName);
@@ -130,6 +144,7 @@ namespace Infrastructure.Builders
         /// <returns></returns>
         private Instance ProcessInstanceInformation(string currentStringInstance, string currentAnalyzedClassName)
         {
+            if (currentAnalyzedClassName == null) currentAnalyzedClassName = "";
             if(currentStringInstance.Contains("."))
             {
                 throw new ArgumentException("String instance should not contain chained properties");
@@ -165,8 +180,8 @@ namespace Infrastructure.Builders
             {
                 processedInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
                 // We set the inheritedClasses of the component to the inheritance of this current class we are analyzing since an inherited class may contain this component as its property
-                // TODO: Check if the class name used for the query works
-                processedInstance.inheritedClasses = InheritanceDictionaryManager.instance.inheritanceDictionary[currentAnalyzedClassName];
+                if (InheritanceDictionaryManager.instance.inheritanceDictionary.TryGetValue(currentAnalyzedClassName, out List<string> inheritedClasses))
+                    processedInstance.inheritedClasses = inheritedClasses.AsReadOnly();
                 _methodInstanceKind = KindOfInstance.HasClassNameStatic;
             }
             // If this is not empty and is the "this" and isn't the "base" keyword, then this component is of type of the class we are analyzing
@@ -210,13 +225,12 @@ namespace Infrastructure.Builders
                         parameterInstance.chainedInstance = GeneratePropertyChain(currentStringInstance, currentStringInstancePropertyChain);
 
                     // Adding the parameter to the method instance parameters list
-                    _calledParametersInstances.Add(parameterInstance);
+                    _calledParametersObjects.Add(parameterInstance);
                 }
-                // If the parameter to manage is another MethodCall, then generate the Data and link the generated MethodInstance to this MethodCall
+                // If the parameter to manage is another MethodCall, then just add the bulder to the parameters list to be later built
                 else if (calledParameters[i] is MethodInstanceBuilder)
                 {
-                    var parameterMethodCall = ((MethodInstanceBuilder)calledParameters[i]).Build();
-                    _calledParametersInstances.Add(parameterMethodCall);
+                   _calledParametersObjects.Add(calledParameters[i]);
                 }
                 else
                 {
@@ -244,6 +258,7 @@ namespace Infrastructure.Builders
         public MethodInstanceBuilder SetNormalInstanceChainedInstance(string chainedInstance)
         {
             this._ownedChainedInstance = new Instance(chainedInstance);
+            _ownedChainedInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
             return this;
         }
         /// <summary>

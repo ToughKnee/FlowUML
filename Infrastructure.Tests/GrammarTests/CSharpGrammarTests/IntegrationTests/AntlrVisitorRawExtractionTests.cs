@@ -8,6 +8,7 @@ using Infrastructure.Mediators;
 using Moq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Xunit.Abstractions;
 
 namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
@@ -46,7 +47,12 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            List<(string, string)> receivedParameters = new List<(string, string)>();
            List<(string, string)> receivedLocalVariables = new List<(string, string)>();
 
-           mediatorMock.Setup(x => x.ReceiveParameters(It.IsAny<string>(), It.IsAny<string>()))
+            mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
+                .Returns(() =>
+                {
+                    return new Dictionary<string, AbstractInstance>().AsReadOnly();
+                });
+            mediatorMock.Setup(x => x.ReceiveParameters(It.IsAny<string>(), It.IsAny<string>()))
                .Callback<string, string>((param1, param2) =>
                {
                    receivedParameters.Add((param1, param2));
@@ -102,7 +108,12 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            // Capture the received parameter to check it
            mediatorMock.Setup(m => m.ReceiveMethodBuilders(It.IsAny<List<AbstractBuilder<Method>>>()))
                .Callback<List<AbstractBuilder<Method>>>(r => abstractBuilders = r);
-           _antlrService = new ANTLRService(mediatorMock.Object);
+           mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
+               .Returns(() =>
+               {
+                   return new Dictionary<string, AbstractInstance>().AsReadOnly();
+               });
+            _antlrService = new ANTLRService(mediatorMock.Object);
            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile2.txt", true);
 
            // Act
@@ -154,7 +165,12 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            // Capture the received parameter to check it
            mediatorMock.Setup(m => m.ReceiveClassEntityBuilders(It.IsAny<List<AbstractBuilder<ClassEntity>>>()))
                .Callback<List<AbstractBuilder<ClassEntity>>>(r => abstractBuilders = r);
-           _antlrService = new ANTLRService(mediatorMock.Object);
+            mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
+                .Returns(() =>
+                {
+                    return new Dictionary<string, AbstractInstance>().AsReadOnly();
+                });
+            _antlrService = new ANTLRService(mediatorMock.Object);
            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile3.txt", true);
 
            // Act
@@ -203,8 +219,13 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            List<(string, string)> receivedParameters = new List<(string, string)>();
            List<(string, string)> receivedLocalVariables = new List<(string, string)>();
 
-           //===========================  Capturing the received info from the antlr visitor
-           mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
+            //===========================  Capturing the received info from the antlr visitor
+            mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
+                .Returns(() =>
+                {
+                    return new Dictionary<string, AbstractInstance>().AsReadOnly();
+                });
+            mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
                .Callback<string>((param1) => receivedNamespace = param1);
            mediatorMock.Setup(x => x.ReceiveClassNameAndInheritance(It.IsAny<string>()))
                .Callback<string>((param1) =>
@@ -270,13 +291,18 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            List<(string, string)> receivedParameters = new List<(string, string)>();
            List<(string, string)> receivedLocalVariables = new List<(string, string)>();
 
-           //===========================  Capturing the received info from the antlr visitor
-           mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
-               .Callback<string>((param1) =>
-               {
-                   receivedNamespaces.Add(param1);
-               });
-           mediatorMock.Setup(x => x.ReceiveClassNameAndInheritance(It.IsAny<string>()))
+            //===========================  Capturing the received info from the antlr visitor
+            mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
+                .Returns(() =>
+                {
+                    return new Dictionary<string, AbstractInstance>().AsReadOnly();
+                });
+            mediatorMock.Setup(x => x.ReceiveNamespace(It.IsAny<string>()))
+                .Callback<string>((param1) =>
+                {
+                    receivedNamespaces.Add(param1);
+                });
+            mediatorMock.Setup(x => x.ReceiveClassNameAndInheritance(It.IsAny<string>()))
                .Callback<string>((param1) =>
                {
                    receivedClassNames.Add(param1);
@@ -378,6 +404,11 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            List<MethodBuilder> receivedMethodBuilders = new List<MethodBuilder>();
 
             //===========================  Capturing the received info from the antlr visitor
+            mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
+                .Returns(() =>
+                {
+                    return new Dictionary<string, AbstractInstance>().AsReadOnly();
+                });
             mediatorMock.Setup(x => x.ReceiveMethodCall(It.IsAny<AbstractBuilder<MethodInstance>>()))
                 .Callback<AbstractBuilder<MethodInstance>>((methodCallBuilder) =>
                 {

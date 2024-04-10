@@ -45,17 +45,15 @@ namespace Infrastructure.Antlr
         /// </summary>
         private readonly string separator = "-";
         /// <summary>
-        /// TODO: CORRECT this info
-        /// List that represents the method calls that are parameters for other method calls
-        /// A value is added whenever the VisitMethodCall function finds parameters that are methodCalls
-        /// and we immediately visit this new methodCall, pausing the processing of the methodCall that was 
-        /// being built, this can be thought of as pre order tree traversal
+        /// Stack that is used mainly by the method "VisitMethodCall" whenever there are other nested methodCalls, 
+        /// things like parameters that are methodCalls too, or chained methodCalls like 
+        /// "MyMethodCall().propertyChain.chainedMethodCall()", where "propertyChain.chainedMethodCall()" would be 
+        /// chained methodCall of "MyMethodCall()"
+        /// An element is added whenever a methodCall has been visited, and retrieved by the methodCall that owns the
+        /// other methodCall because it was a parameter or a chained methodCall
+        /// This can be thought of as pre order tree traversal
         /// </summary>
         private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
-        /// <summary>
-        /// See the documentation of the "_parameterMethodInstanceBuilders" property form this class
-        /// </summary>
-        private List<MethodInstanceBuilder> _chainedMethodInstanceBuilders = new();
         private MethodInstanceBuilder _currentMethodInstanceBuilder;
 
         public CSharpVisitor(IMediator mediator)
@@ -430,17 +428,9 @@ namespace Infrastructure.Antlr
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
             string wholeFunctionString = context.GetText().Replace("await", "").Replace("new", "");
-            // TODO: REMOVE this loop since it is no longer necessary to look for more methodCalls, since the expressionChain already takes care of that
-            for (int j = 0; j < context.ChildCount; j++)
-            {
-                // Check each part of the expressionMethodCall, if there are nested methodCalls, then we visit each of them to be extract the information
-                if(ChildRuleNameIs("methodCall", context, j))
-                {
-                    // TODO: =================  FIXME: Since we have new grammar, Fix problem of having chained methodCalls and being able to manage them(the test with the advancedTextFile3 is not detecting the "SomeOtherMethod" chained methodCall, because now this instead of being a child of the expression method call, it is a child of a new rule called "methodChain")
-                    var methodCallNode = GetRuleNodeInChildren("methodCall", context, j);
-                   Visit(methodCallNode);
-                }
-            }
+
+            var methodCallNode = GetRuleNodeInChildren("methodCall", context);
+            Visit(methodCallNode);
 
             return wholeFunctionString;
         }
@@ -510,25 +500,24 @@ namespace Infrastructure.Antlr
             var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
 
             // If there is another methodCall chained, then visit that too, which will put the chained methodCall into the Stack of MethodInstanceBuilders and be retrieved after the visited chained methodCall finishes being processed and then set it to the methodInstanceBuilder
-            if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1) != null)
+            if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1))
             {
                 Visit(expressionChainNode.GetChild(1));
                 methodInstanceBuilder.SetMethodCallChainedInstance(_methodInstanceBuildersStack.Pop());
             }
             // If its a normal instance of an object, then get the string and add it to the methodInstanceBuilder
-            else if(expressionChainNode != null && ChildRuleNameIs("advancedIdentifier", expressionChainNode, 1) != null)
+            else if(expressionChainNode != null && ChildRuleNameIs("advancedIdentifier", expressionChainNode, 1))
             {
                 methodInstanceBuilder.SetNormalInstanceChainedInstance(expressionChainNode.GetChild(1).GetText());
             }
             //=======
 
-            // Set the remaining data of the methodCall and put it into the methodInstanceBuilder
+            // Set the remaining data of the methodCall to be managed by the methodInstanceBuilder
             methodInstanceBuilder.SetMethodName(methodName);
             methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
             methodInstanceBuilder.SetConstructorMethodKind(isConstructor);
             methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
             methodInstanceBuilder.SetParameters(parameterList);
-            //_methodCallDataList.Add(new MethodCallData(namespaceAndClass, methodName, parameterList, propertyChainString, _currentMethodBuilder, isConstructor));
             _methodInstanceBuildersStack.Push(methodInstanceBuilder);
 
             _currentMethodInstanceBuilder = methodInstanceBuilder;
