@@ -650,7 +650,7 @@ Inherited Classes:
             Program_Main.callsites[5].calledMethod.Should().Be(SNodeIntOperation);
         }
         [Fact]
-        public void MediatorCreatedInstancesWithLists_MediatorStartsBuildingClassEntitiesAndRecognizesCorrectlyInstancesFromLists_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        public void MediatorCreatedInstancesWithIndexedCollections1_MediatorStartsBuildingClassEntitiesAndRecognizesCorrectlyInstancesFromLists_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
         {
             // Arrange
             var mediator = new AntlrMediator();

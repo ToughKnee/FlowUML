@@ -414,7 +414,9 @@ namespace Infrastructure.Antlr
             {
                 assignmentText = context.GetText();
             }
-            
+
+            // TODO: Get the IndexRetrieval node and if exists, mark the info to set this instance with the kind of "IsIndexRetrievalInstance"
+
             return assignmentText;
         }
         /// <summary>
@@ -433,6 +435,39 @@ namespace Infrastructure.Antlr
             Visit(methodCallNode);
 
             return wholeFunctionString;
+        }
+
+        private void ProcessIndexRetrieval(IParseTree context, MethodInstanceBuilder? methodInstanceBuilder = null)
+        {
+            var indexRetrievalNode = GetRuleNodeInChildren("indexRetrieval", context);
+            if (methodInstanceBuilder != null) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsIndexRetrievalInstance);
+            // If there is an expressionChain in the indexRetrieval node, then process it
+            if (indexRetrievalNode != null && ChildRuleNameIs("expressionChain", indexRetrievalNode, 1))
+            {
+                ProcessExpressionChain(context);
+            }
+
+        }
+
+        private object? ProcessExpressionChain(IParseTree context)
+        {
+            var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
+
+            // If there is another methodCall chained, then visit that too, which will put the chained methodCall into the Stack of MethodInstanceBuilders and be retrieved after the visited chained methodCall finishes being processed and then set it to the methodInstanceBuilder
+            if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1))
+            {
+                Visit(expressionChainNode.GetChild(1));
+                return _methodInstanceBuildersStack.Pop();
+            }
+            // If its a normal instance of an object, then get the string and add it to the methodInstanceBuilder
+            // TODO: Move the logic of the Instance creation to the MthodInstancBuilder to reduce coupling
+            else if (expressionChainNode != null && ChildRuleNameIs("advancedIdentifier", expressionChainNode, 1))
+            {
+                var processedChainInstance = new Instance(expressionChainNode.GetChild(1).GetText());
+                processedChainInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+                return processedChainInstance;
+            }
+            return null;
         }
         /// <summary>
         /// Gets the info of this methodCall like the method's signature to later
@@ -496,26 +531,21 @@ namespace Infrastructure.Antlr
                 }
             }
 
-            //===========================  Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call
-            var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
+            // Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call
+            var chainedInstance = ProcessExpressionChain(context);
+            if(chainedInstance is Instance) methodInstanceBuilder.SetNormalInstanceChainedInstance((Instance) chainedInstance);
+            else if(chainedInstance is MethodInstanceBuilder) methodInstanceBuilder.SetMethodCallChainedInstance((MethodInstanceBuilder)chainedInstance);
+            else throw new Exception("The processing of the expression chain did not return anything to work with");
 
-            // If there is another methodCall chained, then visit that too, which will put the chained methodCall into the Stack of MethodInstanceBuilders and be retrieved after the visited chained methodCall finishes being processed and then set it to the methodInstanceBuilder
-            if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1))
-            {
-                Visit(expressionChainNode.GetChild(1));
-                methodInstanceBuilder.SetMethodCallChainedInstance(_methodInstanceBuildersStack.Pop());
-            }
-            // If its a normal instance of an object, then get the string and add it to the methodInstanceBuilder
-            else if(expressionChainNode != null && ChildRuleNameIs("advancedIdentifier", expressionChainNode, 1))
-            {
-                methodInstanceBuilder.SetNormalInstanceChainedInstance(expressionChainNode.GetChild(1).GetText());
-            }
-            //=======
+
+            //===========================  Check if the current methodCall has an IndexRetrieval node, if so process it
+
+            //=====
 
             // Set the remaining data of the methodCall to be managed by the methodInstanceBuilder
             methodInstanceBuilder.SetMethodName(methodName);
             methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
-            methodInstanceBuilder.SetConstructorMethodKind(isConstructor);
+            if(isConstructor) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsConstructor);
             methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
             methodInstanceBuilder.SetParameters(parameterList);
             _methodInstanceBuildersStack.Push(methodInstanceBuilder);

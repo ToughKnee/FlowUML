@@ -23,7 +23,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
         // If this element comes from an indexed collection(array, list or dictionary) then the type of this instance is actually the typename that the actual collection holds
         IsElementFromCollection,
         // This applies to normal caller class Instaance types, if there is a methodCall that is part of a chain from another methodCall, then the caller class automatically is assigned this type, only for info purposes
-        IsFromLinkedMethodInstance
+        IsFromLinkedMethodInstance,
+        // This kind states that the current instance is a collection and its type is found in the the template typename of the collection this instance represents
+        IsIndexRetrievalInstance
     }
 
     /// <summary>
@@ -67,7 +69,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// </summary>
         public KindOfInstance kind;
         /// <summary>
-        /// This property defines the instance that is chained to this instance, like "myProperty" 
+        /// This property defines the instance that is chained to this instance, like "myProperty"
         /// would be the chainedInstance in "myInstance.myProperty" 
         /// </summary>
         public AbstractInstance? chainedInstance { get; set; } = null;
@@ -75,7 +77,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// This represents the case when the instance is an indexed collection and it is retrieving an element from it,
         /// like "GetMyList()[0]" would result in a MethodInstance class with this property present and not null
         /// </summary>
-        // TODO: Implement the functionality to use this property
         public AbstractInstance? indexRetrievedInstance { get; set; } = null;
 
         public AbstractInstance(string name, StringWrapper type)

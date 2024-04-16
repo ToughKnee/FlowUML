@@ -22,48 +22,111 @@ fork
 with a methodCall or lone methodCall
 ==== paramList type is List<object>|
 :MethodCallFound;
-:=ProcessMethodCall|
-:Get the components of the methodCall|
+#f34:=**ProcessMethodCall**|
+:===MethodInstanceBuilder
+This class will be the result of this process, 
+which is added to the Stack when complete
+and set in the _methodInstanceBuildersStack/
+:Get the components of the methodCall and put them in the MethodInstanceBuilder| 
 if (Parameters found?) is (no) then
 else (yes)
 package ProcessParameters #daa {
   if (Parameter is a ...) is (Normal Instance) then
     :Add it to the paramList;
   else (MethodCall)
-    :Process MethodCall|
+    #f34:ProcessMethodCall|
     note right
-    This adds the methoddCall to the list from the Visitor,
+    Recursive call. This adds the methoddCall to the stack from the Visitor,
     where the MethodInstanceBuilder is going to be 
     removed by the owner methodCall
     end note
-    :Remove the last element from the list of 
+    :Remove the last element from the stack of 
     **MethodInstanceBuilders** and move it to the parametersList>
   endif
 }
 endif
+#6b7:ProcessSpecialInstanceAttributes|
+:Set all the respective data of the MethodInstanceBuilder;
+
+:Put **MethodInstanceBuilder generated** into the Stack;
+
+
+
+
+'//===========================  VisitExpression 
+fork again
+:=**VisitLocalVariableDeclaration** being visited|
+if (Expression is..) is (Normal Instance) then
+  :Store the entire advancedIdentfierNode in a  
+  **string var** to be later passed to the 
+  mediator and let him do the actual Instance;
+  :Normal Instances don't 
+  need to process expressionChain>
+  #6b7:=ProcessSpecialInstanceAttributes
+  We get the node that has the children 
+  with expressionChain and IndexRetrieval|
+else (MethodCall)
+  :=Visit MethodCallNode|
+  :After this, the class' property 
+  **_methodInstanceBuildersStack**, 
+  is set from the visit;
+
+endif
+
+
+
+
+
+fork again
+#6b7:=**ProcessSpecialInstanceAttributes**
+Params: IParseTreeNode - Node that must contain 
+the **IndexRetrieval** and **ExpressionChain** children|
+
 if (Has expressionChain?) is (no) then
 else (yes)
-package ProcessExpressionChain #add {
+package ProcessExpressionChain(context) #add {
   if (expressionChain is a ...) is (Normal Instance) then
-    :Add it to the current methodInstanceBuilder;
+      :Create a normal Instance and assign 
+      its kind as propertyFromThisClass;
+      :Return the Instance created;
   else (MethodCall)
-    :Process MethodCall|
+    #f34:ProcessMethodCall|
     note right
-    This adds the methoddCall to the list from the Visitor, 
+    Recursive call. This adds the methoddCall to the stack from the Visitor, 
     where the MethodInstanceBuilder is going to be 
     removed by the owner methodCall
     end note
-    :Remove the last element from the list of 
-    **MethodInstanceBuilders** and move it to the parametersList>
+    :Remove the last element from the stack of 
+    **MethodInstanceBuilders** and return it;
   endif
+  :**Returns** the generated **Instance** or **MethodInstanceBuilder**/
 }
 endif
 
-:Put **MethodInstanceBuilder generated** into List;
+if (Has IndexRetrieval?) is (no) then
+else (yes)
+  :Mark the Instances's kind as **IsIndexRetrievalInstance** kind;
+package ProcessIndexRetrieval #eda {
+  if (Has expressionChain?) is (no) then
+  else (yes)
+  :**Create new IndexInstance** for this IndexRetrieval component;
+  package ProcessExpressionChain #add {
+    :=ProcessExpressionChain|
+    note right
+    This results in the Instance or MethodInstBuilder, 
+    which belongs to the **created Instance**
+    end note
+  }
+  :Get the processed **Instance** or **MethodInstanceBuilder**;
+  :Mark its kind as **IndexRetrievalInstance**;
+  if (Processed instance is a) is (Normal Instance) then
+    :Visit the ;
+  else (MethodInstanceBuilder)
+    :Build the MethodInstance and assign it to the IndexInstance;
+  endif
 
-'//===========================  Process MethodCall
-fork again
-:=ProcessMethodCall|
-:;
+  endif
+}
+endif
 
 @enduml

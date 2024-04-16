@@ -23,7 +23,6 @@ namespace Infrastructure.Builders
         public MethodBuilder linkedMethodBuilder;
         private Callsite _linkedCallsite;
         private KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
-        public bool isConstructor = false;
         private readonly string _paramIdentifier = "<p>";
         /// <summary>
         /// Used to get important data from the analysis of the code files which is 
@@ -44,9 +43,6 @@ namespace Infrastructure.Builders
 
         public MethodInstance Build()
         {
-            if (isConstructor)
-                _methodInstanceKind = KindOfInstance.IsConstructor;
-
             // Seting the chained instance of the caller class
             if(_callerClass != null)
                 _callerClass.chainedInstance = _callerClassChainedInstance;
@@ -255,10 +251,9 @@ namespace Infrastructure.Builders
                 chainedMethodCall._callerClass.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
             return this;
         }
-        public MethodInstanceBuilder SetNormalInstanceChainedInstance(string chainedInstance)
+        public MethodInstanceBuilder SetNormalInstanceChainedInstance(Instance chainedInstance)
         {
-            this._ownedChainedInstance = new Instance(chainedInstance);
-            _ownedChainedInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+            this._ownedChainedInstance = chainedInstance;
             return this;
         }
         /// <summary>
@@ -272,9 +267,9 @@ namespace Infrastructure.Builders
             this.linkedMethodBuilder = methodBuilder;
             return this;
         }
-        public MethodInstanceBuilder SetConstructorMethodKind(bool isConstructor)
+        public MethodInstanceBuilder SetMethodKind(KindOfInstance kind)
         {
-            this.isConstructor = isConstructor;
+            this._methodInstanceKind = kind;
             return this;
         }
     }
