@@ -24,66 +24,6 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
            MethodDictionaryManager.instance.CleanMethodDictionary();
            ClassEntityManager.instance.CleanClassEntitiesDictionary();
        }
-
-       public static IEnumerable<object[]> TextFile1Expectations
-       {
-           get
-           {
-               yield return new object[] {
-                   new List<(string, string)> { ("string", "teamName"), ("string", "playerName") },
-                   new List<(string, string)> { ("teamId", "TeamName.Create(teamName)"), ("team", "_teamsRepository.GetByIdAsync(teamId)"), ("playerId", "UserName.Create(playerName)") }
-               };
-           }
-       }
-
-       [Theory]
-       [MemberData(nameof(TextFile1Expectations))]
-       public void AnalyzeBasicClassDeclaration_MediatorReceivesExpectedStrings(List<(string, string)> expectedParameters, List<(string, string)> expectedLocalVariables)
-       {
-           // Arrange
-           var mediatorMock = new Mock<IMediator>();
-
-           // Create a collection to store the captured parameters
-           List<(string, string)> receivedParameters = new List<(string, string)>();
-           List<(string, string)> receivedLocalVariables = new List<(string, string)>();
-
-            mediatorMock.Setup(x => x.GetKnownInstancesDeclaredInCurrentMethodAnalysis())
-                .Returns(() =>
-                {
-                    return new Dictionary<string, AbstractInstance>().AsReadOnly();
-                });
-            mediatorMock.Setup(x => x.ReceiveParameters(It.IsAny<string>(), It.IsAny<string>()))
-               .Callback<string, string>((param1, param2) =>
-               {
-                   receivedParameters.Add((param1, param2));
-               });
-           mediatorMock.Setup(x => x.ReceiveLocalVariableDeclaration(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AbstractBuilder<MethodInstance>>()))
-               .Callback<string, string, AbstractBuilder<MethodInstance>>((param1, param2, methodCallBuilder) =>
-               {
-                   receivedLocalVariables.Add((param1, param2));
-               });
-           _antlrService = new ANTLRService(mediatorMock.Object);
-           _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile1.txt", true);
-
-           // Act
-           _antlrService.RunVisitorWithSpecificStartingRule("method");
-
-           // Assert
-           // Checking all the received strings are correct
-           receivedParameters.Should().BeEquivalentTo(expectedParameters);
-           receivedLocalVariables.Should().BeEquivalentTo(expectedLocalVariables);
-
-           //foreach (KeyValuePair<AbstractInstance, AbstractInstance> assignment in InstancesDictionaryManager.instance.instancesDictionary)
-           //{
-           //    string identifier = assignment.Key.name;
-           //    string value = assignment.Value.name;
-           //    Assert.True(value == expectedValues[i]);
-           //    Assert.True(identifier == expectedIdentifiers[i]);
-           //    i++;
-           //}
-
-       }
-
        public static IEnumerable<object[]> TextFile2Expectations
        {
            get

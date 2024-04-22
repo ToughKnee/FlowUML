@@ -5,10 +5,13 @@ class Program
 {
     static void Main(string[] args)
     {
-        GetMyList()[0].myProperty.myFuncCall().listProp[1];
-        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA(list[0]
-        , caller.callerChain.GetMyList().methodInstanceChain[0][1].listChain.myFuncCall().prop1.prop2.listProp[1].prop999.propdnc()
-        , GetMyList()[0]);
+          var thing = myth.otherThing().myList[0].normalThing[1].otherthings.functionThings();
+          var thing2 = myth.otherThing().myList[0].normalThing[1].otherthings.functionThings();
+          var thing3 = myth.otherThing().myList[0].otherthing();
+          GetMyList()[0].myProperty.myFuncCall().listProp[1];
+          AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA(list[0]
+          , caller.callerChain.GetMyList().methodInstanceChain[0][1].listChain.myFuncCall().prop1.prop2.listProp[1].prop999.propdnc()
+          , GetMyList()[0]);
    }
    static void Assign(int num1, int num2, string str)
    {

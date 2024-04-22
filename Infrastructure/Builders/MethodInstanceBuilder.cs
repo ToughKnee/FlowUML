@@ -7,6 +7,12 @@ namespace Infrastructure.Builders
 {
     public class MethodInstanceBuilder : AbstractBuilder<MethodInstance>
     {
+        /// <summary>
+        /// This is set to true if the method "SetMethodCallChainedInstance" is called and there is a 
+        /// methodInstanceBuilder in the parameters of this
+        /// Used to know if we must add the callsite right now or after the parameters have been built
+        /// </summary>
+        private bool _hasMethodCallParameters = false;
         private string _methodName;
         private AbstractInstance? _callerClass = null;
         /// <summary>
@@ -20,6 +26,7 @@ namespace Infrastructure.Builders
         private AbstractInstance? _callerClassChainedInstance = null;
         private AbstractInstance? _ownedChainedInstance = null;
         private MethodInstanceBuilder? _ownedChainedMethodInstanceBuilder = null;
+        private AbstractInstance? _indexRetrievalInstance = null;
         public MethodBuilder linkedMethodBuilder;
         private Callsite _linkedCallsite;
         private KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
@@ -57,10 +64,6 @@ namespace Infrastructure.Builders
                     parametersInstances.Add(((MethodInstanceBuilder)objectParam).Build());
             }
 
-            // Make the callsite for the method
-            _linkedCallsite = new Callsite(null);
-            linkedMethodBuilder.AddCallsite(_linkedCallsite);
-
             var methodInstance = new MethodInstance(_callerClass
                 , (_ownedChainedMethodInstanceBuilder != null) ? (_ownedChainedMethodInstanceBuilder.Build().callerClass) : ((_ownedChainedInstance != null) ? (_ownedChainedInstance) : (null))
                 , _methodName
@@ -68,6 +71,7 @@ namespace Infrastructure.Builders
                 , _linkedCallsite
                 , _methodInstanceKind
                 , _mediator.GetUsedNamespaces());
+            methodInstance.indexRetrievedInstance = this._indexRetrievalInstance;
             return methodInstance;
         }
 
@@ -238,6 +242,7 @@ namespace Infrastructure.Builders
         }
         public MethodInstanceBuilder SetMethodCallChainedInstance(MethodInstanceBuilder chainedMethodCall)
         {
+            _hasMethodCallParameters = true;
             this._ownedChainedMethodInstanceBuilder = chainedMethodCall;
             chainedMethodCall.SetCallerClassName(null);
             chainedMethodCall._callerClass.kind = KindOfInstance.IsFromLinkedMethodInstance;
@@ -265,11 +270,24 @@ namespace Infrastructure.Builders
         public MethodInstanceBuilder SetLinkedMethodBuilder(MethodBuilder methodBuilder)
         {
             this.linkedMethodBuilder = methodBuilder;
+
+            // If there are no parameters that go before this method call, then Make the callsite for the method
+            if (_hasMethodCallParameters != true)
+            {
+                _linkedCallsite = new Callsite(null);
+                linkedMethodBuilder.AddCallsite(_linkedCallsite);
+            }
+
             return this;
         }
         public MethodInstanceBuilder SetMethodKind(KindOfInstance kind)
         {
             this._methodInstanceKind = kind;
+            return this;
+        }
+        public MethodInstanceBuilder SetIndexRetrievalInstance(AbstractInstance indexRetrievalInstance)
+        {
+            this._indexRetrievalInstance = indexRetrievalInstance;
             return this;
         }
     }

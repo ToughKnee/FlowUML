@@ -437,21 +437,43 @@ namespace Infrastructure.Antlr
             return wholeFunctionString;
         }
 
-        private void ProcessIndexRetrieval(IParseTree context, MethodInstanceBuilder? methodInstanceBuilder = null)
+        private AbstractInstance? ProcessIndexRetrieval(IParseTree context, MethodInstanceBuilder ownerMethodInstanceBuilder = null)
         {
             var indexRetrievalNode = GetRuleNodeInChildren("indexRetrieval", context);
-            if (methodInstanceBuilder != null) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsIndexRetrievalInstance);
-            // If there is an expressionChain in the indexRetrieval node, then process it
-            if (indexRetrievalNode != null && ChildRuleNameIs("expressionChain", indexRetrievalNode, 1))
-            {
-                ProcessExpressionChain(context);
-            }
+            if (indexRetrievalNode is null) return null;
+            AbstractInstance chainedInstance;
+            string resultInstanceName = indexRetrievalNode.GetChild(1).GetText(); // We get the second child because that child will always contain the contents of the brackets indexer
+            var indexRetrievalInstanceResult = new Instance(resultInstanceName);
+            indexRetrievalInstanceResult.kind = KindOfInstance.IsIndexRetrievalInstance;
+            //if (methodInstanceBuilder != null) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsIndexRetrievalInstance);
 
+            var expressionChainNode = GetRuleNodeInChildren("expressionChain", indexRetrievalNode);
+            // If there is an expressionChain in the indexRetrieval node, then process it
+            if (expressionChainNode != null)
+            {
+                // Get the chained instance to later add it to the generated result instance
+                var chainedInstanceObject = ProcessExpressionChain(indexRetrievalNode);
+                if(chainedInstanceObject is MethodInstanceBuilder)
+                {
+                    var chainedInstanceBuilder = (MethodInstanceBuilder)chainedInstanceObject;
+                    chainedInstance = ((MethodInstanceBuilder)chainedInstanceBuilder).Build();
+                }
+                else chainedInstance = (Instance)chainedInstanceObject;
+
+                indexRetrievalInstanceResult.chainedInstance = chainedInstance;
+            }
+            // TODO: At some point process also other IndexRetrieval nodes
+         
+            return indexRetrievalInstanceResult;
         }
 
         private object? ProcessExpressionChain(IParseTree context)
         {
             var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
+            if(expressionChainNode == null) return null; 
+
+            // Process the index retrieval if there is any
+            var indexRetrievalInstance = ProcessIndexRetrieval(expressionChainNode);
 
             // If there is another methodCall chained, then visit that too, which will put the chained methodCall into the Stack of MethodInstanceBuilders and be retrieved after the visited chained methodCall finishes being processed and then set it to the methodInstanceBuilder
             if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1))
@@ -465,8 +487,10 @@ namespace Infrastructure.Antlr
             {
                 var processedChainInstance = new Instance(expressionChainNode.GetChild(1).GetText());
                 processedChainInstance.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+                processedChainInstance.indexRetrievedInstance = indexRetrievalInstance;
                 return processedChainInstance;
             }
+
             return null;
         }
         /// <summary>
@@ -530,24 +554,18 @@ namespace Infrastructure.Antlr
                     parameterList.Add(expressionString);
                 }
             }
+            methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
 
             // Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call
             var chainedInstance = ProcessExpressionChain(context);
             if(chainedInstance is Instance) methodInstanceBuilder.SetNormalInstanceChainedInstance((Instance) chainedInstance);
             else if(chainedInstance is MethodInstanceBuilder) methodInstanceBuilder.SetMethodCallChainedInstance((MethodInstanceBuilder)chainedInstance);
-            else throw new Exception("The processing of the expression chain did not return anything to work with");
-
-
-            //===========================  Check if the current methodCall has an IndexRetrieval node, if so process it
-
-            //=====
 
             // Set the remaining data of the methodCall to be managed by the methodInstanceBuilder
             methodInstanceBuilder.SetMethodName(methodName);
-            methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
-            if(isConstructor) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsConstructor);
             methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
             methodInstanceBuilder.SetParameters(parameterList);
+            if(isConstructor) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsConstructor);
             _methodInstanceBuildersStack.Push(methodInstanceBuilder);
 
             _currentMethodInstanceBuilder = methodInstanceBuilder;
