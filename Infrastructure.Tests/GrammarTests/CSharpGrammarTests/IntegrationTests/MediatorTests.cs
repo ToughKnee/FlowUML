@@ -672,23 +672,29 @@ Inherited Classes:
 //");
 
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
-            ClassEntityManager.instance.classEntities.Count.Should().Be(1);
+            ClassEntityManager.instance.classEntities.Count.Should().Be(3);
 
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
 
             // Creating the references to the methods to be checked
             var Program_Main = classEntitiesList[0].methods[0];
             var AssignMethod = classEntitiesList[0].methods[1];
-            var AssignCollectionsMethod = classEntitiesList[0].methods[2];
+            var GetMyListMethod = classEntitiesList[0].methods[2];
+            var myFuncCallMethod = classEntitiesList[1].methods[0];
+            var otherThingMethod = classEntitiesList[1].methods[1];
+            var differentOtherThingMethod = classEntitiesList[1].methods[2];
+            var myOtherClassFunctionMethod = classEntitiesList[2].methods[0];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(6);
+            Program_Main.callsites.Count.Should().Be(8);
             Program_Main.callsites[0].calledMethod.Should().Be(null);
-            Program_Main.callsites[1].calledMethod.Should().Be(null);
-            Program_Main.callsites[2].calledMethod.Should().Be(null);
-            Program_Main.callsites[3].calledMethod.Should().Be(AssignMethod);
-            Program_Main.callsites[4].calledMethod.Should().Be(AssignMethod);
-            Program_Main.callsites[5].calledMethod.Should().Be(AssignCollectionsMethod);
+            Program_Main.callsites[1].calledMethod.Should().Be(otherThingMethod);
+            Program_Main.callsites[2].calledMethod.Should().Be(differentOtherThingMethod);
+            Program_Main.callsites[3].calledMethod.Should().Be(myOtherClassFunctionMethod);
+            Program_Main.callsites[4].calledMethod.Should().Be(GetMyListMethod);
+            Program_Main.callsites[5].calledMethod.Should().Be(otherThingMethod);
+            Program_Main.callsites[6].calledMethod.Should().Be(GetMyListMethod);
+            Program_Main.callsites[7].calledMethod.Should().Be(AssignMethod);
         }
     }
 }

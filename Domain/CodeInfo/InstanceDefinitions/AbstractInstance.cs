@@ -92,7 +92,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public AbstractInstance()
         {
         }
-        public static AbstractInstance? GetLastChainedInstance(AbstractInstance instance)
+        public static AbstractInstance? GetLastChainedInstance(AbstractInstance instance, bool returnFirstMethodInstance = false)
         {
             AbstractInstance nextInstance = instance;
             AbstractInstance previousInstance = nextInstance;
@@ -100,6 +100,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             {
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
+                if (returnFirstMethodInstance && nextInstance is MethodInstance) return nextInstance;
             }
             return previousInstance;
         }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Reflection.Emit;
+using System.Security.Cryptography.X509Certificates;
 using Domain.CodeInfo.MethodSystem;
 
 namespace Domain.CodeInfo.InstanceDefinitions
@@ -140,6 +142,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
             }
             methodInstancesWithUndefinedCallsite.Remove(this);
             ResolveChainedInstanceType(this);
+            // If this methodInstance has an indexRetrieval instance, then resolve its type if there are other MethodInstances that were called by that indexRetrievalInstance
+            if(this.indexRetrievedInstance != null)
+            {
+                ResolveIndexRetrievalInstanceType(this);
+            }
         }
         public void ResolveCollectionInstanceType(AbstractInstance instance)
         {
@@ -240,13 +247,32 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
                 // Then resolve the type of this nextInstance
                 ResolveComponentType(nextInstance, currentOwnerClass);
-                // If the current component does not have a type and is of kind "IsFromLinkedMethodInstance", then set the type right away
+                // If the "nextInstance" does not have a type and is of kind "IsFromLinkedMethodInstance", then set the type right away
                 if (String.IsNullOrEmpty(nextInstance.refType.data) && nextInstance.kind == KindOfInstance.IsFromLinkedMethodInstance)
                     nextInstance.refType.data = currentOwnerClass;
+                // If the "nextInstance" has an "indexRetrievedInstance", then that means this "nextInstance" is an indexed collection and we must make a new chainedInstance representing the type of the elements
+                if (nextInstance.indexRetrievedInstance != null)
+                {
+                    ResolveIndexRetrievalInstanceType(nextInstance);
+                    // We break outside this while loop because if we continue, then when we assign the indexRetrievalInstance as the chainedInstance, and the loop will not end when it is supposed to end
+                    break;
+                }
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
             }
-
+        }
+        public void ResolveIndexRetrievalInstanceType(AbstractInstance instanceWithIndexRetrieval)
+        {
+            if (instanceWithIndexRetrieval.chainedInstance != null) throw new Exception("The nextInstance is an indexed collection and must not have a chainedInstance, but it does");
+            instanceWithIndexRetrieval.chainedInstance = instanceWithIndexRetrieval.indexRetrievedInstance;
+            // After setting the chainedInstance as the indexRetrieval, we get the type of the nextInstance, and get the string between diamonds, which represents the type of the elements from the collection, the "Last()" method is used because the last typename from the collection is most likely the type of the elements
+            instanceWithIndexRetrieval.indexRetrievedInstance.refType.data = Typename.GetTypenameList(instanceWithIndexRetrieval.type).Last().name;
+            // Then we get the first methodInstance chained to this indexRetrieval, and we set the type of the callerClass of that chained MethodInstaance to the type of the indexRetrieval, because the indexRetrieval is the actual caller class, and also remove the chainedInstance from the indexRetrieval to avoid infinite references to each other
+            var firstMethodInstanceChained = AbstractInstance.GetLastChainedInstance(instanceWithIndexRetrieval, true);
+            if (firstMethodInstanceChained != null)
+            {
+                ((MethodInstance)firstMethodInstanceChained).callerClass = instanceWithIndexRetrieval.indexRetrievedInstance;
+            }
         }
         /// <summary>
         /// This method checks the types of the aliases it has(className and parameters)
@@ -428,8 +454,8 @@ namespace Domain.CodeInfo.InstanceDefinitions
             {
                 methodIdentifier.ownerClassNameAndInheritedClasses = new();
             }
-            // If there is a propertyChain, then use the type of the last property from the propertyChain, else then use the type of the class name
-            if(callerClass.chainedInstance is not null)
+            // If there is a propertyChain and the caller class does not have as a chain the same methodInstance, then use the type of the last property from the propertyChain, else then use the type of the class name
+            if(callerClass.chainedInstance is not null && callerClass.chainedInstance != this)
             {
                 methodIdentifier.ownerClassNameAndInheritedClasses.Add(GetLastChainedInstance(callerClass.chainedInstance).type);
             }

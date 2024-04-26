@@ -561,6 +561,9 @@ namespace Infrastructure.Antlr
             if(chainedInstance is Instance) methodInstanceBuilder.SetNormalInstanceChainedInstance((Instance) chainedInstance);
             else if(chainedInstance is MethodInstanceBuilder) methodInstanceBuilder.SetMethodCallChainedInstance((MethodInstanceBuilder)chainedInstance);
 
+            var indexRetrievalInstance = ProcessIndexRetrieval(context);
+            methodInstanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
+
             // Set the remaining data of the methodCall to be managed by the methodInstanceBuilder
             methodInstanceBuilder.SetMethodName(methodName);
             methodInstanceBuilder.SetCallerClassName(namespaceAndClass);

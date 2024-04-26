@@ -251,7 +251,7 @@ namespace Infrastructure.Builders
             {
                 chainedMethodCall._callerClass.refType.data = "";
             }
-            // If the chained caller class has a name, then remove the "IsFromLinkedMethodInstance" kind and replace it with "IsPropertyFromInheritanceOrInThisClass", to let the true type of the property be discovered by the MethodInstance
+            // If the chained caller class has a name(which means that the caller class is actually a property from this MethodCall), then remove the "IsFromLinkedMethodInstance" kind and replace it with "IsPropertyFromInheritanceOrInThisClass", to let the true type of the property be discovered by the MethodInstance
             else
                 chainedMethodCall._callerClass.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
             return this;
@@ -259,6 +259,11 @@ namespace Infrastructure.Builders
         public MethodInstanceBuilder SetNormalInstanceChainedInstance(Instance chainedInstance)
         {
             this._ownedChainedInstance = chainedInstance;
+            return this;
+        }
+        public MethodInstanceBuilder SetIndexRetrievalInstance(Instance indexRetrievalInstance)
+        {
+            this._indexRetrievalInstance = indexRetrievalInstance;
             return this;
         }
         /// <summary>
