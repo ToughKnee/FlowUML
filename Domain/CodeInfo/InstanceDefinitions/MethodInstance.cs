@@ -9,10 +9,12 @@ namespace Domain.CodeInfo.InstanceDefinitions
     /// <summary>
     /// Special class for the instances that are return types from methods
     /// At first it will store the parts of a method(owner class, name and parameters) and 
-    /// mark the 'methodIsUnknown' bool as true, thus 
-    /// When 'methodIsUnknown' is false, then it means that the owner class of this method defined it
-    /// and the MOST important part is that we can know its return type everytime this method is called,
-    /// meaning that all the normal instances that are assigned by this method will be known now
+    /// mark the 'methodIsUnknown' bool as true
+    /// This is the part where, when we got the information from the code analysis and 
+    /// their respective linking from the Mediator, then we start using the 
+    /// information in this class and start discovering the information in order to
+    /// discover the actual Method this class represents, the callsite, and its type for other
+    /// MethodInstances to use and also discover their actual Methods
     /// </summary>
     public class MethodInstance : AbstractInstance
     {
@@ -85,33 +87,12 @@ namespace Domain.CodeInfo.InstanceDefinitions
             this.linkedCallsite = new Callsite(method);
             RegisterToTheMethodInstancesList(this);
         }
-        /// <summary>
-        /// Set the inheritance of this MethoInstance and also the inheritance of the components of this 
-        /// MethodInstance if they are null
-        /// </summary>
-        /// <param name="inheritance"></param>
-        public void SetInheritance(IReadOnlyList<string> inheritance)
-        {
-            this.inheritedClasses = inheritance;
-            if (callerClass is not null && callerClass.inheritedClasses is null)
-            {
-                callerClass.inheritedClasses = inheritedClasses;
-            }
-            for (int i = 0; i < calledParameters.Count; i++)
-            {
-                if (calledParameters[i].inheritedClasses is null)
-                {
-                    calledParameters[i].inheritedClasses = inheritedClasses;
-                }
-            }
-        }
         public static void RegisterToTheMethodInstancesList(MethodInstance methodInstance)
         {
             MethodInstance.methodInstancesWithUndefinedCallsite.Add(methodInstance);
         }
-        public void HandleActualMethod(Method actualMethod)
+        private void HandleActualMethod(Method actualMethod)
         {
-            // TODO: Make an if statement which checks if the "actualMethod.returnType == <TYPENAME>T", where the thing in diamonds will represent the identifier for return types that are TEMPLATES TYPES, while the single 'T' represents the real typename from the definition of the method or class
             this.refType.data = actualMethod.returnType;
             this.linkedCallsite.calledMethod = actualMethod;
             // Check if the actualMethod or if the owner class of the actualMethod has typename parameters, if so, then look for the correct type used when instantiated
@@ -142,36 +123,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
             }
             methodInstancesWithUndefinedCallsite.Remove(this);
             ResolveChainedInstanceType(this);
-            // If this methodInstance has an indexRetrieval instance, then resolve its type if there are other MethodInstances that were called by that indexRetrievalInstance
+            // If this methodInstance has an indexRetrieval instance, then resolve its type for other MethodInstances that were called by that indexRetrievalInstance which will require this indexRetrievalInstnace defined
             if(this.indexRetrievedInstance != null)
             {
                 ResolveIndexRetrievalInstanceType(this);
             }
-        }
-        public void ResolveCollectionInstanceType(AbstractInstance instance)
-        {
-            var newRefType = new StringWrapper();
-            newRefType.data = instance.type;
-            int firstCharacterIndex = 0;
-            int lastCharacterIndex = 0;
-
-            // If the type is an array, then get rid of the brackets to leave the type of the elements
-            if (instance.type.Contains("["))
-            {
-                firstCharacterIndex = instance.type.IndexOf('[') + 1;
-                newRefType.data = newRefType.data.Substring(0, firstCharacterIndex - 1);
-                instance.refType = newRefType;
-            }
-            // If the indexed collection has diamonds with the type of the elements inside them, then get the contents of the diamonds
-            else if (instance.type.Contains("<"))
-            {
-                firstCharacterIndex = instance.type.IndexOf('<') + 1;
-                lastCharacterIndex = instance.type.IndexOf('>');
-                newRefType.data = newRefType.data.Substring(firstCharacterIndex, lastCharacterIndex - firstCharacterIndex);
-                instance.refType = newRefType;
-            }
-            else
-                throw new Exception("The indexed collection did not contain any bracket or diamond to be able to get the type of the contained elements");
         }
         /// <summary>
         /// This method resolves the type of a given component of this MethodInstance
@@ -181,14 +137,8 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// <param name="component">Target Instance to look for its type</param>
         /// <param name="ownerClass">Extra parameter that add another class to look for 
         /// alognside the inherited classes</param>
-        public void ResolveComponentType(AbstractInstance component, string ownerClass = "")
+        private void ResolveComponentType(AbstractInstance component, string ownerClass = "")
         {
-            // If this component is an element from an indexed collection and it knows the type of the collection, then we assign its type to the type contained in the indexed collection
-            if (component.kind == KindOfInstance.IsElementFromCollection && !String.IsNullOrEmpty(component.type) && (component.type.Contains("<") || component.type.Contains("[")))
-            {
-                ResolveCollectionInstanceType(component);
-                return;
-            }
             // If the current component of the MethodInstance already has its type defined or is another MethodInstance, then we ignore this component
             if (!String.IsNullOrEmpty(component.type) || component is MethodInstance)
             {
@@ -219,14 +169,12 @@ namespace Domain.CodeInfo.InstanceDefinitions
                         break;
                 }
             }
-
-
         }
         /// <summary>
         /// Gets the type of all the chained instances from a given Instance, and this represents the propertyChain
         /// </summary>
         /// <param name="ownerInstance"></param>
-        public void ResolveChainedInstanceType(AbstractInstance ownerInstance)
+        private void ResolveChainedInstanceType(AbstractInstance ownerInstance)
         {
             // If this is not a parameter and the MehtodInstance does not have a chainedInstance then do nothing, or if this is a parameter and the parameter does not have a chainedInstance then do nothing, or if the ownerInstnace is another MehtodInstance and it is a parameter then do nothing
             if (ownerInstance.chainedInstance is null)
@@ -261,7 +209,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 nextInstance = nextInstance.chainedInstance;
             }
         }
-        public void ResolveIndexRetrievalInstanceType(AbstractInstance instanceWithIndexRetrieval)
+        private void ResolveIndexRetrievalInstanceType(AbstractInstance instanceWithIndexRetrieval)
         {
             if (instanceWithIndexRetrieval.chainedInstance != null) throw new Exception("The nextInstance is an indexed collection and must not have a chainedInstance, but it does");
             instanceWithIndexRetrieval.chainedInstance = instanceWithIndexRetrieval.indexRetrievedInstance;
@@ -275,29 +223,23 @@ namespace Domain.CodeInfo.InstanceDefinitions
             }
         }
         /// <summary>
-        /// This method checks the types of the aliases it has(className and parameters)
-        /// and if there are no unknown types, then this MethodInstance will remove itself from
-        /// the methodInstancesWithUndefinedCallsite, and start defining the remaning classes with
+        /// This method checks the types of the components it has(className, parameters, and 
+        /// the property chains of the caller class, parameters and this MethodInstance)
+        /// and if we found all the types, then this MethodInstance is ready to look for the actual Method, and then 
+        /// remove itself from the methodInstancesWithUndefinedCallsite, and start defining the remaning classes with
         /// this info
         /// If there are still unknwon types, we need to look for it with the help of other classes
         /// And we have several places to look for
         /// </summary>
-        public void SolveTypesOfAliases()
+        public void SolveTypesOfComponents()
         {
-            // If this method is actually an array of a class, then define its type as the array correctly
-            if (this.methodName.Contains("["))
-            {
-                this.refType.data = this.methodName;
-                this.refType.data = this.refType.data.Substring(0, refType.data.IndexOf("[") + 1) + "]";
-                methodInstancesWithUndefinedCallsite.Remove(this);
-                ResolveChainedInstanceType(this);
-                return;
-            }
+            //===========================  Finding the CHAINED INSTANCES types of the Caller Class
             // Get the inheritance of the callerClass if its type is known to process the cases where this MethodInstance is a normal kind or a kind that involves inheritance
             if (callerClass is not null && !String.IsNullOrEmpty(callerClass.type))
             {
                 if(InheritanceDictionaryManager.instance.inheritanceDictionary.TryGetValue(callerClass.type, out List<string> inheritance))
                 {
+                    // The methodInstance must share the inherited classes with the caller class
                     this.inheritedClasses = inheritance;
 
                     // If the inheritance of this class has been resolved and the callerClass is NOT a MethodInstance, then get the inheritance for the next property in the property chain if this MethodInstance has any
@@ -306,6 +248,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 }
             }
 
+            //===========================  Finding the PARAMETERS and CALLER CLASS types
             // Then we resolve the parameters and class name if they are of a special kind of instance, and then we go through all of these components, and check their types, if the types are missing then we get the types
             // Putting all the components of this MethodInstance into a List to traverse them and resolve their types
             var methodInstanceComponents = new List<AbstractInstance>(calledParameters);
@@ -317,8 +260,9 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 ResolveComponentType(currentMethodComponent);
             }
 
+            //===========================  Finding the CHAINED INSTANCES types of the Parameters and checking if all the components of this MethodInstance are defined to look for the actual Method
             // Check if this MethodInstance knows the class parameters types, if so then proceed to find the actual Method, if not then do nothing
-            bool areParametersTypeKnown = true;
+            bool componentsTypeKnown = true;
             for (int i = 0; i < calledParameters.Count; i++)
             {
                 // If this parameter has a chained Instance, then we must find the types of all the chained instances, unless it is another MethodInstance
@@ -329,17 +273,18 @@ namespace Domain.CodeInfo.InstanceDefinitions
                         ResolveChainedInstanceType(calledParameters[i]);
                     // Check if the last element has its type defined, if not then the parameters type are not known
                     if (String.IsNullOrEmpty(GetLastChainedInstance(calledParameters[i]).type))
-                        areParametersTypeKnown = false;
+                        componentsTypeKnown = false;
                 }
 
                 else if (String.IsNullOrEmpty(calledParameters[i].type))
                 {
-                    areParametersTypeKnown = false;
+                    componentsTypeKnown = false;
                 }
             }
 
+            //===========================  Finding the ACTUAL METHOD
             // If the parameters type and the types of the components of the caller are known, then look into the methodDictionary the actual Method and get the return type, and also define the linkedCallsite with the actual Method
-            if (areParametersTypeKnown)
+            if (componentsTypeKnown)
             {
                 if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod1))
                     HandleActualMethod(actualMethod1);
@@ -372,12 +317,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
                     }
                 }
             }
-            // If this method call returned an indexed collection, and it was called with "[]" after it, then this method call must return the type of the elements in the collection
-            if (kind == KindOfInstance.IsElementFromCollection)
-            {
-                ResolveCollectionInstanceType(this);
-            }
-
         }
 
         /// <summary>
@@ -388,7 +327,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// are going to be shown
         /// </summary>
         /// <returns>Identification of the MethodInstance's method</returns>
-        public string GetIdentifier()
+        private string GetIdentifier()
         {
             string result = "";
             // Getting the className identification of this MethodInstance
@@ -430,12 +369,12 @@ namespace Domain.CodeInfo.InstanceDefinitions
         }
 
         /// <summary>
-        /// This method get the MethodIdentifier of this MethodInstance which is used ONLY 
-        /// when all the aliases have been found out their types and we must get 
+        /// This method gets the MethodIdentifier of this MethodInstance which is used ONLY 
+        /// when all the components of this class have been found out their types and we must get 
         /// the actual Method from the methodDictionary
         /// </summary>
         /// <returns></returns>
-        public MethodIdentifier GetMethodIdentifier()
+        private MethodIdentifier GetMethodIdentifier()
         {
             // Setting the parameters of the MethodIdentifier to request the actual Method to the methodDictionary
             var methodIdentifier = new MethodIdentifier();

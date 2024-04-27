@@ -17,9 +17,9 @@ When:
         -Mediator receives info for instances which could be a local variable, property, parameter or methodCall
 Then:
         -New Instances that are parts of a methodCall or assignments of local variables by properties, params or local variables MUST be linked to them and share their type property
-          -If we can't connect this new instance with another ALREADY existing instance, we must make data to recognize at a later time the instance that should have been defined(NOT implemented)
+                -If we can't connect this new instance with another ALREADY existing instance, we must make data to recognize at a later time the instance that should have been defined(NOT implemented)
         -IF the class has inheritance AND the Instance to be made requires knowing the inheritance of the class to know its type(like an Instance named the "this" keyword) then ALL methodCalss AND properties must have contents in their inheritanceList containing the parents of the current class analyzed AND ALSO the grandparents
-         The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are directly linked to
+                -The components of the methodCallInstance MUST share their inheritanceList with the MethodInstance they are directly linked to
         -inheritanceDictionary is filled by the Mediator when processing the raw data
 
 「 Scenario 」     ※ EXTENSION::: Receive info to create Instances:Parent method called
@@ -33,13 +33,12 @@ Then:
         -When we call the MethodInstance, the method that checks the types of the aliases on the instances dictioanry(CheckTypesOfAliases), has to do something before doing anything else, which is a comparison of the owner class of each method and see if any matches an element from the inheritanceList
 
 //===========================  
-//===========================   「 Feature 」     ※ ???
+//===========================   「 Feature 」     ※ Mediator
         Responsibilities(+|-):
 +Benefits
 -Drawbacks
 
-
-「 Scenario 」     ※ Resolution of aliases from Instance
+「 Scenario 」     ※ Resolution of type of components of the MethodInstance
 Given:
         -Analysis of all code files FINISHED
         -InheritanceDictionary completed
@@ -48,16 +47,19 @@ Given:
         --The Builders(ClassEntity and Method) are complete and ready to create the classes of their correspondent type
                 These builders are crucial for this scenario
 When:
+        -We have finished the analysis of code files and have all the Method, ClassEntity and MethodInstance Builders
+        -Start building the ClassEntities(which also build the Methods they belong to)
+        -Also start building the MethodInstances
+        -After building the MethodInstances, start defining their types
         -We need the Callsites to be completed so that we can start making Diagrams
 Then:
         -ClassEntityBuilders use the inheritance manager to link the ClassEntities with their inherited classes
-        -Build all the ClassEntities, which will then build the Methods
-        -Make the MethodBuilders store their built Method to the MethodDictionaryManager, which will be used for the resolution of Instances
-        ---(BIG STEP)Pass through all the List of MethodInstances with unknown type and call the "SolveTypesOfAliases()" method, which will solve the type of the components if this MethodInstance(owner class name and parameters) and then query the methodDictionary for the Method object containing the correspondent signature
-                -If the method found a match, then set the respective data and remove itself from the list of MethodInstances with undefined callsite
+        -Make the MethodBuilders store their built Method to the MethodDictionaryManager, which will be used for the resolution of MethodInstances
+        ---(BIG STEP)Pass through all the List of MethodInstances with unknown type and call the "SolveTypesOfComponents()" method, which will solve the type of the components of this MethodInstance(owner class name, parameters and all the property chains) and then query the methodDictionary for the actual Method represented by the MethodInstance
+                -If the methodInstance found a match, then set the respective data and remove itself from the list of MethodInstances with undefined callsite
         -Keep going until a max number of attempts since there may be methodCalls that can't be tracked
 Result:
-        -The ClassEntityManager has all the ClassEntities with the respective Methods which contain their Callsites to all the parts of the code and we have finished the code analysis
+        -The ClassEntityManager has all the ClassEntities with the respective Methods which contain their Callsites defined to all the parts of the code thanks to the MethodInstances and we have finished the code analysis
 
 
 //===========================   「 Feature 」     ※ MethodDictionaryInstance

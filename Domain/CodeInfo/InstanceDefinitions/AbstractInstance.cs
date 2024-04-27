@@ -102,6 +102,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 nextInstance = nextInstance.chainedInstance;
                 if (returnFirstMethodInstance && nextInstance is MethodInstance) return nextInstance;
             }
+            if (returnFirstMethodInstance) return null;
             return previousInstance;
         }
 

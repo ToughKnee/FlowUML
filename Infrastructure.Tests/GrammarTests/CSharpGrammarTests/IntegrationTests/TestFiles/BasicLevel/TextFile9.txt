@@ -6,15 +6,12 @@ class Program
     static void Main(string[] args)
     {
           var myth = new myClass();
-          // TODO: Make more lines with indexRetrieval being used after a method chain, after another indexRetrieval, and such
-          // var thing = myth.otherThing().myList[0].normalThing[1].otherthings.functionThings();
-          // var thing2 = myth.otherThing().myList[0].normalThing[1].otherthings.functionThings();
-          // GetMyList()[0].myProperty.myFuncCall().listProp[1];
           var thing3 = myth.otherThing().myList[0].differentOtherThing();
           thing3.myOtherClassFunction();
           Assign(myth
           , GetMyList()[0].otherThing()
           , GetMyList());
+          // var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
    }
    static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
    {
@@ -28,6 +25,7 @@ class Program
 
 class myClass
 {
+     // public List<myOtherClass> myOtherList;
      public myClass myProperty;
      public void myFuncCall()
      {
@@ -46,7 +44,7 @@ class myClass
 class myOtherClass
 {
      public List<myClass> myList;
-     public void myOtherClassFunction()
+     public myClass myOtherClassFunction()
      {
      }
 }

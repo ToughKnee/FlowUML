@@ -40,7 +40,7 @@ namespace Infrastructure.Mediators
             for (int j = 0, maxTries = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count && maxTries < 10; j++)
             {
                 var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
-                methodInstance.SolveTypesOfAliases();
+                methodInstance.SolveTypesOfComponents();
                 if (j >= MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
                 {
                     j = -1;
