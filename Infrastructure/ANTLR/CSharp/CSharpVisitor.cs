@@ -312,14 +312,14 @@ namespace Infrastructure.Antlr
             for (int j = 1; j < methodBodyNode.ChildCount-1; j++)
             {
                 // Get the local variable rule if there is
-                if(ChildRuleNameIs("localVariableDeclaration", methodBodyNode.GetChild(j), 0))
+                if(ChildRuleNameIs("localVariableDefinition", methodBodyNode.GetChild(j), 0))
                 {
                     string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0));
-                    // If the localVariableDeclaration contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
+                    // If the localVariableDefinition contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
                     if(localVariableText.Contains('-'))
                     {
                         string[] assignmentValues = localVariableText.Split("-");
-                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1], _currentAbstractInstanceBuilder);
+                        _mediator.ReceiveLocalVariableDefinition(assignmentValues[0], assignmentValues[1], _currentAbstractInstanceBuilder);
                         _currentAbstractInstanceBuilder = null;
                     }
                     if(_currentAbstractInstanceBuilder != null) _currentAbstractInstanceBuilder = null;
@@ -368,7 +368,7 @@ namespace Infrastructure.Antlr
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public override string VisitLocalVariableDeclaration([NotNull] CSharpGrammarParser.LocalVariableDeclarationContext context)
+        public override string VisitLocalVariableDefinition([NotNull] CSharpGrammarParser.LocalVariableDefinitionContext context)
         {
             var expressionNode = GetRuleNodeInChildren("expression", context);
 

@@ -216,12 +216,12 @@ methodContent
     : valueAssignment ';'
     | expression ';'
     | statement
-    | localVariableDeclaration ';'
+    | localVariableDefinition ';'
     | variableDefinition ';'
     | returnExpression ';'
     ;
 
-localVariableDeclaration
+localVariableDefinition
     : type identifier assigner expression ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
     ;
 

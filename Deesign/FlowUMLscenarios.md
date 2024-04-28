@@ -110,11 +110,11 @@ Then:
 -Another class to be created and linked by the Mediator
 
 
-「 Scenario 」     ※ PlayAsSinglePlayer
+「 Scenario 」     ※ Process block statement
 Given:
-        -
+        -During code analysis and Instances building
 When:
-        -
+        -ANTLR Visitor finds a block statement(code inside curly braces like if statements)
 Then:
         -
 

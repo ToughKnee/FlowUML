@@ -96,7 +96,7 @@ namespace Infrastructure.Mediators
             // This also adds a string to the identfier to prevent ambiguity when there are porperties with the same identifier
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(paramIdentifier + identifier, parameterInstance);
         }
-        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder)
+        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder)
         {
             // Create the instance assignee to be defined
             AbstractInstance instanceAssignee;

@@ -55,7 +55,7 @@ endif
 
 '//===========================  VisitExpression 
 fork again
-:=**VisitLocalVariableDeclaration** being visited|
+:=**VisitLocalVariableDefinition** being visited|
 if (Expression is..) is (Normal Instance) then
   :Store the entire advancedIdentfierNode in a  
   **string var** to be later passed to the 

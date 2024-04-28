@@ -89,7 +89,7 @@ namespace Infrastructure.Mediators
         /// <param name="assigner">The "right part" of an assignment</param>
         /// <param name="assignee">The "left part" of an assignment</param>
         /// <param name="methodCallAssigner">The linked methodInstanceBuilder if the assigner is a methodCall</param>
-        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder);
+        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
         /// should start processing the parameters and local variables received

@@ -200,29 +200,39 @@ parameter
     : type identifier
     ;
 
-statements
-    : statement+ 
-    ;
 statement
     : whileLoopStatement 
+    | anyStatement
     ;  // otherStatement represents all other kinds of statements in your language
 whileLoopStatement
     : 'while' '(' (comparisonExpression | advancedIdentifier) ')'
     methodBodyContent
-    ;  // condition represents the while loop condition
+    ;
+ifStatement
+    : 'if' '(' (comparisonExpression | advancedIdentifier) ')'
+    methodBodyContent
+    ;
+foreachStatement
+    : 'foreach' '(' (type advancedIdentifier 'in' advancedIdentifier) ')'
+    methodBodyContent
+    ;
+anyStatement
+    : advancedIdentifier gibberish*
+    methodBodyContent
+    ;
 
 //===========================  Method content grammar
 methodContent
-    : valueAssignment ';'
-    | expression ';'
+    : expression ';'
     | statement
-    | localVariableDeclaration ';'
+    | localVariableDefinition ';'
     | variableDefinition ';'
     | returnExpression ';'
     ;
 
-localVariableDeclaration
-    : type identifier assigner expression ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+localVariableDefinition
+    : type? identifier assigner expression ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    | type identifier
     ;
 
 variableDefinition
@@ -236,10 +246,6 @@ assigner
     | '-='
     | '*='
     | '/='
-    ;
-
-valueAssignment
-    : advancedIdentifier '=' expression
     ;
 
 returnExpression
