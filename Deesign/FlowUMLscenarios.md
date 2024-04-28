@@ -4,6 +4,9 @@
 +Decoupled way to handle the info and then convert the info to instanceManager info
 +Mediator is responsible of 'caching' the raw info to be able to link Instances between them
 +Can be modularized separating the Concrete Instances creation, making room for more complex logic when creating the Instances
++Is the intermediary step between **extracting raw data** and **making the links between this data**
++Makes instances get linked with other instances that relate to each other to later find their types
++Uses the other Managers that store data to be facilitated to other classes
 -Drawbacks
 
 「 Scenario 」     ※ Receive info to create Instances
@@ -32,13 +35,6 @@ Then:
         -The MethodInstance to be created sets a boolean as "true", which represents that it needs the class that owns the method it has AND it matches one of the string in the inheritanceList
         -When we call the MethodInstance, the method that checks the types of the aliases on the instances dictioanry(CheckTypesOfAliases), has to do something before doing anything else, which is a comparison of the owner class of each method and see if any matches an element from the inheritanceList
 
-//===========================  
-//===========================   「 Feature 」     ※ Mediator
-        Responsibilities(+|-):
-+Is the intermediary step between **extracting raw data** and **making the links between this data**
-+Makes instances get linked with other instances that relate to each other to later find their types
-+Uses the other Managers that store data to be facilitated to other classes
--Drawbacks
 
 「 Scenario 」     ※ Resolution of type of components of the MethodInstances
 Given:
@@ -103,23 +99,8 @@ Then:
         -
 
 
-「 Feature 」     ※ MethodInstance Lists recognition?????????????????
-        Responsibilities(+|-):
-+Benefits
--Drawbacks
-
-
-「 Scenario 」     ※ Found new Collection Instance  
-This Instance could be like "var myList = new List<int>()", or "var myDict = new Dictionary<string, int>()"
-Given:
-        -Antlr Visitor is performing analysis
-        -Antlr Visitor finds a Collection Instance declaration
-When:
-        -Mediator receives from the Antlr Visitor the Collection Instance declaration
-Then:
-        -Mediator sets the kind of the MethodInstance and sends it to the MethodInstance which manages it
-
-「 Feature 」     ※ Statement handling
+//===========================  
+//===========================  「 Feature 」     ※ Statement handling
         Description:
 
 

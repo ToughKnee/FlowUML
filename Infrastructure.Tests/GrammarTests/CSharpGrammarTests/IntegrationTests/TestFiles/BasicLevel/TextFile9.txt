@@ -18,7 +18,8 @@ class Program
           var myClassFromCollectionEasy = myth.otherThing().myList[0];
           myClassFromCollectionEasy.myFuncCall();
           myClassFromCollectionHard.normalThing();
-          // var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
+          var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
+          thing.myFuncCall();
    }
    static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
    {
@@ -32,7 +33,7 @@ class Program
 
 class myClass
 {
-     // public List<myOtherClass> myOtherList;
+     public List<myOtherClass> myOtherList;
      public myClass myProperty;
      public void myFuncCall()
      {

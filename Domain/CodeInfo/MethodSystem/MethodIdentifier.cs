@@ -28,6 +28,7 @@ namespace Domain.CodeInfo.MethodSystem
             {
                 int hash = 17;
                 hash = hash * 23 + methodName.GetHashCode();
+                // TODO: When the maxTries reaches a big number, start just comparing methods with only their NAME, NUMBER of parameters AND matching usings statement
                 foreach (var parameter in methodParameters)
                 {
                     hash += parameter.GetHashCode() * 5;
@@ -38,6 +39,7 @@ namespace Domain.CodeInfo.MethodSystem
 
         public override bool Equals(object obj)
         {
+            // TODO: When the maxTries reaches a big number, start just comparing methods with only their NAME, NUMBER of parameters AND matching usings statement
             if (obj == null || GetType() != obj.GetType())
                 return false;
 
