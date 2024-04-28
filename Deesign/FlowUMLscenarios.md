@@ -35,10 +35,12 @@ Then:
 //===========================  
 //===========================   「 Feature 」     ※ Mediator
         Responsibilities(+|-):
-+Benefits
++Is the intermediary step between **extracting raw data** and **making the links between this data**
++Makes instances get linked with other instances that relate to each other to later find their types
++Uses the other Managers that store data to be facilitated to other classes
 -Drawbacks
 
-「 Scenario 」     ※ Resolution of type of components of the MethodInstance
+「 Scenario 」     ※ Resolution of type of components of the MethodInstances
 Given:
         -Analysis of all code files FINISHED
         -InheritanceDictionary completed
@@ -50,7 +52,9 @@ When:
         -We have finished the analysis of code files and have all the Method, ClassEntity and MethodInstance Builders
         -Start building the ClassEntities(which also build the Methods they belong to)
         -Also start building the MethodInstances
-        -After building the MethodInstances, start defining their types
+        -After building the MethodInstances, **start defining their types**
+                -This means that the Mediator starts using the **extracted raw data** to start **creating and linking Instances** to each other for them to later define themselves 
+                -(Storing the true Instance when there are many variable aliases) When there is a case like "var myClassFromCollectionHard = otherMyth.myList[0].myProperty;", and a MethodInstance is received with "myClassFromCollectionHard.normalThing()", then the Mediator must make a Dict with <string, Instance> where "myClassFromCollectionHard" results in "otherMyth.myList[0].myProperty" and handed to that MethodInstance
         -We need the Callsites to be completed so that we can start making Diagrams
 Then:
         -ClassEntityBuilders use the inheritance manager to link the ClassEntities with their inherited classes
@@ -115,10 +119,23 @@ When:
 Then:
         -Mediator sets the kind of the MethodInstance and sends it to the MethodInstance which manages it
 
+「 Feature 」     ※ Statement handling
+        Description:
 
 
+        Responsibilities(+|-):
++Class representing ifs, while and other statements that use '{}'
+++Lets measurement of Ciclomatic Complexity
+-Another class to be created and linked by the Mediator
 
 
+「 Scenario 」     ※ PlayAsSinglePlayer
+Given:
+        -
+When:
+        -
+Then:
+        -
 
 
 

@@ -82,11 +82,14 @@ namespace Infrastructure.Mediators
         /// Receives the local variable declaration found by an ANTLR visitor to manage them 
         /// after the ANTLR visitor finishes analyzing the method
         /// Also, this must not handle callsites since that is already covered by the "ReceiveMethodCall" method
+        /// Also, this stores the true Instance of variables definitionss when there are many variable aliases AND
+        /// a MethodInstance has a component of a simple variable and needs the true Instance of the variable when
+        /// built by the MethodInstanceBuilder
         /// </summary>
         /// <param name="assigner">The "right part" of an assignment</param>
         /// <param name="assignee">The "left part" of an assignment</param>
         /// <param name="methodCallAssigner">The linked methodInstanceBuilder if the assigner is a methodCall</param>
-        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<MethodInstance> methodCallAssigner);
+        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
         /// should start processing the parameters and local variables received
@@ -101,7 +104,7 @@ namespace Infrastructure.Mediators
         /// is in this parameter which has the info for the method that made this callsite, 
         /// to be able to set the callsite generated and let the builder be able to add this 
         /// callsite to the Method class to be built</param>
-        public void ReceiveMethodCall(AbstractBuilder<MethodInstance> methodCallBuilder);
+        public void ReceiveMethodCall(AbstractBuilder<AbstractInstance> methodCallBuilder);
         /// <summary>
         /// Receive the usedNamespaces to be able to disambiguate between classes with the same name
         /// Intended to be used after the ReceiveMethodCall was made

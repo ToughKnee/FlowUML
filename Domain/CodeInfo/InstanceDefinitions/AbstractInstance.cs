@@ -105,6 +105,39 @@ namespace Domain.CodeInfo.InstanceDefinitions
             if (returnFirstMethodInstance) return null;
             return previousInstance;
         }
+        /// <summary>
+        /// Generate the whole propertyChain from the provided strings, while avoiding to put inside 
+        /// the propertyChain the class that owns the propertyChain
+        /// </summary>
+        /// <param name="ownerName">The name of the Instance that will be the
+        /// head of this propertyChain</param>
+        /// <param name="propertyChainString">The text that represents the whole propertyChain as 
+        /// a raw string, which will be converted into multiple chained AbstractInstances</param>
+        /// <returns>The first Instance that has all the other properties chained</returns>
+        public static AbstractInstance GeneratePropertyChain(string ownerName, string propertyChainString)
+        {
+            var methodInstancePropertyChainString = propertyChainString.Split(".");
+            AbstractInstance previousInstance = null;
+            AbstractInstance firstChainedInstance = null;
+            foreach (string componentString in methodInstancePropertyChainString)
+            {
+                // If the current component isn't the caller class, then it is part of the propertyChain
+                if (componentString != ownerName)
+                {
+                    var component = new Instance(componentString);
+                    component.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
+                    // If the previous component is null, then this is the first element of the propertyChain which will be received by the MethodInstance constructor
+                    if (previousInstance is null)
+                        firstChainedInstance = component;
+                    // If not then we need to chain all the properties properly
+                    else
+                        previousInstance.chainedInstance = component;
+                    previousInstance = component;
+                }
+            }
+            return firstChainedInstance;
+        }
+
 
         //public override bool Equals(object obj)
         //{

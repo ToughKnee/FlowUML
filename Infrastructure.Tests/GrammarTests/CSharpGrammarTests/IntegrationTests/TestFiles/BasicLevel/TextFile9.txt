@@ -11,6 +11,13 @@ class Program
           Assign(myth
           , GetMyList()[0].otherThing()
           , GetMyList());
+          
+          var otherMyth = new myOtherClass();
+          var myClassCollection = otherMyth.myList;
+          var myClassFromCollectionHard = otherMyth.myList[222].myProperty;
+          var myClassFromCollectionEasy = myth.otherThing().myList[0];
+          myClassFromCollectionEasy.myFuncCall();
+          myClassFromCollectionHard.normalThing();
           // var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
    }
    static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)

@@ -101,10 +101,10 @@ namespace Infrastructure.Mediators
             // This also adds a string to the identfier to prevent ambiguity when there are porperties with the same identifier
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(paramIdentifier + identifier, parameterInstance);
         }
-        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<MethodInstance> methodCallAssigner)
+        public void ReceiveLocalVariableDeclaration(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder)
         {
             // Create the instance assignee to be defined
-            Instance instanceAssignee;
+            AbstractInstance instanceAssignee;
 
             // If the assigner is a method call, then create the instances and link them
             if (assigner.Contains("("))
@@ -112,40 +112,26 @@ namespace Infrastructure.Mediators
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
                 var returnType = new StringWrapper();
-                var methodInstanceAssigner = methodCallAssigner.Build();
+                var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilder).Build();
                 methodInstanceAssigner.refType = returnType;
                 instanceAssignee.refType = methodInstanceAssigner.refType;
-            }
-            // If the assigner is the element of an indexed collection, create the instance and assign the kind of element from a collection
-            else if (assigner.Contains("["))
-            {
-                // instanceAssignee.MakeInstanceInformationBasedFromString(assigner);
-                string assignerWithoutBrackets = assigner.Substring(0, assigner.IndexOf("["));
-                instanceAssignee = new Instance(assignee);
-                instanceAssignee.kind = KindOfInstance.IsElementFromCollection;
 
-                // Check in the known instances the assigner without the brackets and make the link between these 2 instances
-                AbstractInstance knownAssignerInstance = _knownInstancesDeclaredInCurrentMethodAnalysis[assignerWithoutBrackets];
-                instanceAssignee.refType = knownAssignerInstance.refType;
+                // This is done to add the actual Instance in the knownInstances dictionary
+                instanceAssignee = methodInstanceAssigner;
             }
             // If the declaration is simple
             else
             {
-                // Make the new instance and link it to an existing instance
-                instanceAssignee = new Instance(assignee);
-
-                // Check in the known instances the assigner and make the link between these 2 instances
-                if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(assigner, out AbstractInstance knownAssignerInstance))
+                // Check first if the assigner is another variable and we already processed it, if so then just make this assignee also point to the actual instnace of the assginer
+                if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(assigner, out AbstractInstance knownAssignerInstance) && knownAssignerInstance is not MethodInstance)
                 {
-                    instanceAssignee.refType = knownAssignerInstance.refType;
+                    instanceAssignee = (Instance)knownAssignerInstance;
                 }
-                // If unknown, then the assigner must be a property from a parent class, and then we must add this assignment to the instancesDictionary
+                // Make the new instance 
                 else
                 {
-                    // Creating the Instance of the unknown assigner
-                    var unknownAssignerInstance = new Instance(_currentNamespace + _currentClassName + _currentMethodName + assigner);
+                    instanceAssignee = (Instance)instanceAssignerBuilder.Build();
                 }
-
             }
 
             // Add the new instance to the known instances dictionary
@@ -162,9 +148,9 @@ namespace Infrastructure.Mediators
                 _knownInstancesDeclaredInCurrentMethodAnalysis.Add(property.Key, property.Value);
             }
         }
-        public void ReceiveMethodCall(AbstractBuilder<MethodInstance> methodCallBuilder)
+        public void ReceiveMethodCall(AbstractBuilder<AbstractInstance> methodCallBuilder)
         {
-            methodCallBuilder.Build();
+            ((MethodInstanceBuilder)methodCallBuilder).Build();
         }
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
         {

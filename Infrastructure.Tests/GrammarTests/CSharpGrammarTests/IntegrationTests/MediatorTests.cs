@@ -683,10 +683,11 @@ Inherited Classes:
             var myFuncCallMethod = classEntitiesList[1].methods[0];
             var otherThingMethod = classEntitiesList[1].methods[1];
             var differentOtherThingMethod = classEntitiesList[1].methods[2];
+            var normalThingMethod = classEntitiesList[1].methods[3];
             var myOtherClassFunctionMethod = classEntitiesList[2].methods[0];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(8);
+            Program_Main.callsites.Count.Should().Be(12);
             Program_Main.callsites[0].calledMethod.Should().Be(null);
             Program_Main.callsites[1].calledMethod.Should().Be(otherThingMethod);
             Program_Main.callsites[2].calledMethod.Should().Be(differentOtherThingMethod);
@@ -695,6 +696,11 @@ Inherited Classes:
             Program_Main.callsites[5].calledMethod.Should().Be(otherThingMethod);
             Program_Main.callsites[6].calledMethod.Should().Be(GetMyListMethod);
             Program_Main.callsites[7].calledMethod.Should().Be(AssignMethod);
+
+            Program_Main.callsites[8].calledMethod.Should().Be(null);
+            Program_Main.callsites[9].calledMethod.Should().Be(otherThingMethod);
+            Program_Main.callsites[10].calledMethod.Should().Be(myFuncCallMethod);
+            Program_Main.callsites[11].calledMethod.Should().Be(normalThingMethod);
         }
     }
 }

@@ -1,20 +1,19 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Reflection.Emit;
-using System.Security.Cryptography.X509Certificates;
 using Domain.CodeInfo.MethodSystem;
 
 namespace Domain.CodeInfo.InstanceDefinitions
 {
     /// <summary>
     /// Special class for the instances that are return types from methods
-    /// At first it will store the parts of a method(owner class, name and parameters) and 
-    /// mark the 'methodIsUnknown' bool as true
+    /// At first it will store the copmonents of a method(owner class, name, parameters and chainedInstances)
     /// This is the part where, when we got the information from the code analysis and 
     /// their respective linking from the Mediator, then we start using the 
     /// information in this class and start discovering the information in order to
     /// discover the actual Method this class represents, the callsite, and its type for other
     /// MethodInstances to use and also discover their actual Methods
+    /// MethodInstances are in charge of descovering the types of their components
+    /// ONLY IF they are normal Instances, and NOT other MethodInstances
     /// </summary>
     public class MethodInstance : AbstractInstance
     {
@@ -171,7 +170,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             }
         }
         /// <summary>
-        /// Gets the type of all the chained instances from a given Instance, and this represents the propertyChain
+        /// Gets the type of all the chained instances from a given Instance
         /// </summary>
         /// <param name="ownerInstance"></param>
         private void ResolveChainedInstanceType(AbstractInstance ownerInstance)
@@ -198,12 +197,13 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 // If the "nextInstance" does not have a type and is of kind "IsFromLinkedMethodInstance", then set the type right away
                 if (String.IsNullOrEmpty(nextInstance.refType.data) && nextInstance.kind == KindOfInstance.IsFromLinkedMethodInstance)
                     nextInstance.refType.data = currentOwnerClass;
-                // If the "nextInstance" has an "indexRetrievedInstance", then that means this "nextInstance" is an indexed collection and we must make a new chainedInstance representing the type of the elements
+                // If the "nextInstance" has an "indexRetrievedInstance", then that means this "nextInstance" is an indexed collection the brackets are being used to get an element from it, and we must make a new chainedInstance representing the type of the element to be retrieved
                 if (nextInstance.indexRetrievedInstance != null)
                 {
                     ResolveIndexRetrievalInstanceType(nextInstance);
-                    // We break outside this while loop because if we continue, then when we assign the indexRetrievalInstance as the chainedInstance, and the loop will not end when it is supposed to end
-                    break;
+
+                    // After creating the indexRetrievalInstance as another chainedInstance, we purposefully make the nextInstance variable jump over the just added chainedProperty
+                    nextInstance = nextInstance.chainedInstance;
                 }
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
@@ -211,15 +211,26 @@ namespace Domain.CodeInfo.InstanceDefinitions
         }
         private void ResolveIndexRetrievalInstanceType(AbstractInstance instanceWithIndexRetrieval)
         {
-            if (instanceWithIndexRetrieval.chainedInstance != null) throw new Exception("The nextInstance is an indexed collection and must not have a chainedInstance, but it does");
+            // Now with the indexRetrieval type solved, we move that from being the property of the chainedInstance.indexRetrievalInstance to chainedInstance.chainedInstance
+            var nextInstancePlaceholder = instanceWithIndexRetrieval.chainedInstance;
+            // Moving all the other chainedProperties after the indexRetrieval
+            while (nextInstancePlaceholder != null)
+            {
+                instanceWithIndexRetrieval.chainedInstance = instanceWithIndexRetrieval.indexRetrievedInstance;
+                nextInstancePlaceholder = nextInstancePlaceholder.chainedInstance;
+                instanceWithIndexRetrieval.indexRetrievedInstance.chainedInstance = nextInstancePlaceholder;
+            }
             instanceWithIndexRetrieval.chainedInstance = instanceWithIndexRetrieval.indexRetrievedInstance;
+            instanceWithIndexRetrieval.indexRetrievedInstance = null;
+
             // After setting the chainedInstance as the indexRetrieval, we get the type of the nextInstance, and get the string between diamonds, which represents the type of the elements from the collection, the "Last()" method is used because the last typename from the collection is most likely the type of the elements
-            instanceWithIndexRetrieval.indexRetrievedInstance.refType.data = Typename.GetTypenameList(instanceWithIndexRetrieval.type).Last().name;
+            instanceWithIndexRetrieval.chainedInstance.refType.data = Typename.GetTypenameList(instanceWithIndexRetrieval.type).Last().name;
+
             // Then we get the first methodInstance chained to this indexRetrieval, and we set the type of the callerClass of that chained MethodInstaance to the type of the indexRetrieval, because the indexRetrieval is the actual caller class, and also remove the chainedInstance from the indexRetrieval to avoid infinite references to each other
             var firstMethodInstanceChained = AbstractInstance.GetLastChainedInstance(instanceWithIndexRetrieval, true);
             if (firstMethodInstanceChained != null)
             {
-                ((MethodInstance)firstMethodInstanceChained).callerClass = instanceWithIndexRetrieval.indexRetrievedInstance;
+                ((MethodInstance)firstMethodInstanceChained).callerClass = instanceWithIndexRetrieval.chainedInstance;
             }
         }
         /// <summary>

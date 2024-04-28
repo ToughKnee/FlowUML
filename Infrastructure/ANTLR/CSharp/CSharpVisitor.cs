@@ -54,7 +54,7 @@ namespace Infrastructure.Antlr
         /// This can be thought of as pre order tree traversal
         /// </summary>
         private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
-        private MethodInstanceBuilder _currentMethodInstanceBuilder;
+        private AbstractBuilder<AbstractInstance> _currentAbstractInstanceBuilder;
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -319,10 +319,10 @@ namespace Infrastructure.Antlr
                     if(localVariableText.Contains('-'))
                     {
                         string[] assignmentValues = localVariableText.Split("-");
-                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1], _currentMethodInstanceBuilder);
-                        _currentMethodInstanceBuilder = null;
-                        //_methodCallDataList.Clear();
+                        _mediator.ReceiveLocalVariableDeclaration(assignmentValues[0], assignmentValues[1], _currentAbstractInstanceBuilder);
+                        _currentAbstractInstanceBuilder = null;
                     }
+                    if(_currentAbstractInstanceBuilder != null) _currentAbstractInstanceBuilder = null;
                 }
                 else
                 {
@@ -331,11 +331,10 @@ namespace Infrastructure.Antlr
                 }
 
                 // Check if the methodCall data has been sent to the mediator by the local variable if statement, if not then send it right now
-                if(_currentMethodInstanceBuilder != null)
+                if(_currentAbstractInstanceBuilder != null)
                 {
-                    _mediator.ReceiveMethodCall(_currentMethodInstanceBuilder);
-                    _currentMethodInstanceBuilder = null;
-                    //_methodCallDataList.Clear();
+                    _mediator.ReceiveMethodCall(_currentAbstractInstanceBuilder);
+                    _currentAbstractInstanceBuilder = null;
                 }
             }
             // TODO: Use the "CustomVisitTemplateTypeName" to be able to define methods with template typenames
@@ -383,14 +382,19 @@ namespace Infrastructure.Antlr
             {
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
-             
+
                 // Gets the Assignee and the Assigner and returns them
                 return identifierNode.GetText() + separator + assignerExpression;
             }
             // If the expression is another identifier of another variable, or field of a class, then get the info and return it
             else if((expressionChildNode = GetRuleNodeInChildren("advancedIdentifier", expressionNode)) is not null)
             {
-                return identifierNode.GetText() + separator + expressionChildNode.GetText();
+                var instanceBuilder = new InstanceBuilder(_mediator);
+                instanceBuilder.SetCallerClassName(expressionChildNode.GetText());
+                var indexRetrievalInstance = ProcessIndexRetrieval(expressionNode);
+                instanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
+                _currentAbstractInstanceBuilder = instanceBuilder;
+                return identifierNode.GetText() + separator + expressionNode.GetText();
             }
             return assignerExpression;
         }
@@ -414,8 +418,6 @@ namespace Infrastructure.Antlr
             {
                 assignmentText = context.GetText();
             }
-
-            // TODO: Get the IndexRetrieval node and if exists, mark the info to set this instance with the kind of "IsIndexRetrievalInstance"
 
             return assignmentText;
         }
@@ -571,7 +573,7 @@ namespace Infrastructure.Antlr
             if(isConstructor) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsConstructor);
             _methodInstanceBuildersStack.Push(methodInstanceBuilder);
 
-            _currentMethodInstanceBuilder = methodInstanceBuilder;
+            _currentAbstractInstanceBuilder = methodInstanceBuilder;
             return completeFunctionString;
         }
     }
