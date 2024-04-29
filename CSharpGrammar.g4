@@ -208,13 +208,13 @@ statement
     | anyStatement
     ;  // otherStatement represents all other kinds of statements in your language
 whileLoopStatement
-    : 'while' '(' (comparisonExpression | advancedIdentifier) ')'
+    : 'while' '(' (expression) ')'
     methodBodyContent
     ;
 ifStatement
-    : 'else'? 'if' '(' (comparisonExpression | advancedIdentifier) ')'
+    : 'else'? 'if' '(' (expression) ')'
     methodBodyContent
-    | 'else' '(' (comparisonExpression | advancedIdentifier) ')'
+    | 'else'
     methodBodyContent
     ;
 foreachStatement
@@ -222,7 +222,7 @@ foreachStatement
     methodBodyContent
     ;
 forStatement
-    : 'for' '(' localVariableDefinition ';' comparisonExpression ';' expression ')'
+    : 'for' '(' localVariableDefinition ';' expression ';' expression ')'
     methodBodyContent
     ;
 anyStatement
@@ -240,7 +240,7 @@ methodContent
     ;
 
 localVariableDefinition
-    : type? (identifier | advancedIdentifier) assigner '('* expression (arithmeticOperations | ')')*
+    : type? (identifier | advancedIdentifier) assigner expression
     ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
     (',' localVariableDefinition)?
     | type identifier
@@ -266,14 +266,17 @@ returnExpression
 // Something that returns something
 expression
     :
-    ternaryOperatorExpression indexRetrieval?
-    | expressionMethodCall
-    | comparisonExpression
-    | advancedIdentifier ('--')? ('++')?
-    | advancedIdentifier indexRetrieval?
-    | localVariableDefinition
-    | string
-    | number
+    '('?'('?'('?
+        (ternaryOperatorExpression indexRetrieval?
+        | comparisonExpression
+        | expressionMethodCall
+        | advancedIdentifier ('--')? ('++')?
+        | advancedIdentifier indexRetrieval?
+        | localVariableDefinition
+        | string
+        | number) 
+        (arithmeticOperations)*
+    ')'?')'?')'?
     // TODO: Do the following features AND make sure to put the optional parentheses around them
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     ;
@@ -308,8 +311,6 @@ outParameter
 // Gibberish here refers to things that we are not interested in like expressions enclosed in braces
 // The logic is to basically state that 'if the thing we are currently looking at(while parsing text) is not something important(like an expression), then it is rubbish and we don't care'
 gibberish: ('<' 
-    | '{' 
-    | '}' 
     | '[' 
     | '!' 
     | '#' 
@@ -319,10 +320,8 @@ gibberish: ('<'
     | '\'' 
     | '*' 
     | '+' 
-    | ',' 
     | '-' 
     | '/' 
-    | '=' 
     | '>' 
     | '?' 
     | '@' 

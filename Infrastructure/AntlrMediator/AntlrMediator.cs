@@ -130,7 +130,8 @@ namespace Infrastructure.Mediators
             }
 
             // Add the new instance to the known instances dictionary
-            _knownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
+            if(!_knownInstancesDeclaredInCurrentMethodAnalysis.ContainsKey(assignee))
+                _knownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
 
             return;
         }

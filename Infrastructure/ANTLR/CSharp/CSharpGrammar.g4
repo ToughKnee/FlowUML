@@ -51,7 +51,7 @@ STRING
 string: STRING ;
 
 NUMBER 
-    : '-'? [0-9]+ ('.' [0-9]+)? 
+    : '-'? [0-9]+ ('.' [0-9]+)? 'f'?
     ;
 number: NUMBER ;
 
@@ -72,7 +72,7 @@ ACCESS_MODIFIER
 accessModifier: ACCESS_MODIFIER;
 
 advancedTypeName
-    : identifier ('<' genericType (',' genericType)* '>')?
+    : advancedIdentifier ('<' genericType (',' genericType)* '>')?
     ;
 
 genericType
@@ -91,7 +91,7 @@ identifier
     ;
     
 advancedIdentifier
-    : identifier ('.' identifier)*
+    : '!'? identifier ('.' identifier)*
     ;
 
 type
@@ -200,21 +200,39 @@ parameter
     : type identifier
     ;
 
-statements
-    : statement+ 
-    ;
 statement
     : whileLoopStatement 
+    | ifStatement
+    | foreachStatement
+    | forStatement
+    | anyStatement
     ;  // otherStatement represents all other kinds of statements in your language
 whileLoopStatement
-    : 'while' '(' (comparisonExpression | advancedIdentifier) ')'
+    : 'while' '(' (expression) ')'
     methodBodyContent
-    ;  // condition represents the while loop condition
+    ;
+ifStatement
+    : 'else'? 'if' '(' (expression) ')'
+    methodBodyContent
+    | 'else'
+    methodBodyContent
+    ;
+foreachStatement
+    : 'foreach' '(' (type advancedIdentifier 'in' advancedIdentifier) ')'
+    methodBodyContent
+    ;
+forStatement
+    : 'for' '(' localVariableDefinition ';' expression ';' expression ')'
+    methodBodyContent
+    ;
+anyStatement
+    : advancedIdentifier gibberish*
+    methodBodyContent
+    ;
 
 //===========================  Method content grammar
 methodContent
-    : valueAssignment ';'
-    | expression ';'
+    : expression ';'
     | statement
     | localVariableDefinition ';'
     | variableDefinition ';'
@@ -222,7 +240,10 @@ methodContent
     ;
 
 localVariableDefinition
-    : type identifier assigner expression ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    : type? (identifier | advancedIdentifier) assigner expression
+    ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    (',' localVariableDefinition)?
+    | type identifier
     ;
 
 variableDefinition
@@ -238,23 +259,24 @@ assigner
     | '/='
     ;
 
-valueAssignment
-    : advancedIdentifier '=' expression
-    ;
-
 returnExpression
     : RETURN (identifier | expression)
     ;
 
 // Something that returns something
 expression
-    : 
-    ternaryOperatorExpression indexRetrieval?
-    | expressionMethodCall
-    | comparisonExpression
-    | advancedIdentifier indexRetrieval?
-    | string
-    | number
+    :
+    '('?'('?'('?
+        (ternaryOperatorExpression indexRetrieval?
+        | comparisonExpression
+        | expressionMethodCall
+        | advancedIdentifier ('--')? ('++')?
+        | advancedIdentifier indexRetrieval?
+        | localVariableDefinition
+        | string
+        | number) 
+        (arithmeticOperations)*
+    ')'?')'?')'?
     // TODO: Do the following features AND make sure to put the optional parentheses around them
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     ;
@@ -263,13 +285,12 @@ indexRetrieval
     : ('[' (string | number | advancedIdentifier) ']')+ expressionChain?
     ;
 
-// TODO: Remove "('.' methodCall)*", because it isn't necessary to catch methodCalls since the expressionChain already does that
 expressionMethodCall
-    : AWAIT? methodCall ('.' methodCall)*
+    : AWAIT? methodCall
     ;
 
 methodCall
-    : new? (advancedIdentifier | type) ('(' argumentList? ')') indexRetrieval? expressionChain?
+    : new? '!'? (advancedIdentifier | type) ('(' argumentList? ')') indexRetrieval? expressionChain?
     | new type ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 
@@ -284,14 +305,12 @@ argumentList
     ;
 
 outParameter
-    : 'out' type identifier
+    : 'out' localVariableDefinition /*type identifier*/
     ;
     
 // Gibberish here refers to things that we are not interested in like expressions enclosed in braces
 // The logic is to basically state that 'if the thing we are currently looking at(while parsing text) is not something important(like an expression), then it is rubbish and we don't care'
 gibberish: ('<' 
-    | '{' 
-    | '}' 
     | '[' 
     | '!' 
     | '#' 
@@ -301,11 +320,8 @@ gibberish: ('<'
     | '\'' 
     | '*' 
     | '+' 
-    | ',' 
     | '-' 
-    | '.' 
     | '/' 
-    | '=' 
     | '>' 
     | '?' 
     | '@' 
@@ -318,6 +334,10 @@ gibberish: ('<'
     | operators
     )+;
 
+arithmeticOperations
+    : (gibberish (gibberish | expression))
+    ;
+
 // In order to implement a way to recognize nested rules, like the ternary operator, we must create 3 rules, the normal rule which captures the cases where the is NO  nesting(which usually does not have special characters like '()', which must be used when we want to nest values) -- After that we need a component rule which basically has everythig that will be in the rule normally, BUT it must not include the previous rule, which would be itself, but this alone would leave us without nesting, so we need the last rule -- Which represents the case where there IS nesting, it would look the same as the first rule structurally, but it will differ at being able to be composed of the second rule AND the first rule also, ONLY IF we start the rule with another rule that MUST be present, like 'nestedTernaryOperator' having a '(' without the question mark, while the 'ternaryOperatorExpression' starts with '('?, including the question mark, and if that quesiton mark wasn't there in the third rule then ANTLR marks it as left recursion which can't be handled
 //===========================  Ternary operataor nesting rules
 ternaryOperatorExpression
@@ -327,11 +347,12 @@ ternaryOperatorExpression
     ;
 
 ternaryOperatorComponent
-    : nestedTernaryOperator
+    : (nestedTernaryOperator
     | comparisonExpression
     | expressionMethodCall
     | advancedIdentifier
-    | comparisonExpression
+    | number
+    | string) arithmeticOperations*
     // | gibberish
     ;
 
@@ -348,12 +369,12 @@ comparisonExpression
     ;
 
 comparisonExpressionComponent
-    : nestedTernaryOperator
+    : (nestedTernaryOperator
     | nestedComparisonExpression
     | expressionMethodCall
     | advancedIdentifier
     | number
-    | string
+    | string) arithmeticOperations*
     ;
 
 nestedComparisonExpression

@@ -312,9 +312,9 @@ namespace Infrastructure.Antlr
             for (int j = 1; j < methodBodyNode.ChildCount-1; j++)
             {
                 // Get the local variable rule if there is
-                if(ChildRuleNameIs("localVariableDefinition", methodBodyNode.GetChild(j), 0))
+                if(ChildRuleNameIs("localVariableDefinition", methodBodyNode.GetChild(j).GetChild(0), 0))
                 {
-                    string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0));
+                    string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0).GetChild(0));
                     // If the localVariableDefinition contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
                     if(localVariableText.Contains('-'))
                     {
@@ -389,6 +389,8 @@ namespace Infrastructure.Antlr
             // If the expression is another identifier of another variable, or field of a class, then get the info and return it
             else if((expressionChildNode = GetRuleNodeInChildren("advancedIdentifier", expressionNode)) is not null)
             {
+                // If the assignee is not a simple variable(and instead is a property of a class) then do nothing
+                if (identifierNode == null) return "";
                 var instanceBuilder = new InstanceBuilder(_mediator);
                 instanceBuilder.SetCallerClassName(expressionChildNode.GetText());
                 var indexRetrievalInstance = ProcessIndexRetrieval(expressionNode);

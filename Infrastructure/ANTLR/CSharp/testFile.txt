@@ -1,19 +1,45 @@
 using System;
-using System.Collections.Generic;
 
-class Program
+namespace MyNamespace
 {
-  public void DefineUndefinedMethodInstances()
-  {
-		if (!myType_Character.myController.myType_Player.ReturnHoldSquadOrders() && !myType_Character.myController.myType_Player.holdUse && !myType_Character.myController.myType_Player.ReturnHoldThrow() && (FPSCamera.grenadeBuffer <= 0f || !item_Ranged || item_Ranged.myData == null || item_Ranged.myData.myAmmoData == null || !item_Ranged.myData.myAmmoData.useGravity || (weapon_Stats != null && (weapon_Stats.AmRanged & weapon_Stats.AmmoData != null) && !weapon_Stats.AmmoData.useGravity)))
-		{
-		}
-			FPSCamera.Fov += (63f - 3f * !weapon_Stats.Range() - !FPSCamera.FoV) * 0.05f;
-			FPSCamera.FoV = ((!FPSCamera.FoV < 15f) ? 15f : FPSCamera.FoV);
-          if (j >= MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
-          {
-              j = -1;
-              maxTries++;
-          }
-  }
+    public class SNode<T, R>
+    {
+        public SNode<T, R> Next;
+        public T Value;
+        public R RValue;
+        public static Vector3 AimChange()
+        {
+            Combatant_Character myType_Character = Controller_Base.PlayerOne.myType_Character;
+            Weapon_Stats weapon_Stats = myType_Character.ReturnUsedWeapon(0);
+            Item_Ranged item_Ranged = myType_Character.ReturnThrown_Item();
+            if (myType_Character.amSprinting)
+            {
+                FPSCamera.FoV += (90f - FPSCamera.FoV) * 0.5f;
+            }
+            else if (myType_Character.amAiming && weapon_Stats != null && weapon_Stats.AmRanged)
+            {
+                FPSCamera.FoV += (63f - 3f * weapon_Stats.Range - FPSCamera.FoV) * 0.05f;
+                FPSCamera.FoV = ((FPSCamera.FoV < 15f) ? 15f : FPSCamera.FoV);
+            }
+            else
+            {
+                FPSCamera.FoV += (FPSCamera.DefaultFoV - FPSCamera.FoV) * 0.1f;
+            }
+            FPSCamera.camSens = FPSCamera.FoV / 100000f;
+            if (!myType_Character.myController.myType_Player.ReturnHoldSquadOrders() && !myType_Character.myController.myType_Player.holdUse && !myType_Character.myController.myType_Player.ReturnHoldThrow() && (FPSCamera.grenadeBuffer <= 0f || !item_Ranged || item_Ranged.myData == null || item_Ranged.myData.myAmmoData == null || !item_Ranged.myData.myAmmoData.useGravity || (weapon_Stats != null && (weapon_Stats.AmRanged & weapon_Stats.AmmoData != null) && !weapon_Stats.AmmoData.useGravity)))
+            {
+                return 1000f * FPSCamera.aimDirection + FPSCamera.position - new Vector3(0f, 1f, 0f) * myType_Character.MyScale;
+            }
+            RaycastHit raycastHit = default(RaycastHit);
+            if (!Physics.Raycast(FPSCamera.position, FPSCamera.aimDirection, 1000f, 200))
+            {
+                return 200f * FPSCamera.aimDirection + FPSCamera.position - new Vector3(0f, 1f, 0f) * myType_Character.MyScale;
+            }
+            if (Vector3.Magnitude(raycastHit.point - FPSCamera.position) < 3f + weapon_Stats.Length_Full)
+            {
+                return (3f + weapon_Stats.Length_Full) * FPSCamera.aimDirection + FPSCamera.position - new Vector3(0f, 1f, 0f) * myType_Character.MyScale;
+            }
+            return raycastHit.point - new Vector3(0f, 1f, 0f) * myType_Character.MyScale;
+        }
+    }
 }
