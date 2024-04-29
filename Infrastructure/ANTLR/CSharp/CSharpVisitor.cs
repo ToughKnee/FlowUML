@@ -396,6 +396,7 @@ namespace Infrastructure.Antlr
                 _currentAbstractInstanceBuilder = instanceBuilder;
                 return identifierNode.GetText() + separator + expressionNode.GetText();
             }
+            // TODO: Make an else statement just visiting the expressionNode, in case the expression was a ternary operator or comparison, that may contain a method call
             return assignerExpression;
         }
         /// <summary>
@@ -418,6 +419,7 @@ namespace Infrastructure.Antlr
             {
                 assignmentText = context.GetText();
             }
+            // TODO: Visit the other kinds of expressions like ternary operators, comparison and visit the method calls
 
             return assignmentText;
         }
@@ -431,7 +433,7 @@ namespace Infrastructure.Antlr
         /// <returns>The whole method that may be assigning a variable</returns>
         public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
         {
-            string wholeFunctionString = context.GetText().Replace("await", "").Replace("new", "");
+            string wholeFunctionString = context.GetText().Replace("await", "").Replace("new", ""); // TODO: Move this line to the VisitMethodCall function
 
             var methodCallNode = GetRuleNodeInChildren("methodCall", context);
             Visit(methodCallNode);

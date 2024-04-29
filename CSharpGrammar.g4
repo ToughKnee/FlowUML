@@ -51,7 +51,7 @@ STRING
 string: STRING ;
 
 NUMBER 
-    : '-'? [0-9]+ ('.' [0-9]+)? 
+    : '-'? [0-9]+ ('.' [0-9]+)? 'f'?
     ;
 number: NUMBER ;
 
@@ -72,7 +72,7 @@ ACCESS_MODIFIER
 accessModifier: ACCESS_MODIFIER;
 
 advancedTypeName
-    : identifier ('<' genericType (',' genericType)* '>')?
+    : advancedIdentifier ('<' genericType (',' genericType)* '>')?
     ;
 
 genericType
@@ -91,7 +91,7 @@ identifier
     ;
     
 advancedIdentifier
-    : identifier ('.' identifier)*
+    : '!'? identifier ('.' identifier)*
     ;
 
 type
@@ -202,6 +202,9 @@ parameter
 
 statement
     : whileLoopStatement 
+    | ifStatement
+    | foreachStatement
+    | forStatement
     | anyStatement
     ;  // otherStatement represents all other kinds of statements in your language
 whileLoopStatement
@@ -209,11 +212,17 @@ whileLoopStatement
     methodBodyContent
     ;
 ifStatement
-    : 'if' '(' (comparisonExpression | advancedIdentifier) ')'
+    : 'else'? 'if' '(' (comparisonExpression | advancedIdentifier) ')'
+    methodBodyContent
+    | 'else' '(' (comparisonExpression | advancedIdentifier) ')'
     methodBodyContent
     ;
 foreachStatement
     : 'foreach' '(' (type advancedIdentifier 'in' advancedIdentifier) ')'
+    methodBodyContent
+    ;
+forStatement
+    : 'for' '(' localVariableDefinition ';' comparisonExpression ';' expression ')'
     methodBodyContent
     ;
 anyStatement
@@ -231,7 +240,9 @@ methodContent
     ;
 
 localVariableDefinition
-    : type? identifier assigner expression ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    : type? (identifier | advancedIdentifier) assigner '('* expression (arithmeticOperations | ')')*
+    ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    (',' localVariableDefinition)?
     | type identifier
     ;
 
@@ -254,11 +265,13 @@ returnExpression
 
 // Something that returns something
 expression
-    : 
+    :
     ternaryOperatorExpression indexRetrieval?
     | expressionMethodCall
     | comparisonExpression
+    | advancedIdentifier ('--')? ('++')?
     | advancedIdentifier indexRetrieval?
+    | localVariableDefinition
     | string
     | number
     // TODO: Do the following features AND make sure to put the optional parentheses around them
@@ -269,13 +282,12 @@ indexRetrieval
     : ('[' (string | number | advancedIdentifier) ']')+ expressionChain?
     ;
 
-// TODO: Remove "('.' methodCall)*", because it isn't necessary to catch methodCalls since the expressionChain already does that
 expressionMethodCall
-    : AWAIT? methodCall ('.' methodCall)*
+    : AWAIT? methodCall
     ;
 
 methodCall
-    : new? (advancedIdentifier | type) ('(' argumentList? ')') indexRetrieval? expressionChain?
+    : new? '!'? (advancedIdentifier | type) ('(' argumentList? ')') indexRetrieval? expressionChain?
     | new type ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 
@@ -290,7 +302,7 @@ argumentList
     ;
 
 outParameter
-    : 'out' type identifier
+    : 'out' localVariableDefinition /*type identifier*/
     ;
     
 // Gibberish here refers to things that we are not interested in like expressions enclosed in braces
@@ -309,7 +321,6 @@ gibberish: ('<'
     | '+' 
     | ',' 
     | '-' 
-    | '.' 
     | '/' 
     | '=' 
     | '>' 
@@ -324,6 +335,10 @@ gibberish: ('<'
     | operators
     )+;
 
+arithmeticOperations
+    : (gibberish (gibberish | expression))
+    ;
+
 // In order to implement a way to recognize nested rules, like the ternary operator, we must create 3 rules, the normal rule which captures the cases where the is NO  nesting(which usually does not have special characters like '()', which must be used when we want to nest values) -- After that we need a component rule which basically has everythig that will be in the rule normally, BUT it must not include the previous rule, which would be itself, but this alone would leave us without nesting, so we need the last rule -- Which represents the case where there IS nesting, it would look the same as the first rule structurally, but it will differ at being able to be composed of the second rule AND the first rule also, ONLY IF we start the rule with another rule that MUST be present, like 'nestedTernaryOperator' having a '(' without the question mark, while the 'ternaryOperatorExpression' starts with '('?, including the question mark, and if that quesiton mark wasn't there in the third rule then ANTLR marks it as left recursion which can't be handled
 //===========================  Ternary operataor nesting rules
 ternaryOperatorExpression
@@ -333,11 +348,12 @@ ternaryOperatorExpression
     ;
 
 ternaryOperatorComponent
-    : nestedTernaryOperator
+    : (nestedTernaryOperator
     | comparisonExpression
     | expressionMethodCall
     | advancedIdentifier
-    | comparisonExpression
+    | number
+    | string) arithmeticOperations*
     // | gibberish
     ;
 
@@ -354,12 +370,12 @@ comparisonExpression
     ;
 
 comparisonExpressionComponent
-    : nestedTernaryOperator
+    : (nestedTernaryOperator
     | nestedComparisonExpression
     | expressionMethodCall
     | advancedIdentifier
     | number
-    | string
+    | string) arithmeticOperations*
     ;
 
 nestedComparisonExpression

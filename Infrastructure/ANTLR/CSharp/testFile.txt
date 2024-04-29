@@ -3,57 +3,17 @@ using System.Collections.Generic;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-          myClass myth;
-          myth = new myClass();
-          var thing3 = myth.otherThing().myList[0].differentOtherThing();
-          thing3.myOtherClassFunction();
-          Assign(myth
-          , GetMyList()[0].otherThing()
-          , GetMyList());
-          
-          var otherMyth = new myOtherClass();
-          var myClassCollection = otherMyth.myList;
-          var myClassFromCollectionHard = otherMyth.myList[222].myProperty;
-          var myClassFromCollectionEasy = myth.otherThing().myList[0];
-          myClassFromCollectionEasy.myFuncCall();
-          myClassFromCollectionHard.normalThing();
-          var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
-          thing.myFuncCall();
-   }
-   static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
-   {
-   }
-   static List<myClass> GetMyList()
-   {
-     return new List<myClass>();
-   }
-
-}
-
-class myClass
-{
-     public List<myOtherClass> myOtherList;
-     public myClass myProperty;
-     public void myFuncCall()
-     {
-     }
-     public myOtherClass otherThing()
-     {
-     }
-     public myOtherClass differentOtherThing()
-     {
-     }
-     public void normalThing()
-     {
-     }
-}
-
-class myOtherClass
-{
-     public List<myClass> myList;
-     public myClass myOtherClassFunction()
-     {
-     }
+  public void DefineUndefinedMethodInstances()
+  {
+		if (!myType_Character.myController.myType_Player.ReturnHoldSquadOrders() && !myType_Character.myController.myType_Player.holdUse && !myType_Character.myController.myType_Player.ReturnHoldThrow() && (FPSCamera.grenadeBuffer <= 0f || !item_Ranged || item_Ranged.myData == null || item_Ranged.myData.myAmmoData == null || !item_Ranged.myData.myAmmoData.useGravity || (weapon_Stats != null && (weapon_Stats.AmRanged & weapon_Stats.AmmoData != null) && !weapon_Stats.AmmoData.useGravity)))
+		{
+		}
+			FPSCamera.Fov += (63f - 3f * !weapon_Stats.Range() - !FPSCamera.FoV) * 0.05f;
+			FPSCamera.FoV = ((!FPSCamera.FoV < 15f) ? 15f : FPSCamera.FoV);
+          if (j >= MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
+          {
+              j = -1;
+              maxTries++;
+          }
+  }
 }
