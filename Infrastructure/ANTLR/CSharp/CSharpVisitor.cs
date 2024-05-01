@@ -549,8 +549,8 @@ namespace Infrastructure.Antlr
             {
                 string expressionString = Visit(argumentListNode.GetChild(i));
 
-                // If the visited child node was a methodCall(because it contains a parenthesis), then we remove it from the Stack of method instance builders and move it to the parameterList
-                if (!String.IsNullOrEmpty(expressionString) && expressionString.Contains("("))
+                // If the visited child node was a methodCall, then we remove it from the Stack of method instance builders and move it to the parameterList
+                if (!String.IsNullOrEmpty(expressionString) && GetRuleNodeInChildren("expressionMethodCall", argumentListNode.GetChild(i)) != null)
                 {
                     parameterList.Add(_methodInstanceBuildersStack.Pop());
                 }

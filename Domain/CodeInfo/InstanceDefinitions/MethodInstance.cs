@@ -127,6 +127,8 @@ namespace Domain.CodeInfo.InstanceDefinitions
             {
                 ResolveIndexRetrievalInstanceType(this);
             }
+            if (callerClass.kind == KindOfInstance.IsFromLinkedMethodInstance)
+                callerClass.chainedInstance = this;
         }
         /// <summary>
         /// This method resolves the type of a given component of this MethodInstance
@@ -242,7 +244,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// If there are still unknwon types, we need to look for it with the help of other classes
         /// And we have several places to look for
         /// </summary>
-        public void SolveTypesOfComponents()
+        public void SolveTypesOfComponents(bool useLooseMatchingRules)
         {
             //===========================  Finding the CHAINED INSTANCES types of the Caller Class
             // Get the inheritance of the callerClass if its type is known to process the cases where this MethodInstance is a normal kind or a kind that involves inheritance
@@ -295,13 +297,14 @@ namespace Domain.CodeInfo.InstanceDefinitions
 
             //===========================  Finding the ACTUAL METHOD
             // If the parameters type and the types of the components of the caller are known, then look into the methodDictionary the actual Method and get the return type, and also define the linkedCallsite with the actual Method
-            if (componentsTypeKnown)
+            if (componentsTypeKnown || useLooseMatchingRules)
             {
                 if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod1))
                     HandleActualMethod(actualMethod1);
                 else if (kind == KindOfInstance.HasClassNameStatic)
                 {
                     // If is static method, we then check the Dictionary using the className as if it was its own type
+                    var backupCallerClassName = callerClass.refType.data;
                     callerClass.refType.data = callerClass.name;
                     if (MethodDictionaryManager.instance.methodDictionary.TryGetValue(this.GetMethodIdentifier(), out Method actualMethod2))
                     {
@@ -309,7 +312,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
                     }
                     else
                     {
-                        callerClass.refType.data = null;
+                        callerClass.refType.data = backupCallerClassName;
                     }
                 }
                 else if (kind == KindOfInstance.IsConstructor)

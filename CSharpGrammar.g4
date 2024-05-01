@@ -72,7 +72,7 @@ ACCESS_MODIFIER
 accessModifier: ACCESS_MODIFIER;
 
 advancedTypeName
-    : advancedIdentifier ('<' genericType (',' genericType)* '>')?
+    : (identifier | advancedIdentifier) ('<' genericType (',' genericType)* '>')?
     ;
 
 genericType

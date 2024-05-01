@@ -705,5 +705,45 @@ Inherited Classes:
             Program_Main.callsites[13].calledMethod.Should().Be(myOtherClassFunctionMethod);
             Program_Main.callsites[14].calledMethod.Should().Be(myFuncCallMethod);
         }
+
+        [Fact]
+        public void MediatorCreatedInstancesWitHardInstances_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "BasicLevel\\TextFile10.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+//            classStrings[0].Should().Be(@"Name: SNode
+//Inherited Classes:
+//");
+
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            ClassEntityManager.instance.classEntities.Count.Should().Be(3);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Creating the references to the methods to be checked
+            var Program_Main = classEntitiesList[0].methods[0];
+            var CalculateNumbersMethod = classEntitiesList[0].methods[1];
+            var PrintResultsMethod = classEntitiesList[1].methods[0];
+            var PrintOtherResultsMethod = classEntitiesList[2].methods[0];
+
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(3);
+            Program_Main.callsites[0].calledMethod.Should().Be(CalculateNumbersMethod);
+            Program_Main.callsites[1].calledMethod.Should().Be(PrintResultsMethod);
+            Program_Main.callsites[2].calledMethod.Should().Be(PrintOtherResultsMethod);
+        }
     }
 }

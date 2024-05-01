@@ -51,7 +51,7 @@ namespace Infrastructure.Builders
                 else if(objectParam is MethodInstanceBuilder)
                     parametersInstances.Add(((MethodInstanceBuilder)objectParam).Build());
             }
-
+            
             var methodInstance = new MethodInstance(_callerClass
                 , (_ownedChainedMethodInstanceBuilder != null) ? ((MethodInstance)_ownedChainedMethodInstanceBuilder.Build()).callerClass : ((_ownedChainedInstance != null) ? (_ownedChainedInstance) : (null))
                 , _methodName

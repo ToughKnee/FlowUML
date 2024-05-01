@@ -28,18 +28,26 @@ namespace Infrastructure.Mediators
         /// </summary>
         private List<string> _usedNamespaces = new List<string>();
         private readonly string paramIdentifier = "<p>";
+        private bool _useLooseMatchingRules = false;
 
         public void DefineUndefinedMethodInstances()
         {
             // After having the analysis of the entire codebase done, we traverse the methodInstancesWithUndefinedCallsite to be able to define them to start making the diagrams
-            for (int j = 0, maxTries = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count && maxTries < 10; j++)
+            for (int j = 0, maxTries = 0; j < MethodInstance.methodInstancesWithUndefinedCallsite.Count && maxTries < 15; j++)
             {
                 var methodInstance = MethodInstance.methodInstancesWithUndefinedCallsite[j];
-                methodInstance.SolveTypesOfComponents();
+                methodInstance.SolveTypesOfComponents(_useLooseMatchingRules);
                 if (j >= MethodInstance.methodInstancesWithUndefinedCallsite.Count - 1 && MethodInstance.methodInstancesWithUndefinedCallsite.Count > 0)
                 {
                     j = -1;
                     maxTries++;
+
+                    if(maxTries > 10)
+                    {
+                        _useLooseMatchingRules = true;
+                        MethodIdentifier.UseLooseMatchingRules();
+                        MethodDictionaryManager.instance.CleanAndFillDictionary();
+                    }
                 }
             }
         }

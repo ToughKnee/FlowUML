@@ -2,9 +2,9 @@ using System;
 
 namespace MyNamespace
 {
-    public class Program
+    public class MyClass
     {
-        public static void Main()
+        public static Vector3 AimChange()
         {
             var calculatedThing = CalculateNumbers((63f - 3f * weapon_Stats.Range - FPSCamera.FoV) * ((888 / 1) + 0)
             , FPSCamera.FoV / 100000f
@@ -16,15 +16,11 @@ namespace MyNamespace
         {
 
         }
-        public OtherResult CalculateStuff(int num1, float num2, double num3)
-        {
-
-        }
     }
 
     public class Result
     {
-        public OtherResult PrintResults()
+        public OtherResult PrintResults(double value, string stringValue)
         {
         }
     }

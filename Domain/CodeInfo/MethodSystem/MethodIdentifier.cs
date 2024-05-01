@@ -11,11 +11,21 @@ namespace Domain.CodeInfo.MethodSystem
         public string methodName;
         public List<string> methodParameters;
         public string methodReturnType;
+        private static bool _useLooseMatchingRules = false;
 
         public MethodIdentifier()
         {
         }
-
+        /// <summary>
+        /// When there is a moment where MethodInstances can't find all the data to fully know the 
+        /// Method signature, then we change the way how Method can be matched by MethodInstances 
+        /// with less data and higher chances of matching actual Methods, but also less accuracy and possible mismatch
+        
+        /// </summary>
+        public static void UseLooseMatchingRules()
+        {
+            _useLooseMatchingRules = true;
+        }
         /// <summary>
         /// This override is aimed to just contemplate the other parts of the 
         /// method EXCEPT for the namespaces and owner class name, which if there are 2 methods that 
@@ -28,10 +38,16 @@ namespace Domain.CodeInfo.MethodSystem
             {
                 int hash = 17;
                 hash = hash * 23 + methodName.GetHashCode();
-                // TODO: When the maxTries reaches a big number, start just comparing methods with only their NAME, NUMBER of parameters AND matching usings statement
-                foreach (var parameter in methodParameters)
+                if(!_useLooseMatchingRules)
                 {
-                    hash += parameter.GetHashCode() * 5;
+                    foreach (var parameter in methodParameters)
+                    {
+                        hash += parameter.GetHashCode() * 5;
+                    }
+                }
+                else
+                {
+                    hash += methodParameters.Count.GetHashCode() * 5;
                 }
                 return hash;
             }
@@ -39,7 +55,6 @@ namespace Domain.CodeInfo.MethodSystem
 
         public override bool Equals(object obj)
         {
-            // TODO: When the maxTries reaches a big number, start just comparing methods with only their NAME, NUMBER of parameters AND matching usings statement
             if (obj == null || GetType() != obj.GetType())
                 return false;
 
@@ -60,19 +75,12 @@ namespace Domain.CodeInfo.MethodSystem
             if (methodParameters.Count != other.methodParameters.Count)
                 return false;
 
-            for (int i = 0; i < methodParameters.Count; i++)
-            {
-                if (methodParameters[i] != other.methodParameters[i])
-                    return false;
-            }
-
-            // This part is where the namespaces are checked
-            // We dirst check we can compare the namespaces
+            // This part checks the namespaces
+            // We first check we can compare the namespaces
             if (other.methodInstanceCandidateNamespaces.Count <= 0)
                 return false;
 
             bool sameMethod = false;
-
             
             // If the Method(the item stored in the Dictionary/the "this") is inside the MethodInstance namespaceCandidates(the object that makes a query to the Dict, "Dict[MethInst]"/ the "other"), then we found a match
             foreach (string usedNamespace in other.methodInstanceCandidateNamespaces)
@@ -82,6 +90,15 @@ namespace Domain.CodeInfo.MethodSystem
                     sameMethod = true;
                     break;
                 }
+            }
+
+            if (_useLooseMatchingRules)
+                return sameMethod;
+
+            for (int i = 0; i < methodParameters.Count; i++)
+            {
+                if (methodParameters[i] != other.methodParameters[i])
+                    return false;
             }
 
             return sameMethod;
