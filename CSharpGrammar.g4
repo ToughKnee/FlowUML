@@ -158,21 +158,20 @@ templateTypeName
 
 //===========================  Class properties grammar
 classContent
-    // Syntax for property declaration
-    : property
-    | method
+: property
+| method
+;
+
+property
+    : (attributes | accessModifier | modifiers )* type identifier SEMICOLON
     ;
 
-    property
-        : (attributes | accessModifier | modifiers )* type identifier SEMICOLON
-        ;
-
-    method
-        :    
-        (attributes | accessModifier | modifiers)* type? identifier templateTypeName?
-        '(' parameterList? ')'
-        methodBodyContent
-        ;
+method
+    :    
+    (attributes | accessModifier | modifiers)* type? identifier templateTypeName?
+    '(' parameterList? ')'
+    methodBodyContent
+    ;
 
 attributeIdentifier
     : '[' identifier ('(' .*? ')')? ']'
@@ -235,7 +234,6 @@ methodContent
     : expression ';'
     | statement
     | localVariableDefinition ';'
-    | variableDefinition ';'
     | returnExpression ';'
     ;
 
@@ -244,11 +242,6 @@ localVariableDefinition
     ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
     (',' localVariableDefinition)?
     | type identifier
-    ;
-
-variableDefinition
-    : advancedIdentifier assigner expression
-    | advancedIdentifier ('++' | '--')
     ;
 
 assigner
@@ -269,7 +262,7 @@ expression
     '('?'('?'('?
         (ternaryOperatorExpression indexRetrieval?
         | comparisonExpression
-        | expressionMethodCall
+        | methodCall
         | advancedIdentifier ('--')? ('++')?
         | advancedIdentifier indexRetrieval?
         | localVariableDefinition

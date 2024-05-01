@@ -309,20 +309,27 @@ namespace Infrastructure.Antlr
             }
 
             // Getting inside the "methodBodyContent" to get the variables and methodCalls and pass them to the mediator
-            for (int j = 1; j < methodBodyNode.ChildCount-1; j++)
+            ProcessMethodBodyContent(methodBodyNode);
+            
+            _mediator.ReceiveMethodAnalysisEnd();
+            return "";
+        }
+        public void ProcessMethodBodyContent(IParseTree methodBodyNode)
+        {
+            for (int j = 1; j < methodBodyNode.ChildCount - 1; j++)
             {
                 // Get the local variable rule if there is
-                if(ChildRuleNameIs("localVariableDefinition", methodBodyNode.GetChild(j).GetChild(0), 0))
+                if (ChildRuleNameIs("localVariableDefinition", methodBodyNode.GetChild(j).GetChild(0), 0))
                 {
                     string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0).GetChild(0));
                     // If the localVariableDefinition contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
-                    if(localVariableText.Contains('-'))
+                    if (localVariableText.Contains('-'))
                     {
                         string[] assignmentValues = localVariableText.Split("-");
                         _mediator.ReceiveLocalVariableDefinition(assignmentValues[0], assignmentValues[1], _currentAbstractInstanceBuilder);
                         _currentAbstractInstanceBuilder = null;
                     }
-                    if(_currentAbstractInstanceBuilder != null) _currentAbstractInstanceBuilder = null;
+                    if (_currentAbstractInstanceBuilder != null) _currentAbstractInstanceBuilder = null;
                 }
                 else
                 {
@@ -331,17 +338,14 @@ namespace Infrastructure.Antlr
                 }
 
                 // Check if the methodCall data has been sent to the mediator by the local variable if statement, if not then send it right now
-                if(_currentAbstractInstanceBuilder != null)
+                if (_currentAbstractInstanceBuilder != null)
                 {
                     _mediator.ReceiveMethodCall(_currentAbstractInstanceBuilder);
                     _currentAbstractInstanceBuilder = null;
                 }
             }
-            // TODO: Use the "CustomVisitTemplateTypeName" to be able to define methods with template typenames
-            _mediator.ReceiveMethodAnalysisEnd();
-            return "";
-        }
 
+        }
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
         {
             string result = "";
@@ -377,8 +381,8 @@ namespace Infrastructure.Antlr
 
             string assignerExpression = "";
             IParseTree expressionChildNode;
-            // If the expression is a expressionMethodCall, visit it and get the info of the assignment
-            if ((expressionChildNode = GetRuleNodeInChildren("expressionMethodCall", expressionNode)) != null)
+            // If the expression is a methodCall, visit it and get the info of the assignment
+            if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
             {
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
@@ -410,12 +414,12 @@ namespace Infrastructure.Antlr
         public override string VisitExpression([NotNull] CSharpGrammarParser.ExpressionContext context)
         {
             string assignmentText = "";
-            var expressionMethodCallNode = GetRuleNodeInChildren("expressionMethodCall", context);
+            var methodCallNode = GetRuleNodeInChildren("methodCall", context);
             
             // Get the full text of the assignment 
-            if(expressionMethodCallNode != null)
+            if(methodCallNode != null)
             {
-                assignmentText = Visit(expressionMethodCallNode);
+                assignmentText = Visit(methodCallNode);
             }
             else
             {
@@ -425,24 +429,6 @@ namespace Infrastructure.Antlr
 
             return assignmentText;
         }
-        /// <summary>
-        /// This method explores all the methodCalls that are nested, as in having to visit the 
-        /// 3 methodCalls inside a line like this 
-        /// "myClass.getClass2().doSomething().myProperty.function3()", 
-        /// and return this entire method, for the cases where this was used to assign a variable 
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns>The whole method that may be assigning a variable</returns>
-        public override string VisitExpressionMethodCall([NotNull] CSharpGrammarParser.ExpressionMethodCallContext context)
-        {
-            string wholeFunctionString = context.GetText().Replace("await", "").Replace("new", ""); // TODO: Move this line to the VisitMethodCall function
-
-            var methodCallNode = GetRuleNodeInChildren("methodCall", context);
-            Visit(methodCallNode);
-
-            return wholeFunctionString;
-        }
-
         private AbstractInstance? ProcessIndexRetrieval(IParseTree context, MethodInstanceBuilder ownerMethodInstanceBuilder = null)
         {
             var indexRetrievalNode = GetRuleNodeInChildren("indexRetrieval", context);
@@ -550,7 +536,7 @@ namespace Infrastructure.Antlr
                 string expressionString = Visit(argumentListNode.GetChild(i));
 
                 // If the visited child node was a methodCall, then we remove it from the Stack of method instance builders and move it to the parameterList
-                if (!String.IsNullOrEmpty(expressionString) && GetRuleNodeInChildren("expressionMethodCall", argumentListNode.GetChild(i)) != null)
+                if (!String.IsNullOrEmpty(expressionString) && GetRuleNodeInChildren("methodCall", argumentListNode.GetChild(i)) != null)
                 {
                     parameterList.Add(_methodInstanceBuildersStack.Pop());
                 }
