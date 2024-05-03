@@ -1,0 +1,65 @@
+using System;
+
+namespace MyNamespace
+{
+    public class Program
+    {
+        public static void Main()
+        {
+            var myWeapon = new Weaopn();
+            CalculateNumbers((63f - 3f * myWeapon.GetRange() - FPSCamera.FoV) * ((888 / 1)
+             + GetConstantTime())
+            , FPSCamera.FoV() / 100000f
+            , GetAverage())
+            .PrintResults(((FPSCamera.FoV() < 15f + FPSCamera.GetCameraValue()) ? 15f : Weapon.GetID()), "myString") 
+                - operatorBB() + operatorCC(parameterOperatorCC()).chainedOperatorCC();
+        }
+        public Result CalculateNumbers(int num1, float num2, double num3)
+        {
+
+        }
+        
+        private float GetConstantTime()
+        {
+            return 13f;
+        }
+        private int operatorBB()
+        {
+            return 21;
+        }
+        private FPSCamera operatorCC()
+        {
+            return 22f;
+        }
+        private float parameterOperatorCC()
+        {
+            return 23f;
+        }
+    }
+    public class Weaopn
+    {
+        public int GetRange()
+        {
+            return 11;
+        }
+        public static int GetID()
+        {
+            return 112193;
+        }
+    }
+    public class FPSCamera
+    {
+        public static int FoV()
+        {
+            return 909;
+        }
+        public static int GetCameraValue()
+        {
+            return -11;
+        }
+        private double chainedOperatorCC()
+        {
+            return 24.0;
+        }
+    }
+}

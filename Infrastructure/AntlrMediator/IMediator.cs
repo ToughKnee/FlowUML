@@ -89,7 +89,7 @@ namespace Infrastructure.Mediators
         /// <param name="assigner">The "right part" of an assignment</param>
         /// <param name="assignee">The "left part" of an assignment</param>
         /// <param name="methodCallAssigner">The linked methodInstanceBuilder if the assigner is a methodCall</param>
-        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder);
+        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, List<AbstractBuilder<AbstractInstance>>? instanceAssignerBuilders);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
         /// should start processing the parameters and local variables received
@@ -104,7 +104,7 @@ namespace Infrastructure.Mediators
         /// is in this parameter which has the info for the method that made this callsite, 
         /// to be able to set the callsite generated and let the builder be able to add this 
         /// callsite to the Method class to be built</param>
-        public void ReceiveMethodCall(AbstractBuilder<AbstractInstance> methodCallBuilder);
+        public void ReceiveMethodCall(List<AbstractBuilder<AbstractInstance>> methodCallBuilders);
         /// <summary>
         /// Receive the usedNamespaces to be able to disambiguate between classes with the same name
         /// Intended to be used after the ReceiveMethodCall was made

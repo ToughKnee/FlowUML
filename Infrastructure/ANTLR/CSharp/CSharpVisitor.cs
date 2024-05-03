@@ -54,7 +54,6 @@ namespace Infrastructure.Antlr
         /// This can be thought of as pre order tree traversal
         /// </summary>
         private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
-        private AbstractBuilder<AbstractInstance> _currentAbstractInstanceBuilder;
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -321,27 +320,20 @@ namespace Infrastructure.Antlr
                 // Get the local variable rule if there is
                 if (ChildRuleNameIs("localVariableDefinition", methodBodyNode.GetChild(j).GetChild(0), 0))
                 {
-                    string localVariableText = Visit(methodBodyNode.GetChild(j).GetChild(0).GetChild(0));
-                    // If the localVariableDefinition contains a hypen, it means it has an assignment we must manage, and needs to be sent to the mediator
-                    if (localVariableText.Contains('-'))
-                    {
-                        string[] assignmentValues = localVariableText.Split("-");
-                        _mediator.ReceiveLocalVariableDefinition(assignmentValues[0], assignmentValues[1], _currentAbstractInstanceBuilder);
-                        _currentAbstractInstanceBuilder = null;
-                    }
-                    if (_currentAbstractInstanceBuilder != null) _currentAbstractInstanceBuilder = null;
+                    Visit(methodBodyNode.GetChild(j).GetChild(0).GetChild(0));
                 }
                 else
                 {
                     // We visit all the other childs explicitly, in order to end the method analysis after we find the callsites this method made and be able to let the mediator get all the info it needs, because at this point the mediator does not have that kind of info, but will if we visit the children preemptively
+                    // Aside from that, if we visit the "statement" node, we start visting all the nodes automatically
                     Visit(methodBodyNode.GetChild(j).GetChild(0));
                 }
 
-                // Check if the methodCall data has been sent to the mediator by the local variable if statement, if not then send it right now
-                if (_currentAbstractInstanceBuilder != null)
+                // Check if there are methodCalls in the stack, and send them to the mediator, also the methodCall at the bottom of the stack is the first method being called, and the methodCalls that come after it are methodCalls inside the subtree of this MethodCall that are not part of the methodCall chained property nor parameters
+                if (_methodInstanceBuildersStack.Count > 0)
                 {
-                    _mediator.ReceiveMethodCall(_currentAbstractInstanceBuilder);
-                    _currentAbstractInstanceBuilder = null;
+                    _mediator.ReceiveMethodCall(_methodInstanceBuildersStack.Cast<AbstractBuilder<AbstractInstance>>().ToList());
+                    _methodInstanceBuildersStack.Clear();
                 }
             }
 
@@ -380,7 +372,10 @@ namespace Infrastructure.Antlr
             var identifierNode = GetRuleNodeInChildren("identifier", context);
 
             string assignerExpression = "";
+            string result = "";
             IParseTree expressionChildNode;
+            InstanceBuilder instanceBuilder = new();
+            var listWithBuilders = new List<AbstractBuilder<AbstractInstance>>();
             // If the expression is a methodCall, visit it and get the info of the assignment
             if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
             {
@@ -388,21 +383,31 @@ namespace Infrastructure.Antlr
                 assignerExpression = Visit(expressionNode);
 
                 // Gets the Assignee and the Assigner and returns them
-                return identifierNode.GetText() + separator + assignerExpression;
+                result = identifierNode.GetText() + separator + assignerExpression;
+                listWithBuilders = _methodInstanceBuildersStack.Cast<AbstractBuilder<AbstractInstance>>().ToList();
+                _methodInstanceBuildersStack.Clear();
             }
             // If the expression is another identifier of another variable, or field of a class, then get the info and return it
             else if((expressionChildNode = GetRuleNodeInChildren("advancedIdentifier", expressionNode)) is not null)
             {
                 // If the assignee is not a simple variable(and instead is a property of a class) then do nothing
                 if (identifierNode == null) return "";
-                var instanceBuilder = new InstanceBuilder(_mediator);
+                instanceBuilder = new InstanceBuilder(_mediator);
+                listWithBuilders.Add(instanceBuilder);
                 instanceBuilder.SetCallerClassName(expressionChildNode.GetText());
                 var indexRetrievalInstance = ProcessIndexRetrieval(expressionNode);
                 instanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
-                _currentAbstractInstanceBuilder = instanceBuilder;
-                return identifierNode.GetText() + separator + expressionNode.GetText();
+                result = identifierNode.GetText() + separator + expressionNode.GetText();
             }
-            // TODO: Make an else statement just visiting the expressionNode, in case the expression was a ternary operator or comparison, that may contain a method call
+            // TODO: Visit other localVariableDefinition nodes chained, the things like "var thing1 = 1, thing2 = 2"
+
+            // Sending the info to the mediator
+            if (result.Contains("-"))
+            {
+                string[] assignmentValues = result.Split("-");
+                _mediator.ReceiveLocalVariableDefinition(assignmentValues[0], assignmentValues[1], listWithBuilders);
+            }
+
             return assignerExpression;
         }
         /// <summary>
@@ -415,6 +420,7 @@ namespace Infrastructure.Antlr
         {
             string assignmentText = "";
             var methodCallNode = GetRuleNodeInChildren("methodCall", context);
+            var arithmeticOperationsNode = GetRuleNodeInChildren("arithmeticOperations", context);
             
             // Get the full text of the assignment 
             if(methodCallNode != null)
@@ -425,7 +431,20 @@ namespace Infrastructure.Antlr
             {
                 assignmentText = context.GetText();
             }
-            // TODO: Visit the other kinds of expressions like ternary operators, comparison and visit the method calls
+
+            //===========================  Visit whichever expression here to traverse the entire tree to find other methodCalls inside complex rules like ternaryOperators, including also the arithmetic operations node
+            if (methodCallNode == null)
+                base.VisitExpression(context);
+            else if(methodCallNode != null && arithmeticOperationsNode != null)
+            {
+
+                for (int i = 1; i < context.ChildCount; i++)
+                {
+                    arithmeticOperationsNode = GetRuleNodeInChildren("arithmeticOperations", context, i);
+                    Visit(arithmeticOperationsNode);
+                }
+            }
+            //=====
 
             return assignmentText;
         }
@@ -563,7 +582,6 @@ namespace Infrastructure.Antlr
             if(isConstructor) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsConstructor);
             _methodInstanceBuildersStack.Push(methodInstanceBuilder);
 
-            _currentAbstractInstanceBuilder = methodInstanceBuilder;
             return completeFunctionString;
         }
     }

@@ -104,7 +104,7 @@ namespace Infrastructure.Mediators
             // This also adds a string to the identfier to prevent ambiguity when there are porperties with the same identifier
             _knownInstancesDeclaredInCurrentMethodAnalysis.Add(paramIdentifier + identifier, parameterInstance);
         }
-        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, AbstractBuilder<AbstractInstance>? instanceAssignerBuilder)
+        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, List<AbstractBuilder<AbstractInstance>>? instanceAssignerBuilders)
         {
             // Create the instance assignee to be defined
             AbstractInstance instanceAssignee;
@@ -115,7 +115,11 @@ namespace Infrastructure.Mediators
                 // Create the instance and assign the type of the new instance the return type of the methodCall
                 instanceAssignee = new Instance(assignee);
                 var returnType = new StringWrapper();
-                var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilder).Build();
+                var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build();
+                for (int j = 1; j < instanceAssignerBuilders.Count; j++)
+                {
+                    ((MethodInstanceBuilder)instanceAssignerBuilders[j]).Build();
+                }
                 methodInstanceAssigner.refType = returnType;
                 instanceAssignee.refType = methodInstanceAssigner.refType;
 
@@ -133,7 +137,7 @@ namespace Infrastructure.Mediators
                 // Make the new instance 
                 else
                 {
-                    instanceAssignee = (Instance)instanceAssignerBuilder.Build();
+                    instanceAssignee = ((InstanceBuilder)instanceAssignerBuilders[0]).Build();
                 }
             }
 
@@ -152,9 +156,12 @@ namespace Infrastructure.Mediators
                 _knownInstancesDeclaredInCurrentMethodAnalysis.Add(property.Key, property.Value);
             }
         }
-        public void ReceiveMethodCall(AbstractBuilder<AbstractInstance> methodCallBuilder)
+        public void ReceiveMethodCall(List<AbstractBuilder<AbstractInstance>> methodCallBuilders)
         {
-            ((MethodInstanceBuilder)methodCallBuilder).Build();
+            foreach (var builder in methodCallBuilders)
+            {
+               ((MethodInstanceBuilder)builder).Build();
+            }
         }
         public void ReceiveUsedNamespaces(List<string>? usedNamespaces)
         {

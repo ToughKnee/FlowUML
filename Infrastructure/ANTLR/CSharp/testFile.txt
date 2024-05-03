@@ -6,10 +6,10 @@ namespace MyNamespace
     {
         public static void Main()
         {
-            var calculatedThing = CalculateNumbers((63f - 3f * weapon_Stats.Range - FPSCamera.FoV) * ((888 / 1) + 0)
+            var calculatedThing = CalculateNumbers((63f - 3f * weapon_Stats.GETRANGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE() - FPSCamera.FoV) * ((888 / 1) + GETZERORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORO())
             , FPSCamera.FoV / 100000f
-            , 1f)
-            .PrintResults(((FPSCamera.FoV < 15f) ? 15f : FPSCamera.FoV), "myString");
+            , nununnuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu())
+            .PrintResults(((FPSCamera.FooooooooooooooooooooooooooooooooooooooooooooooooooooooV() < 15f + FPSCamera.ToFloat()) ? 15f : FPSCamera.FoV), "myString");
             var otherResultsVariable = calculatedThing.PrintOtherResults();
         }
         public Result CalculateNumbers(int num1, float num2, double num3)
