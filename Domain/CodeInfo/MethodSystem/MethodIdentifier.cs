@@ -11,7 +11,12 @@ namespace Domain.CodeInfo.MethodSystem
         public string methodName;
         public List<string> methodParameters;
         public string methodReturnType;
+        /// <summary>
+        /// Boolean used to switch between rules for matching of methods
+        /// less strict
+        /// </summary>
         private static bool _useLooseMatchingRules = false;
+
 
         public MethodIdentifier()
         {
@@ -19,8 +24,7 @@ namespace Domain.CodeInfo.MethodSystem
         /// <summary>
         /// When there is a moment where MethodInstances can't find all the data to fully know the 
         /// Method signature, then we change the way how Method can be matched by MethodInstances 
-        /// with less data and higher chances of matching actual Methods, but also less accuracy and possible mismatch
-        
+        /// with less data and higher chances of matching actual Methods, but also less accuracy and possible mismatch        
         /// </summary>
         public static void UseLooseMatchingRules()
         {

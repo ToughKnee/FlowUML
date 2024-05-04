@@ -736,14 +736,17 @@ Inherited Classes:
             // Creating the references to the methods to be checked
             var Program_Main = classEntitiesList[0].methods[0];
             var CalculateNumbersMethod = classEntitiesList[0].methods[1];
-            var PrintResultsMethod = classEntitiesList[1].methods[0];
+            var PrintResultsMethod = classEntitiesList[1].methods[1];
+            var ResultsConstructorMethod = classEntitiesList[1].methods[0];
             var PrintOtherResultsMethod = classEntitiesList[2].methods[0];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(3);
+            Program_Main.callsites.Count.Should().Be(5);
             Program_Main.callsites[0].calledMethod.Should().Be(CalculateNumbersMethod);
             Program_Main.callsites[1].calledMethod.Should().Be(PrintResultsMethod);
             Program_Main.callsites[2].calledMethod.Should().Be(PrintOtherResultsMethod);
+            Program_Main.callsites[3].calledMethod.Should().Be(PrintOtherResultsMethod);
+            Program_Main.callsites[4].calledMethod.Should().Be(ResultsConstructorMethod);
         }
         [Fact]
         public void MediatorCreatedInstancesWithVeryDeepMethodCalls_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()

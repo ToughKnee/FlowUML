@@ -126,6 +126,11 @@ namespace Infrastructure.Mediators
                 // This is done to add the actual Instance in the knownInstances dictionary
                 instanceAssignee = methodInstanceAssigner;
             }
+            // If this is just a variable declaration, just build the instance
+            else if (String.IsNullOrEmpty(assigner))
+            {
+                instanceAssignee = instanceAssignerBuilders[0].Build();
+            }
             // If the declaration is simple
             else
             {

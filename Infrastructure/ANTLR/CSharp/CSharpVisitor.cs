@@ -48,12 +48,18 @@ namespace Infrastructure.Antlr
         /// Stack that is used mainly by the method "VisitMethodCall" whenever there are other nested methodCalls, 
         /// things like parameters that are methodCalls too, or chained methodCalls like 
         /// "MyMethodCall().propertyChain.chainedMethodCall()", where "propertyChain.chainedMethodCall()" would be 
-        /// chained methodCall of "MyMethodCall()"
+        /// the chained methodCall of "MyMethodCall()"
         /// An element is added whenever a methodCall has been visited, and retrieved by the methodCall that owns the
         /// other methodCall because it was a parameter or a chained methodCall
         /// This can be thought of as pre order tree traversal
+        /// This is important for the mediator because it contains the methodCalls found in a expression, 
+        /// this is sent to the mediator and cleared to keep doing the same process
         /// </summary>
         private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
+        /// <summary>
+        /// Property only to pass info from the local variable definition node to the method call node
+        /// </summary>
+        private string _actualConstructor = "";
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -100,7 +106,10 @@ namespace Infrastructure.Antlr
             }
             return null;
         }
-
+        public override string VisitAdvancedTypeName([NotNull] CSharpGrammarParser.AdvancedTypeNameContext context)
+        {
+            return "";
+        }
         public override string VisitProperty([NotNull] CSharpGrammarParser.PropertyContext context)
         {
             var identifierNode = GetRuleNodeInChildren("identifier", context);
@@ -336,7 +345,16 @@ namespace Infrastructure.Antlr
                     _methodInstanceBuildersStack.Clear();
                 }
             }
-
+        }
+        /// <summary>
+        /// This method will get the properties of instantiated classes used in a method
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override string VisitAdvancedIdentifier([NotNull] CSharpGrammarParser.AdvancedIdentifierContext context)
+        {
+            // TODO: Recopile the information of properties and send it to the mediator
+            return "";
         }
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
         {
@@ -374,11 +392,24 @@ namespace Infrastructure.Antlr
             string assignerExpression = "";
             string result = "";
             IParseTree expressionChildNode;
-            InstanceBuilder instanceBuilder = new();
+            InstanceBuilder instanceBuilder = new(_mediator);
             var listWithBuilders = new List<AbstractBuilder<AbstractInstance>>();
-            // If the expression is a methodCall, visit it and get the info of the assignment
-            if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
+            // If the expressionNode is null, then this is just a variable declaration, and we can get the type
+            if(expressionNode == null)
             {
+                instanceBuilder.SetCallerClassName(identifierNode.GetText());
+                instanceBuilder.SetType(GetRuleNodeInChildren("type", context).GetText());
+                listWithBuilders.Add(instanceBuilder);
+                _mediator.ReceiveLocalVariableDefinition(identifierNode.GetText(), "", listWithBuilders);
+                return assignerExpression;
+            }
+            // If the expression is a methodCall, visit it and get the info of the assignment
+            else if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
+            {
+                if (expressionNode.GetText().Contains("new"))
+                {
+                    _actualConstructor = GetRuleNodeInChildren("type", context).GetText();
+                }
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
 
@@ -392,7 +423,6 @@ namespace Infrastructure.Antlr
             {
                 // If the assignee is not a simple variable(and instead is a property of a class) then do nothing
                 if (identifierNode == null) return "";
-                instanceBuilder = new InstanceBuilder(_mediator);
                 listWithBuilders.Add(instanceBuilder);
                 instanceBuilder.SetCallerClassName(expressionChildNode.GetText());
                 var indexRetrievalInstance = ProcessIndexRetrieval(expressionNode);
@@ -435,9 +465,8 @@ namespace Infrastructure.Antlr
             //===========================  Visit whichever expression here to traverse the entire tree to find other methodCalls inside complex rules like ternaryOperators, including also the arithmetic operations node
             if (methodCallNode == null)
                 base.VisitExpression(context);
-            else if(methodCallNode != null && arithmeticOperationsNode != null)
+            else if(arithmeticOperationsNode != null)
             {
-
                 for (int i = 1; i < context.ChildCount; i++)
                 {
                     arithmeticOperationsNode = GetRuleNodeInChildren("arithmeticOperations", context, i);
@@ -519,7 +548,7 @@ namespace Infrastructure.Antlr
             //===========================  Getting the components of the method called
             bool isConstructor = GetRuleNodeInChildren("new", context) != null;
             string completeFunctionString = context.GetText(), namespaceAndClass = "", methodName = "";
-            completeFunctionString = completeFunctionString.Replace("new", "");
+            completeFunctionString = (completeFunctionString.Replace("new", "").IndexOf('(') <= 0) ? (completeFunctionString) : (completeFunctionString.Replace("new", ""));
             int firstParenthesesIndex = completeFunctionString.IndexOf('(');
             List<object> parameterList = new();
             if(firstParenthesesIndex > 0)
@@ -546,6 +575,12 @@ namespace Infrastructure.Antlr
                 throw new NotImplementedException();
             }
             //=====
+            // If the method name is the "new" keyword then get the type of the variable and set this method call as a constructor
+            if(methodName == "new")
+            {
+                methodName = _actualConstructor;
+                isConstructor = true;
+            }
 
             // Get the argumentList to visit all the arguments, if they are methodCalls then visit them and remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList normally
             var argumentListNode = GetRuleNodeInChildren("argumentList", context);

@@ -19,6 +19,7 @@ namespace Infrastructure.Builders
         protected AbstractInstance? _callerClass = null;
         protected AbstractInstance? _callerClassChainedInstance = null;
         protected AbstractInstance? _indexRetrievalInstance = null;
+        private string? _type = null;
         protected KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
         protected readonly string _paramIdentifier = "<p>";
         /// <summary>
@@ -44,6 +45,11 @@ namespace Infrastructure.Builders
         public AbstractInstance Build()
         {
             _callerClass.chainedInstance = _callerClassChainedInstance;
+            if(_type != null)
+            {
+                _callerClass.kind = KindOfInstance.Normal;
+                _callerClass.refType.data = _type;
+            }
             AbstractInstance.GetLastChainedInstance(_callerClass).indexRetrievedInstance = _indexRetrievalInstance;
             return _callerClass;
         }
@@ -142,6 +148,11 @@ namespace Infrastructure.Builders
         public InstanceBuilder SetIndexRetrievalInstance(AbstractInstance indexRetrievalInstance)
         {
             this._indexRetrievalInstance = indexRetrievalInstance;
+            return this;
+        }
+        public InstanceBuilder SetType(string type)
+        {
+            this._type = type;
             return this;
         }
     }

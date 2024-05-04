@@ -80,15 +80,13 @@ namespace Infrastructure.Mediators
         public void ReceiveParameters(string type, string identifier);
         /// <summary>
         /// Receives the local variable declaration found by an ANTLR visitor to manage them 
-        /// after the ANTLR visitor finishes analyzing the method
-        /// Also, this must not handle callsites since that is already covered by the "ReceiveMethodCall" method
-        /// Also, this stores the true Instance of variables definitionss when there are many variable aliases AND
+        /// This also registers the true Instance of variables definitionss when there are many variable aliases AND
         /// a MethodInstance has a component of a simple variable and needs the true Instance of the variable when
         /// built by the MethodInstanceBuilder
         /// </summary>
         /// <param name="assigner">The "right part" of an assignment</param>
         /// <param name="assignee">The "left part" of an assignment</param>
-        /// <param name="methodCallAssigner">The linked methodInstanceBuilder if the assigner is a methodCall</param>
+        /// <param name="instanceAssignerBuilders">The linked Instance or Method Instance Builder representing the assigner</param>
         public void ReceiveLocalVariableDefinition(string assignee, string? assigner, List<AbstractBuilder<AbstractInstance>>? instanceAssignerBuilders);
         /// <summary>
         /// After the ANTLR visitor finishes a method analysis, then the Mediator
@@ -96,14 +94,9 @@ namespace Infrastructure.Mediators
         /// </summary>
         public void ReceiveMethodAnalysisEnd();
         /// <summary>
-        /// This will receive the info for the callsites a method made, and be able to create 
-        /// the callsite alongside the MethodInstance, 
-        /// which must be connected, and send each class to their correspondent classes
+        /// This will receive the info for the callsites a method made, and be able to create them
         /// </summary>
-        /// <param name="methodCallData">Contains all the data of the MethodCall, the linked method builder that 
-        /// is in this parameter which has the info for the method that made this callsite, 
-        /// to be able to set the callsite generated and let the builder be able to add this 
-        /// callsite to the Method class to be built</param>
+        /// <param name="methodCallBuilders">MethodInstance builders from the antlr analysis which we must build</param>
         public void ReceiveMethodCall(List<AbstractBuilder<AbstractInstance>> methodCallBuilders);
         /// <summary>
         /// Receive the usedNamespaces to be able to disambiguate between classes with the same name

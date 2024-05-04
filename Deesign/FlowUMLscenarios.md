@@ -118,6 +118,42 @@ When:
 Then:
         -
 
+//===========================  
+//===========================  「 Feature 」     ※ Remark Class' property **usage** in Methods
+        Description:
+Whenever there is an "advancedIdentifier" in a node in the ANTLR Visitor, then there is an instantiation of a class in the code being used, and we will register this info in the Method class to be able to, aside of marking the method calls to other methods, also be able to remark the usage of properties and **stateness** in the Method, and how much influence of the state of the properties impacts the Method
+
+        Responsibilities(+|-):
++Measure the **"statefulness"** of this method to other components
+        Measure that through checking where does this function is **WRITING TO**, which clearly means changes in state, rather than being purely functional
++++Look how much data IS WRITTEN to other components to mark the **Influence** of this Method to other parts of the code(This will also enable **implicit changes**, when a method uses another method, where all the WRITES that other method has are trasnfered to the original method automatically)
+++Look how much data IS READ from other components and mark the **Susceptibility** of this Method to changes from other places
+-Create a new class that must manage all of this
+-Make the Instance class send that information whenever its **type is defined**
+
+
+「 Scenario 」     ※ ANTLR Visitor visits an "advancedIdentifier" node
+Given:
+        -Code analysis by the visitor is ongoing
+        -We must send info of instantiated classes where the Method is using **properties**
+        -We also are sending to the Mediator info of MethodCalls, which contain also **usage of properties**
+When:
+        -There is a visit to an "advancedIdentifier" node
+Then:
+        -We process the instance by converting it into an **InstanceBuilder**
+        -Send the Instance to the mediator
+
+「 Scenario 」     ※ Mediator receives a class' property
+Given:
+        -The previous scenario happened
+        -There are methodCall converted into MethodInstances in the same Mediator(which means there are properties of instantiated classes already being **defined**)
+When:
+        -We avoid visiting "advancedIdentifier" nodes inside MethodCalls(to ensure we are not wasting processing in properties already identified)
+        -The Mediator receives an InstanceBuilder from the Visitor 
+Then:
+        -Find the type of the instance received
+        -Get the owner of the property
+
 
 
 

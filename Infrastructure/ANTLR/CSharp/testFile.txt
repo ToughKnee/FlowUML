@@ -2,21 +2,32 @@ using System;
 
 namespace MyNamespace
 {
-    public class Program
+    public class MyClass
     {
-        public IParseTree? GetRuleNodeInChildren(string ruleName, IParseTree parentRule, int initialOffset)
+        public static Vector3 AimChange()
         {
-            string suffix = "Context";
-            string childRuleName = "";
+            Result instanceBuilder = new(otherResultsVariable);
+        }
+        public Result CalculateNumbers(int num1, float num2, double num3)
+        {
 
-            // Iterates through all the children and compares if the rule of the child is equal to the ruleName
-            for (int j = initialOffset; j < parentRule.ChildCount; j++)
-            {
-                childRuleName = parentRule.GetChild(j).GetType().ToString();
-                childRuleName = childRuleName.Substring(childRuleName.LastIndexOf('+') + 1);
-                if (childRuleName.Equals(ruleName + suffix, StringComparison.OrdinalIgnoreCase)) {return parentRule.GetChild(j);}
-            }
-            return null;
+        }
+    }
+
+    public class Result
+    {
+        public Result(Result previousResult)
+        {
+
+        }
+        public OtherResult PrintResults(double value, string stringValue)
+        {
+        }
+    }
+    public class OtherResult
+    {
+        public Result PrintOtherResults()
+        {
         }
     }
 }

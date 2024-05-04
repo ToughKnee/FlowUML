@@ -26,8 +26,7 @@ using
 
 AWAIT: 'await';
 
-NEW: 'new';
-new: NEW;
+new: 'new';
 
 RETURN: 'return';
 
@@ -60,7 +59,7 @@ MODIFIERS
     : ('static' | 'virtual' | 'override' | 'abstract' | 'sealed' | 'readonly' | 'async')+
     ;
 
-modifiers: NEW | MODIFIERS;
+modifiers: new | MODIFIERS;
 
 ACCESS_MODIFIER
     : 'public'
@@ -192,7 +191,11 @@ methodBodyContent
     ;
 
 parameterList
-    : attributes? parameter (',' attributes? parameter)*
+    : attributes? parameter parameterInitializer? (',' attributes? parameter parameterInitializer?)*
+    ;
+
+parameterInitializer
+    : '=' (advancedIdentifier | string | number)
     ;
 
 parameter
@@ -208,21 +211,21 @@ statement
     ;  // otherStatement represents all other kinds of statements in your language
 whileLoopStatement
     : 'while' '(' (expression) ')'
-    methodBodyContent
+    (methodBodyContent | expression ';')
     ;
 ifStatement
     : 'else'? 'if' '(' (expression) ')'
-    methodBodyContent
+    (methodBodyContent | expression ';')
     | 'else'
-    methodBodyContent
+    (methodBodyContent | expression ';')
     ;
 foreachStatement
     : 'foreach' '(' (type advancedIdentifier 'in' advancedIdentifier) ')'
-    methodBodyContent
+    (methodBodyContent | expression ';')
     ;
 forStatement
     : 'for' '(' localVariableDefinition ';' expression ';' expression ')'
-    methodBodyContent
+    (methodBodyContent | expression ';')
     ;
 anyStatement
     : advancedIdentifier gibberish*
@@ -267,7 +270,8 @@ expression
         | advancedIdentifier indexRetrieval?
         | localVariableDefinition
         | string
-        | number) 
+        | number
+        | returnExpression)
         (arithmeticOperations)*
     ')'?')'?')'?
     // TODO: Do the following features AND make sure to put the optional parentheses around them
@@ -283,7 +287,7 @@ expressionMethodCall
     ;
 
 methodCall
-    : new? '!'? (advancedIdentifier | type) ('(' argumentList? ')') indexRetrieval? expressionChain?
+    : new? '!'? (advancedIdentifier | type | new) ('(' argumentList? ')') indexRetrieval? expressionChain?
     | new type ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 
@@ -292,7 +296,7 @@ expressionChain
     : ('.' methodCall | '.' advancedIdentifier)+ indexRetrieval?
     ;
 
-argumentList    
+argumentList
     : (outParameter | expression) ( ',' (outParameter | expression) )*
     | gibberish
     ;

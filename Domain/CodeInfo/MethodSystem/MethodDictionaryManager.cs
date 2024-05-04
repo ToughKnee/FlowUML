@@ -44,10 +44,9 @@ namespace Domain.CodeInfo.MethodSystem
             _methodDictionary.Add(createdMethod.GetMethodIdentifier(), createdMethod);
         }
         /// <summary>
-        /// Method to clear the dictionary that stored the Methods with all their data, but 
-        /// when we need to find and match Methods with MethodInstances with less data then
-        /// we clear the dictionary, and after chaning the way elements are stored in the dictionary
-        /// then we can store the elements again
+        /// When we need to identify methoInstances with their actual Methods and we don't
+        /// have enough information, then we use this method to clear and refill, but when refilling
+        /// we change the rules for identifying Methods and store the actual Methods with those settings 
         /// </summary>
         public void CleanAndFillDictionary()
         {

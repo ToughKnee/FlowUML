@@ -127,6 +127,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             {
                 ResolveIndexRetrievalInstanceType(this);
             }
+            // If this methodInstance is owned by another MethodInstance, we must chain this method to the caller class, because the caller class of kind "IsFromLinkedMethodInstance" will never contain chainedInstances, and when the owner of this MethodInstance needs to get the type of the chain, he will be able to do it(because the owner methodInstance contains the caller class of this MethodInstance as the chainedInstance)
             if (callerClass.kind == KindOfInstance.IsFromLinkedMethodInstance)
                 callerClass.chainedInstance = this;
         }
@@ -237,12 +238,15 @@ namespace Domain.CodeInfo.InstanceDefinitions
         }
         /// <summary>
         /// This method checks the types of the components it has(className, parameters, and 
-        /// the property chains of the caller class, parameters and this MethodInstance)
+        /// with their respective property chains, including this MethodInstance)
         /// and if we found all the types, then this MethodInstance is ready to look for the actual Method, and then 
         /// remove itself from the methodInstancesWithUndefinedCallsite, and start defining the remaning classes with
         /// this info
-        /// If there are still unknwon types, we need to look for it with the help of other classes
-        /// And we have several places to look for
+        /// This method is responsible for finding all the types of the components ONLY IF they are normal Instances,
+        /// if they are other MethodInstances then it won't find their type because all MethodInstances have the 
+        /// responsibility to find their own types
+        /// <param name="useLooseMatchingRules">If true, then this method will start looking for the actual 
+        /// Method in the MethodDictionaryManager even though its components may not be defined with their types</param>
         /// </summary>
         public void SolveTypesOfComponents(bool useLooseMatchingRules)
         {

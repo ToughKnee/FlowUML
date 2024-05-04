@@ -11,6 +11,9 @@ namespace MyNamespace
             , 1f)
             .PrintResults(((FPSCamera.FoV < 15f) ? 15f : FPSCamera.FoV), "myString");
             var otherResultsVariable = calculatedThing.PrintOtherResults();
+            OtherResult declaredVariable;
+            declaredVariable.PrintOtherResults();
+            Result instanceBuilder = new(otherResultsVariable);
         }
         public Result CalculateNumbers(int num1, float num2, double num3)
         {
@@ -20,13 +23,17 @@ namespace MyNamespace
 
     public class Result
     {
+        public Result(Result previousResult)
+        {
+
+        }
         public OtherResult PrintResults(double value, string stringValue)
         {
         }
     }
     public class OtherResult
     {
-        public void PrintOtherResults()
+        public Result PrintOtherResults()
         {
         }
     }
