@@ -6,19 +6,17 @@ namespace MyNamespace
     {
         public static void Main()
         {
-            var myWeapon = new Weaopn();
-            CalculateNumbers((63f - 3f * myWeapon.GetRange() - FPSCamera.FoV) * ((888 / 1)
+            // The "myWeapon" variable simulates a variable that couldn't be defined
+            CalculateNumbers((63f - 3f * myWeapon.GetRange() - FPSCamera.FoV()) * ((888 / 1)
              + GetConstantTime())
-            , FPSCamera.FoV() / 100000f
-            , GetAverage())
+            , FPSCamera.myValue / 100000f
+            , operatorBB())
             .PrintResults(((FPSCamera.FoV() < 15f + FPSCamera.GetCameraValue()) ? 15f : Weapon.GetID()), "myString") 
-                - operatorBB() + operatorCC(parameterOperatorCC()).chainedOperatorCC();
+                - operatorBB() + operatorCC(conflicterFunction()).conflicterFunction();
         }
         public Result CalculateNumbers(int num1, float num2, double num3)
         {
-
         }
-        
         private float GetConstantTime()
         {
             return 13f;
@@ -27,16 +25,16 @@ namespace MyNamespace
         {
             return 21;
         }
-        private FPSCamera operatorCC()
+        private FPSCamera operatorCC(float data)
         {
             return 22f;
         }
-        private float parameterOperatorCC()
+        private float conflicterFunction()
         {
             return 23f;
         }
     }
-    public class Weaopn
+    public class Weapon
     {
         public int GetRange()
         {
@@ -49,6 +47,7 @@ namespace MyNamespace
     }
     public class FPSCamera
     {
+        public int myValue;
         public static int FoV()
         {
             return 909;
@@ -57,9 +56,15 @@ namespace MyNamespace
         {
             return -11;
         }
-        private double chainedOperatorCC()
+        private double conflicterFunction()
         {
             return 24.0;
+        }
+    }
+    public class Result
+    {
+        public OtherResult PrintResults(double value, string stringValue)
+        {
         }
     }
 }

@@ -61,14 +61,6 @@ namespace Domain.CodeInfo.MethodSystem
             // Getting the real Method and the MethodInstance identifiers
             MethodIdentifier other = (MethodIdentifier)obj;
 
-            // Comparing if the owner class name between the Method and MethodInstance match through of polymorphism
-            HashSet<string> actualMethodClasses = new HashSet<string>(this.ownerClassNameAndInheritedClasses);
-            HashSet<string> methodInstanceClasses = new HashSet<string>(other.ownerClassNameAndInheritedClasses);
-            IEnumerable<string> commonElements = actualMethodClasses.Intersect(methodInstanceClasses);
-            // If there was no polymorphsim(no classes in the inheritance that matched), then return false
-            if (commonElements.Count() == 0)
-                return false;
-
             if (methodName != other.methodName)
                 return false;
 
@@ -77,7 +69,7 @@ namespace Domain.CodeInfo.MethodSystem
 
             // This part checks the namespaces
             // We first check we can compare the namespaces
-            if (other.methodInstanceCandidateNamespaces.Count <= 0)
+            if (other.methodInstanceCandidateNamespaces == null || other.methodInstanceCandidateNamespaces.Count <= 0)
                 return false;
 
             bool sameMethod = false;
@@ -94,6 +86,14 @@ namespace Domain.CodeInfo.MethodSystem
 
             if (_useLooseMatchingRules)
                 return sameMethod;
+
+            // Comparing if the owner class name between the Method and MethodInstance match through polymorphism
+            HashSet<string> actualMethodClasses = new HashSet<string>(this.ownerClassNameAndInheritedClasses);
+            HashSet<string> methodInstanceClasses = new HashSet<string>(other.ownerClassNameAndInheritedClasses);
+            IEnumerable<string> commonElements = actualMethodClasses.Intersect(methodInstanceClasses);
+            // If there was no polymorphsim(no classes in the inheritance that matched), then return false
+            if (commonElements.Count() == 0)
+                return false;
 
             for (int i = 0; i < methodParameters.Count; i++)
             {

@@ -4,34 +4,19 @@ namespace MyNamespace
 {
     public class Program
     {
-        public static void Main()
+        public IParseTree? GetRuleNodeInChildren(string ruleName, IParseTree parentRule, int initialOffset)
         {
-            var calculatedThing = CalculateNumbers((63f - 3f * weapon_Stats.GETRANGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE() - FPSCamera.FoV) * ((888 / 1) + GETZERORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORORO())
-            , FPSCamera.FoV / 100000f
-            , nununnuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu())
-            .PrintResults(((FPSCamera.FooooooooooooooooooooooooooooooooooooooooooooooooooooooV() < 15f + FPSCamera.ToFloat()) ? 15f : FPSCamera.FoV), "myString");
-            var otherResultsVariable = calculatedThing.PrintOtherResults();
-        }
-        public Result CalculateNumbers(int num1, float num2, double num3)
-        {
+            string suffix = "Context";
+            string childRuleName = "";
 
-        }
-        public OtherResult CalculateStuff(int num1, float num2, double num3)
-        {
-
-        }
-    }
-
-    public class Result
-    {
-        public OtherResult PrintResults()
-        {
-        }
-    }
-    public class OtherResult
-    {
-        public void PrintOtherResults()
-        {
+            // Iterates through all the children and compares if the rule of the child is equal to the ruleName
+            for (int j = initialOffset; j < parentRule.ChildCount; j++)
+            {
+                childRuleName = parentRule.GetChild(j).GetType().ToString();
+                childRuleName = childRuleName.Substring(childRuleName.LastIndexOf('+') + 1);
+                if (childRuleName.Equals(ruleName + suffix, StringComparison.OrdinalIgnoreCase)) {return parentRule.GetChild(j);}
+            }
+            return null;
         }
     }
 }
