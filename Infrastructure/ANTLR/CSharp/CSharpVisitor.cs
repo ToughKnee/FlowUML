@@ -57,9 +57,11 @@ namespace Infrastructure.Antlr
         /// </summary>
         private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
         /// <summary>
-        /// Property only to pass info from the local variable definition node to the method call node
+        /// Property created for the methodCall node when a prior node like the expression or local 
+        /// variables nodes have information about the type of the methodCall that the methodCall 
+        /// node won't be able to access
         /// </summary>
-        private string _actualConstructor = "";
+        private string? _methodCallReturnType = "";
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -394,6 +396,7 @@ namespace Infrastructure.Antlr
             IParseTree expressionChildNode;
             InstanceBuilder instanceBuilder = new(_mediator);
             var listWithBuilders = new List<AbstractBuilder<AbstractInstance>>();
+
             // If the expressionNode is null, then this is just a variable declaration, and we can get the type
             if(expressionNode == null)
             {
@@ -406,12 +409,14 @@ namespace Infrastructure.Antlr
             // If the expression is a methodCall, visit it and get the info of the assignment
             else if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
             {
+                // If the variable declaration looks like "MyType typeInstance = new();", then we store the type in the property for the methodCall node to set the methodInstance
                 if (expressionNode.GetText().Contains("new"))
                 {
-                    _actualConstructor = GetRuleNodeInChildren("type", context).GetText();
+                    _methodCallReturnType = GetRuleNodeInChildren("type", context).GetText();
                 }
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
+                _methodCallReturnType = null;
 
                 // Gets the Assignee and the Assigner and returns them
                 result = identifierNode.GetText() + separator + assignerExpression;
@@ -455,7 +460,15 @@ namespace Infrastructure.Antlr
             // Get the full text of the assignment 
             if(methodCallNode != null)
             {
+                var typeCasterNode = GetRuleNodeInChildren("typeCaster", context);
+                // Check if there are explicit type casters in this method call, and set a property to the type caster for the methodCall node to use it
+                if (typeCasterNode is not null)
+                {
+                    _methodCallReturnType = typeCasterNode.GetChild(1).GetText();
+                }
+
                 assignmentText = Visit(methodCallNode);
+                _methodCallReturnType = null;
             }
             else
             {
@@ -578,8 +591,13 @@ namespace Infrastructure.Antlr
             // If the method name is the "new" keyword then get the type of the variable and set this method call as a constructor
             if(methodName == "new")
             {
-                methodName = _actualConstructor;
+                methodName = _methodCallReturnType;
                 isConstructor = true;
+            }
+            // If this wasn't the "new()" constructor but the property containing the type of the method call isn't null, then there is a type caster and we make the methodInstanceBuilder set this type
+            else if(_methodCallReturnType != null)
+            {
+                methodInstanceBuilder.SetType(_methodCallReturnType);
             }
 
             // Get the argumentList to visit all the arguments, if they are methodCalls then visit them and remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList normally

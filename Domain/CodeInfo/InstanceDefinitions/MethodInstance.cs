@@ -92,10 +92,15 @@ namespace Domain.CodeInfo.InstanceDefinitions
         }
         private void HandleActualMethod(Method actualMethod)
         {
-            this.refType.data = actualMethod.returnType;
+            // If the type of this methodInstance wasn't already defined(by something like explicit type caster), then define it
+            if (String.IsNullOrEmpty(this.refType.data))
+            {
+                this.refType.data = actualMethod.returnType;
+            }
             this.linkedCallsite.calledMethod = actualMethod;
+
             // Check if the actualMethod or if the owner class of the actualMethod has typename parameters, if so, then look for the correct type used when instantiated
-            if(actualMethod.typenames is not null || (actualMethod.ownerClass is not null && actualMethod.ownerClass.typenames is not null))
+            if (actualMethod.typenames is not null || (actualMethod.ownerClass is not null && actualMethod.ownerClass.typenames is not null))
             {
                 bool typenameFound = false;
                 var callerClassTypenameParameters = Typename.GetTypenameList(callerClass.type);

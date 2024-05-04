@@ -6,7 +6,11 @@ namespace MyNamespace
     {
         public static Vector3 AimChange()
         {
-            Result instanceBuilder = new(otherResultsVariable);
+            // The "myWeapon" variable simulates a variable that couldn't be defined
+            var instance = (Outer)((Inner)GetInstanceOfClass());
+            CalculateNumbers((outerType) ((innerType) GetInstanceOfClass()))
+            .PrintResults(((FPSCamera.FoV() < 15f + FPSCamera.GetCameraValue()) ? 15f : Weapon.GetID()), "myString") 
+                - operatorBB() + operatorCC(conflicterFunction()).conflicterFunction();
         }
         public Result CalculateNumbers(int num1, float num2, double num3)
         {

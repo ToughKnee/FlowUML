@@ -707,7 +707,7 @@ Inherited Classes:
         }
 
         [Fact]
-        public void MediatorCreatedInstancesWitHardInstances_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        public void MediatorCreatedInstancesWithVeryDeepMethodCallsAndSpecialFeatures_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
         {
             // Arrange
             var mediator = new AntlrMediator();
@@ -741,12 +741,14 @@ Inherited Classes:
             var PrintOtherResultsMethod = classEntitiesList[2].methods[0];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(5);
+            Program_Main.callsites.Count.Should().Be(7);
             Program_Main.callsites[0].calledMethod.Should().Be(CalculateNumbersMethod);
             Program_Main.callsites[1].calledMethod.Should().Be(PrintResultsMethod);
             Program_Main.callsites[2].calledMethod.Should().Be(PrintOtherResultsMethod);
             Program_Main.callsites[3].calledMethod.Should().Be(PrintOtherResultsMethod);
             Program_Main.callsites[4].calledMethod.Should().Be(ResultsConstructorMethod);
+            Program_Main.callsites[5].calledMethod.Should().Be(PrintOtherResultsMethod);
+            Program_Main.callsites[6].calledMethod.Should().Be(PrintOtherResultsMethod);
         }
         [Fact]
         public void MediatorCreatedInstancesWithVeryDeepMethodCalls_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()

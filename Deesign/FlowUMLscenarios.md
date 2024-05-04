@@ -128,6 +128,8 @@ Whenever there is an "advancedIdentifier" in a node in the ANTLR Visitor, then t
         Measure that through checking where does this function is **WRITING TO**, which clearly means changes in state, rather than being purely functional
 +++Look how much data IS WRITTEN to other components to mark the **Influence** of this Method to other parts of the code(This will also enable **implicit changes**, when a method uses another method, where all the WRITES that other method has are trasnfered to the original method automatically)
 ++Look how much data IS READ from other components and mark the **Susceptibility** of this Method to changes from other places
++Be able to know when there are 2 methods connected by accesing data, and remarking if we are adding complexity if both methods read AND WRITE, and it would be better to just make one READ and the other WRITE
++Be able to mark special data **if they are used in if statements(or similar)**, remarking how important the data is and its influence on other parts of other methods
 -Create a new class that must manage all of this
 -Make the Instance class send that information whenever its **type is defined**
 

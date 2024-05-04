@@ -259,10 +259,15 @@ returnExpression
     : RETURN (identifier | expression)
     ;
 
+typeCaster
+    : '(' advancedTypeName ')'
+    ;
 // Something that returns something
 expression
     :
+    typeCaster?
     '('?'('?'('?
+        typeCaster?
         (ternaryOperatorExpression indexRetrieval?
         | comparisonExpression
         | methodCall
