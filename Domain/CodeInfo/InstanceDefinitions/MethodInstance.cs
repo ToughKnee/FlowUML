@@ -103,7 +103,17 @@ namespace Domain.CodeInfo.InstanceDefinitions
             if (actualMethod.typenames is not null || (actualMethod.ownerClass is not null && actualMethod.ownerClass.typenames is not null))
             {
                 bool typenameFound = false;
-                var callerClassTypenameParameters = Typename.GetTypenameList(callerClass.type);
+                List<Typename> callerClassTypenameParameters;
+
+                // If the caller class type isn't defined, then we don't know the types used to instantiate the templates and we can't solve this
+                if (String.IsNullOrEmpty(callerClass.type))
+                {
+                    this.refType.data = null;
+                    return;
+                }
+                else
+                    callerClassTypenameParameters = Typename.GetTypenameList(callerClass.type);
+    
                 // Look for the typename parameter in the actualMethod typename, if the typename was there, then set the real return type
                 for (int i = 0; actualMethod.typenames != null && i < actualMethod.typenames.Count; i++)
                 {

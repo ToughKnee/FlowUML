@@ -137,20 +137,5 @@ namespace Domain.CodeInfo.InstanceDefinitions
             }
             return firstChainedInstance;
         }
-
-
-        //public override bool Equals(object obj)
-        //{
-        //    if (obj == null || GetType() != obj.GetType())
-        //        return false;
-
-        //    AbstractInstance absInstance = (AbstractInstance)obj;
-        //    return this.name == absInstance.name;
-        //}
-
-        //public override int GetHashCode()
-        //{
-        //    return this.name.GetHashCode();
-        //}
     }
 }

@@ -326,6 +326,8 @@ namespace Infrastructure.Antlr
         }
         public void ProcessMethodBodyContent(IParseTree methodBodyNode)
         {
+            if (methodBodyNode == null)
+                return;
             for (int j = 1; j < methodBodyNode.ChildCount - 1; j++)
             {
                 // Get the local variable rule if there is
@@ -410,16 +412,18 @@ namespace Infrastructure.Antlr
             else if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
             {
                 // If the variable declaration looks like "MyType typeInstance = new();", then we store the type in the property for the methodCall node to set the methodInstance
-                if (expressionNode.GetText().Contains("new"))
+                if (expressionNode.GetText().Contains("new("))
                 {
-                    _methodCallReturnType = GetRuleNodeInChildren("type", context).GetText();
+                    _methodCallReturnType = (GetRuleNodeInChildren("type", context) is not null && GetRuleNodeInChildren("type", context).GetText() != "var") 
+                        ? (GetRuleNodeInChildren("type", context).GetText()) : (null);
                 }
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
                 _methodCallReturnType = null;
 
-                // Gets the Assignee and the Assigner and returns them
-                result = identifierNode.GetText() + separator + assignerExpression;
+                // Gets the Assignee and the Assigner and returns them, if the assignee is a property of a class, then leave the assignee null
+                var identifierText = (identifierNode is not null) ? (identifierNode.GetText()) : ("");
+                result = identifierText + separator + assignerExpression;
                 listWithBuilders = _methodInstanceBuildersStack.Cast<AbstractBuilder<AbstractInstance>>().ToList();
                 _methodInstanceBuildersStack.Clear();
             }
@@ -428,11 +432,18 @@ namespace Infrastructure.Antlr
             {
                 // If the assignee is not a simple variable(and instead is a property of a class) then do nothing
                 if (identifierNode == null) return "";
+
+                var typeNode = GetRuleNodeInChildren("type", context);
+                // If the type of the variable isn't "var", then we set the type
+                if (typeNode is not null && typeNode.GetText() != "var")
+                {
+                    instanceBuilder.SetType(typeNode.GetText());
+                }
                 listWithBuilders.Add(instanceBuilder);
                 instanceBuilder.SetCallerClassName(expressionChildNode.GetText());
                 var indexRetrievalInstance = ProcessIndexRetrieval(expressionNode);
                 instanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
-                result = identifierNode.GetText() + separator + expressionNode.GetText();
+                result = identifierNode.GetText() + separator + expressionChildNode.GetText();
             }
             // TODO: Visit other localVariableDefinition nodes chained, the things like "var thing1 = 1, thing2 = 2"
 
@@ -440,6 +451,9 @@ namespace Infrastructure.Antlr
             if (result.Contains("-"))
             {
                 string[] assignmentValues = result.Split("-");
+                // If there are arithmetic operations expressions, and there is no immediate method call, then return and do nothing
+                if (GetRuleNodeInChildren("arithmeticOperations", expressionNode) is not null && GetRuleNodeInChildren("methodCall", expressionNode) is null)
+                    return assignerExpression;
                 _mediator.ReceiveLocalVariableDefinition(assignmentValues[0], assignmentValues[1], listWithBuilders);
             }
 
@@ -461,14 +475,19 @@ namespace Infrastructure.Antlr
             if(methodCallNode != null)
             {
                 var typeCasterNode = GetRuleNodeInChildren("typeCaster", context);
+                string methodCallReturnTypeBackup = _methodCallReturnType;
                 // Check if there are explicit type casters in this method call, and set a property to the type caster for the methodCall node to use it
                 if (typeCasterNode is not null)
                 {
                     _methodCallReturnType = typeCasterNode.GetChild(1).GetText();
                 }
+                else if(_methodCallReturnType != null)
+                {
+                    _methodCallReturnType = null;
+                }
 
                 assignmentText = Visit(methodCallNode);
-                _methodCallReturnType = null;
+                _methodCallReturnType = methodCallReturnTypeBackup;
             }
             else
             {

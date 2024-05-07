@@ -19,7 +19,7 @@ namespace Infrastructure.Builders
         protected AbstractInstance? _callerClass = null;
         protected AbstractInstance? _callerClassChainedInstance = null;
         protected AbstractInstance? _indexRetrievalInstance = null;
-        private string? _type = null;
+        protected string? _type = null;
         protected KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
         protected readonly string _paramIdentifier = "<p>";
         /// <summary>

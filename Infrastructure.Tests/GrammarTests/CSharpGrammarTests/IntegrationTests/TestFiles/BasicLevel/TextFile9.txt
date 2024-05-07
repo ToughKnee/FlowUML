@@ -20,6 +20,9 @@ class Program
           myClassFromCollectionHard.normalThing();
           var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
           thing.myFuncCall();
+
+          var myOtherClassElementVar = myth.myOtherClass.ElementAt(1);
+          myOtherClassElementVar.myOtherClassFunction();
    }
    static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
    {

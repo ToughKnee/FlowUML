@@ -1,0 +1,149 @@
+using System;
+using System.Collections.Immutable;
+
+namespace Domain.CodeInfo.MethodSystem
+{
+    public class MethodIdentifier
+    {
+        public string methodBelongingNamespace;
+        public List<string> methodInstanceCandidateNamespaces;
+        public List<string> ownerClassNameAndInheritedClasses;
+        public string methodName;
+        public List<string> methodParameters;
+        public string methodReturnType;
+        /// <summary>
+        /// Boolean used to switch between rules for matching of methods
+        /// less strict
+        /// </summary>
+        private static bool _useLooseMatchingRules = false;
+
+        /// <summary>
+        /// When there is a moment where MethodInstances can't find all the data to fully know the 
+        /// Method signature, then we change the way how Method can be matched by MethodInstances 
+        /// with less data and higher chances of matching actual Methods, but also less accuracy and possible mismatch        
+        /// </summary>
+        public static void UseLooseMatchingRules()
+        {
+            _useLooseMatchingRules = true;
+        }
+        public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
+        {
+            // After the code analysis of all files is complete, we start building the ClassEntities and Methods(which are built within the ClassEntityBuilder)
+            foreach (var builder in builders)
+            {
+                builder.Build();
+            }
+        }
+    }
+}
+
+namespace Infrastructure.Builders
+{
+    /// <summary>
+    /// Method builder used by the antlr visitor and be passed to another class which 
+    /// uses it as an abstract builder and get the finished ClassEntity alongside the Methods
+    /// </summary>
+    public class ClassEntityBuilder : AbstractBuilder<ClassEntity>
+    {
+        public ClassEntity Build()
+        {
+        }
+        public ClassEntityBuilder SetName(string name)
+        {
+            this.name = name;
+            return this;
+        }
+        public ClassEntityBuilder SetNamespace(string belongingNamespace)
+        {
+            this.belongingNamespace = belongingNamespace;
+            return this;
+        }
+        public ClassEntityBuilder AddProperty(string type, string name)
+        {
+            this.properties.Add(new Property(type, name));
+            return this;
+        }
+        public ClassEntityBuilder AddMethod(MethodBuilder methodBuilder)
+        {
+            this.methodBuilders.Add(methodBuilder);
+            return this;
+        }
+        public ClassEntityBuilder SetTypename(List<Typename> typenameList)
+        {
+            typenames = typenameList;
+            return this;
+        }
+    }
+}
+
+namespace Infrastructure.Builders
+{
+    /// <summary>
+    /// Interface to be used by classes that need to receive
+    /// a certain class that was built by another with a 
+    /// concrete builder
+    /// </summary>
+    public interface AbstractBuilder<T>
+    {
+        /// <summary>
+        /// Returns the class built by the concrete builder
+        /// </summary>
+        /// <returns></returns>
+        public T Build();
+    }
+}
+
+
+
+namespace Infrastructure.Builders
+{
+    /// <summary>
+    /// Instance Builder usd by the c sharp visitor just like the method instnace builder
+    /// where these builders are also passed to the Mediator
+    /// This Builder only focuses on one part of the method instance builder which is the 
+    /// class caller, even though in this kind of objects there are no call, the class callers
+    /// are the "myObject" from the "myObject.prop1.prop2[0]"
+    /// This is inherited by the method instnace builder because that part of the class callers
+    /// has the same processing for both builders
+    /// </summary>
+    public class InstanceBuilder : AbstractBuilder<AbstractInstance>
+    {
+        protected AbstractInstance? _callerClass = null;
+        protected AbstractInstance? _callerClassChainedInstance = null;
+        protected AbstractInstance? _indexRetrievalInstance = null;
+        protected string? _type = null;
+        protected KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
+        protected readonly string _paramIdentifier = "<p>";
+        /// <summary>
+        /// Used to get important data from the analysis of the code files which is 
+        /// needed to build the methodInstance
+        /// </summary>
+        protected IMediator _mediator;
+        /// <summary>
+        /// Reado only dictionary from the mediator, used to know when there are instances with their defined type used 
+        /// in a method and we must identify it
+        /// </summary>
+        protected IReadOnlyDictionary<string, AbstractInstance> _knownInstancesDeclaredInCurrentMethodAnalysis = new Dictionary<string, AbstractInstance>();
+
+        public InstanceBuilder(IMediator mediator)
+        {
+            _mediator = mediator;
+            _knownInstancesDeclaredInCurrentMethodAnalysis = mediator.GetKnownInstancesDeclaredInCurrentMethodAnalysis();
+        }
+        public InstanceBuilder()
+        {
+        }
+
+        public AbstractInstance Build()
+        {
+            _callerClass.chainedInstance = _callerClassChainedInstance;
+            if(_type != null)
+            {
+                _callerClass.kind = KindOfInstance.Normal;
+                _callerClass.refType.data = _type;
+            }
+            AbstractInstance.GetLastChainedInstance(_callerClass).indexRetrievedInstance = _indexRetrievalInstance;
+            return _callerClass;
+        }
+    }
+}

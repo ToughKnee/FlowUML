@@ -687,7 +687,7 @@ Inherited Classes:
             var myOtherClassFunctionMethod = classEntitiesList[2].methods[0];
 
             // Checking the callsites of the Program class
-            Program_Main.callsites.Count.Should().Be(15);
+            Program_Main.callsites.Count.Should().Be(17);
             Program_Main.callsites[0].calledMethod.Should().Be(null);
             Program_Main.callsites[1].calledMethod.Should().Be(otherThingMethod);
             Program_Main.callsites[2].calledMethod.Should().Be(differentOtherThingMethod);
@@ -704,6 +704,9 @@ Inherited Classes:
             Program_Main.callsites[12].calledMethod.Should().Be(otherThingMethod);
             Program_Main.callsites[13].calledMethod.Should().Be(myOtherClassFunctionMethod);
             Program_Main.callsites[14].calledMethod.Should().Be(myFuncCallMethod);
+
+            Program_Main.callsites[15].calledMethod.Should().Be(null);
+            Program_Main.callsites[16].calledMethod.Should().Be(myOtherClassFunctionMethod);
         }
 
         [Fact]
@@ -774,6 +777,63 @@ Inherited Classes:
 
             //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
             ClassEntityManager.instance.classEntities.Count.Should().Be(4);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Creating the references to the methods to be checked
+            var Program_Main = classEntitiesList[0].methods[0];
+            var CalculateNumbersMethod = classEntitiesList[0].methods[1];
+            var GetConstantTimeMethod = classEntitiesList[0].methods[2];
+            var operatorBBMethod = classEntitiesList[0].methods[3];
+            var operatorCCMethod = classEntitiesList[0].methods[4];
+            var conflicterFunctionMethodReturnFloat = classEntitiesList[0].methods[5];
+            var GetRangeMethod = classEntitiesList[1].methods[0];
+            var GetIDMethod = classEntitiesList[1].methods[1];
+            var FoVMethod = classEntitiesList[2].methods[0];
+            var GetCameraValueMethod = classEntitiesList[2].methods[1];
+            var conflicterFunctionMethodReturnDouble = classEntitiesList[2].methods[2];
+            var PrintResultsMethod = classEntitiesList[3].methods[0];
+
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(13);
+            Program_Main.callsites[0].calledMethod.Should().Be(GetRangeMethod);
+            Program_Main.callsites[1].calledMethod.Should().Be(FoVMethod);
+            Program_Main.callsites[2].calledMethod.Should().Be(GetConstantTimeMethod);
+            Program_Main.callsites[3].calledMethod.Should().Be(operatorBBMethod);
+            Program_Main.callsites[4].calledMethod.Should().Be(CalculateNumbersMethod);
+            Program_Main.callsites[5].calledMethod.Should().Be(FoVMethod);
+            Program_Main.callsites[6].calledMethod.Should().Be(GetCameraValueMethod);
+            Program_Main.callsites[7].calledMethod.Should().Be(GetIDMethod);
+            Program_Main.callsites[8].calledMethod.Should().Be(PrintResultsMethod);
+            Program_Main.callsites[9].calledMethod.Should().Be(operatorBBMethod);
+            Program_Main.callsites[10].calledMethod.Should().Be(conflicterFunctionMethodReturnFloat);
+            Program_Main.callsites[11].calledMethod.Should().Be(operatorCCMethod);
+            Program_Main.callsites[12].calledMethod.Should().Be(conflicterFunctionMethodReturnDouble);
+        }
+        [Fact]
+        public void MediatorCreatedInstancesWithRealCode_MethodInstancesResolveTheirTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\AdvTextFile5.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            //            classStrings[0].Should().Be(@"Name: SNode
+            //Inherited Classes:
+            //");
+
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            //ClassEntityManager.instance.classEntities.Count.Should().Be(2);
 
             var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
 

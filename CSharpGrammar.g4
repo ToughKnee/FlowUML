@@ -135,8 +135,15 @@ classDeclarations
     ;
 
 classDeclaration
-    : attributes? accessModifier? 'class' identifier templateTypeName? classHeritage?
-        classBodyContent?
+    : attributes? accessModifier? typeOfClassDeclaration identifier templateTypeName? classHeritage?
+        classBodyContent
+    | attributes? accessModifier? 'enum' identifier
+        '{' (advancedIdentifier ','?)* '}'
+    ;
+
+typeOfClassDeclaration
+    : 'asbtract'? 'class'
+    | 'interface'
     ;
 
 // This will get the properties and methods regardless of their positions inside the body of the class
@@ -162,14 +169,18 @@ classContent
 ;
 
 property
-    : (attributes | accessModifier | modifiers )* type identifier SEMICOLON
+    : (attributes | accessModifier | modifiers )* type identifier (methodBodyContent)? ('=' '>'? expression)? SEMICOLON?
     ;
 
 method
     :    
     (attributes | accessModifier | modifiers)* type? identifier templateTypeName?
-    '(' parameterList? ')'
-    methodBodyContent
+    '(' parameterList? ')' baseConstructor?
+    (methodBodyContent | ';')
+    ;
+
+baseConstructor
+    : ':' methodCall
     ;
 
 attributeIdentifier
@@ -268,12 +279,13 @@ expression
     typeCaster?
     '('?'('?'('?
         typeCaster?
-        (ternaryOperatorExpression indexRetrieval?
+        (
+        ternaryOperatorExpression indexRetrieval?
+        | localVariableDefinition
         | comparisonExpression
         | methodCall
         | advancedIdentifier ('--')? ('++')?
         | advancedIdentifier indexRetrieval?
-        | localVariableDefinition
         | string
         | number
         | returnExpression)
@@ -292,8 +304,8 @@ expressionMethodCall
     ;
 
 methodCall
-    : new? '!'? (advancedIdentifier | type | new) ('(' argumentList? ')') indexRetrieval? expressionChain?
-    | new type ('[' argumentList? ']')? indexRetrieval? expressionChain?
+    : 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
+    | 'throw'? new type templateTypeName? ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 
 // This rule denotes the properties or methods from other complex expressions like methods or a value from a collection retrieved with indexers, simple properties chains like "myClass.myProp1.myProp2" are covered by the "advancedIdentifier" rule 

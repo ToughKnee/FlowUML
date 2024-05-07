@@ -14,7 +14,6 @@ namespace Infrastructure.Builders
         /// </summary>
         private bool _hasMethodCallParameters = false;
         private string _methodName;
-        private string _type;
         // private AbstractInstance? _callerClass = null;
         /// <summary>
         /// List of objects that represents the parameters, which can only be of kind "Instance"
@@ -159,11 +158,6 @@ namespace Infrastructure.Builders
         public MethodInstanceBuilder SetMethodKind(KindOfInstance kind)
         {
             this._methodInstanceKind = kind;
-            return this;
-        }
-        public MethodInstanceBuilder SetType(string type)
-        {
-            this._type = type;
             return this;
         }
     }

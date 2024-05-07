@@ -2,11 +2,11 @@
 //===========================  「 Feature 」     ※ Mediator between AntlrVisitor and instancesManager
         Responsibilities(+|-):
 +Decoupled way to handle the info and then convert the info to instanceManager info
-+Mediator is responsible of 'caching' the raw info to be able to link Instances between them
++Mediator is responsible of 'caching' the raw info to be able to link Instances between them(like a MethodInstance containing another Instance)
 +Can be modularized separating the Concrete Instances creation, making room for more complex logic when creating the Instances
 +Is the intermediary step between **extracting raw data** and **making the links between this data**
 +Makes instances get linked with other instances that relate to each other to later find their types
-+Uses the other Managers that store data to be facilitated to other classes
++Stores data into the other DictionaryManagers to then be used by other classes
 -Drawbacks
 
 「 Scenario 」     ※ Receive info to create Instances
@@ -61,42 +61,14 @@ Then:
 Result:
         -The ClassEntityManager has all the ClassEntities with the respective Methods which contain their Callsites defined to all the parts of the code thanks to the MethodInstances and we have finished the code analysis
 
-
-//===========================   「 Feature 」     ※ MethodDictionaryInstance
-        Responsibilities(+|-):
-+Lets the MethodInstances access this dictionary and check with their complete signature the Method instance they needed
--Drawbacks
-
-
 //===========================   「 Feature 」     ※ MethodIdentifier: Recognizer between MethodInstanceSignature and MethodSignature
         Reason:
 -We need to find a match between info that a MethodInstance has and info an actual Method has
 -Both objects have the same info, EXCEPT for the returnType and namespaces, which the Method knows well and the MethodInstance doesn't but has a List of possible candidates
 
         Responsibilities(+|-):
-+Special lookup when MethodInstance requests the actual Method to the InstancesManager
++Special lookup when MethodInstance requests the actual Method to the InstancesManager using the `GetHash` and `Equals` methods
 -Drawbacks
-
-
-「 Scenario 」     ※ Linkage with Instance at 'Deconstruct' assignment
--This refers to the case when the ANTLR Visitor found an assignment like 'var (calledClassName, calledMethodName, calledParameters, propertyChainString, linkedMethodBuilder, isConstructor) = callData;', where 'callData' is a record, and we need to assign to EACH identifier inside the parentheses the value defined in the 'Deconstruct' method of the record class
-Given:
-        -The ANTLR Visitor found the described local variable assignment
-When:
-        -Mediator is creating the Instances for all the new variables and the MethodInstance
-Then:
-        -The Mediator must use something that creates and links the Instances with the MethodInstance that will give the type to each Instance to be linked
-        -(TODO)Make the MethodInstance have a new class that will take care of the Instances
-
-「 Scenario 」     ※ Type resolution for 'Deconstruct' MethodInstances
-Given:
-        -ANTLR Visitor finished analysis
-        -The MethodInstance knows when it is of type Deconstruct and 
-        -The MethodInstance class is linked to each Instance
-When:
-        -
-Then:
-        -
 
 
 //===========================  
@@ -130,6 +102,7 @@ Whenever there is an "advancedIdentifier" in a node in the ANTLR Visitor, then t
 ++Look how much data IS READ from other components and mark the **Susceptibility** of this Method to changes from other places
 +Be able to know when there are 2 methods connected by accesing data, and remarking if we are adding complexity if both methods read AND WRITE, and it would be better to just make one READ and the other WRITE
 +Be able to mark special data **if they are used in if statements(or similar)**, remarking how important the data is and its influence on other parts of other methods
++Able to say **which method calls DEFINE this data**, which help know how 
 -Create a new class that must manage all of this
 -Make the Instance class send that information whenever its **type is defined**
 
@@ -181,14 +154,23 @@ Then:
 
 *Because we needed that when a Method Instance created itself before the Method declaration
 
-「 Scenario 」     ※ Create a new instance from code
-PS: This requires the usage of the InstancesDictionary
+//===========================  
+//===========================  「 Feature 」     ※ InstanceBuilder
+        Responsibilities(+|-):
+++Be responsible for the creation of Instances and setting their data accordingly, **based on the data received from the ANTLR Visitor and the data from the Mediator**
+-Drawbacks
+
+*Because we needed that when a Method Instance created itself before the Method declaration
+
+「 Scenario 」     ※ Variable declaration
 Given:
         -AntlrVisitor analysis ongoing
-        -There are instances in the knownInstancesDict, which may be retrieved
 When:
-        -We find code which creates an instance(local variable or methodCall)
+        -The visitor finds a local variable definition statement
+        -There is a type in the statement(if there is no type node in the variable definition, then exit)
 Then:
         -We check into the instancesDictionary to see if the assigner or components of the methodCall have already been 
         identified(only used to link the new instance with the instance that is assigning a value)
         -If there is no instance that matched the assigner or components of the methodCall, we must add the assigne and assigner, or just the methodCall, to the instancesDictionary, in order to later identify them
+        -We check if the type is present(like "MyType Instance;") and set the type if so
+

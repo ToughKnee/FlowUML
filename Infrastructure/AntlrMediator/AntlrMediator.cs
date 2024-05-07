@@ -131,6 +131,12 @@ namespace Infrastructure.Mediators
             {
                 instanceAssignee = instanceAssignerBuilders[0].Build();
             }
+            // If the asignee is null then just build the methodInstance and return
+            else if (String.IsNullOrEmpty(assignee))
+            {
+                instanceAssignerBuilders[0].Build();
+                return;
+            }
             // If the declaration is simple
             else
             {
