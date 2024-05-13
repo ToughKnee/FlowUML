@@ -12,6 +12,47 @@ namespace Infrastructure.Antlr
     public class CSharpVisitor : CSharpGrammarBaseVisitor<string?>
     {
         /// <summary>
+        /// Class that stores the actual type of a method call return type when a previous node 
+        /// like local variable or expression node have the actual type of a MethodCall 
+        /// but the method call node isn't able to get that type
+        /// Uses a Stack to be able to store multiple actual types
+        /// </summary>
+        private class MethodActualTypeContainer
+        {
+            /// <summary>
+            /// This is the method's signature which this type is intended to
+            /// when the methodCall node is looking for its actual type
+            /// </summary>
+            private string _methodNameIdentifier;
+            private string _actualType;
+            public static Stack<MethodActualTypeContainer> _previousActualInstance = new();
+
+            public MethodActualTypeContainer(string actualType, string methodName)
+            {
+                PushActualType(actualType, methodName);
+            }
+            public void PushActualType(string actualType, string methodName)
+            {
+                _actualType = actualType;
+                _methodNameIdentifier = methodName;
+                MethodActualTypeContainer._previousActualInstance.Push(this);
+            }
+            public static string PopActualType()
+            {
+                return MethodActualTypeContainer._previousActualInstance.Pop()._actualType;
+            }
+            public static bool CheckForActualMethodType(string methodSignature)
+            {
+                if(_previousActualInstance.Count == 0) 
+                    return false;
+                var currentMethodType = _previousActualInstance.Peek();
+                if(currentMethodType._methodNameIdentifier == methodSignature)
+                    return true;
+                else
+                    return false;
+            }
+        }
+        /// <summary>
         /// Mediator that receives the data from the localVariables and such to manage them
         /// and define the Domain classes
         /// </summary>
@@ -56,12 +97,6 @@ namespace Infrastructure.Antlr
         /// this is sent to the mediator and cleared to keep doing the same process
         /// </summary>
         private Stack<MethodInstanceBuilder> _methodInstanceBuildersStack = new();
-        /// <summary>
-        /// Property created for the methodCall node when a prior node like the expression or local 
-        /// variables nodes have information about the type of the methodCall that the methodCall 
-        /// node won't be able to access
-        /// </summary>
-        private string? _methodCallReturnType = "";
 
         public CSharpVisitor(IMediator mediator)
         {
@@ -414,12 +449,11 @@ namespace Infrastructure.Antlr
                 // If the variable declaration looks like "MyType typeInstance = new();", then we store the type in the property for the methodCall node to set the methodInstance
                 if (expressionNode.GetText().Contains("new("))
                 {
-                    _methodCallReturnType = (GetRuleNodeInChildren("type", context) is not null && GetRuleNodeInChildren("type", context).GetText() != "var") 
-                        ? (GetRuleNodeInChildren("type", context).GetText()) : (null);
+                    new MethodActualTypeContainer((GetRuleNodeInChildren("type", context) is not null && GetRuleNodeInChildren("type", context).GetText() != "var") 
+                        ? (GetRuleNodeInChildren("type", context).GetText()) : (null), expressionChildNode.GetText());
                 }
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
-                _methodCallReturnType = null;
 
                 // Gets the Assignee and the Assigner and returns them, if the assignee is a property of a class, then leave the assignee null
                 var identifierText = (identifierNode is not null) ? (identifierNode.GetText()) : ("");
@@ -475,19 +509,14 @@ namespace Infrastructure.Antlr
             if(methodCallNode != null)
             {
                 var typeCasterNode = GetRuleNodeInChildren("typeCaster", context);
-                string methodCallReturnTypeBackup = _methodCallReturnType;
-                // Check if there are explicit type casters in this method call, and set a property to the type caster for the methodCall node to use it
+
+                // Check if there are explicit type casters in this method call, and set the data for the method call node to receive it
                 if (typeCasterNode is not null)
                 {
-                    _methodCallReturnType = typeCasterNode.GetChild(1).GetText();
-                }
-                else if(_methodCallReturnType != null)
-                {
-                    _methodCallReturnType = null;
+                    new MethodActualTypeContainer(typeCasterNode.GetChild(1).GetText(), methodCallNode.GetText());
                 }
 
                 assignmentText = Visit(methodCallNode);
-                _methodCallReturnType = methodCallReturnTypeBackup;
             }
             else
             {
@@ -535,7 +564,6 @@ namespace Infrastructure.Antlr
                 indexRetrievalInstanceResult.chainedInstance = chainedInstance;
             }
             // TODO: At some point process also other IndexRetrieval nodes
-         
             return indexRetrievalInstanceResult;
         }
 
@@ -580,7 +608,12 @@ namespace Infrastructure.Antlr
             //===========================  Getting the components of the method called
             bool isConstructor = GetRuleNodeInChildren("new", context) != null;
             string completeFunctionString = context.GetText(), namespaceAndClass = "", methodName = "";
-            completeFunctionString = (completeFunctionString.Replace("new", "").IndexOf('(') <= 0) ? (completeFunctionString) : (completeFunctionString.Replace("new", ""));
+
+            // Removing the new keyword from the actual method call
+            if(isConstructor)
+            {
+                completeFunctionString = completeFunctionString.Remove(completeFunctionString.IndexOf("new"), 3);
+            }
             int firstParenthesesIndex = completeFunctionString.IndexOf('(');
             List<object> parameterList = new();
             if(firstParenthesesIndex > 0)
@@ -610,13 +643,13 @@ namespace Infrastructure.Antlr
             // If the method name is the "new" keyword then get the type of the variable and set this method call as a constructor
             if(methodName == "new")
             {
-                methodName = _methodCallReturnType;
+                methodName = MethodActualTypeContainer.PopActualType();
                 isConstructor = true;
             }
             // If this wasn't the "new()" constructor but the property containing the type of the method call isn't null, then there is a type caster and we make the methodInstanceBuilder set this type
-            else if(_methodCallReturnType != null)
+            else if(MethodActualTypeContainer.CheckForActualMethodType(context.GetText()))
             {
-                methodInstanceBuilder.SetType(_methodCallReturnType);
+                methodInstanceBuilder.SetType(MethodActualTypeContainer.PopActualType());
             }
 
             // Get the argumentList to visit all the arguments, if they are methodCalls then visit them and remove them from the _methodCallDataList and move them to the parameter list, if they are normal variables then add them to the parameterList normally

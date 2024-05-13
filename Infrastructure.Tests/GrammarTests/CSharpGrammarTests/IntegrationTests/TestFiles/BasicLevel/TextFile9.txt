@@ -9,8 +9,8 @@ class Program
           var thing3 = myth.otherThing().myList[0].differentOtherThing();
           thing3.myOtherClassFunction();
           Assign(myth
-          , GetMyList()[0].otherThing()
-          , GetMyList());
+          , GetMynewList()[0].otherThing()
+          , GetMynewList());
           
           var otherMyth = new myOtherClass();
           var myClassCollection = otherMyth.myList;
@@ -27,7 +27,7 @@ class Program
    static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
    {
    }
-   static List<myClass> GetMyList()
+   static List<myClass> GetMynewList()
    {
      return new List<myClass>();
    }
