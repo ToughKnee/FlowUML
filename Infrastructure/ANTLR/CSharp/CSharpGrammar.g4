@@ -142,7 +142,7 @@ classDeclaration
     ;
 
 typeOfClassDeclaration
-    : 'asbtract'? 'class'
+    : 'abstract'? 'class'
     | 'interface'
     ;
 
@@ -150,7 +150,7 @@ typeOfClassDeclaration
 classBodyContent
     :
     '{'
-        classContent*
+        (classContent | classDeclaration)*
     '}'
     ;
 
@@ -176,7 +176,7 @@ method
     :    
     (attributes | accessModifier | modifiers)* type? identifier templateTypeName?
     '(' parameterList? ')' baseConstructor?
-    methodBodyContent
+    (methodBodyContent | ';')
     ;
 
 baseConstructor
@@ -303,8 +303,13 @@ expressionMethodCall
     : AWAIT? methodCall
     ;
 
+// This rule hereis made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
+specialMethodCallCaller
+    : '('?'('?'('? typeCaster? advancedIdentifier indexRetrieval? ')'?')'?')'? '.' advancedIdentifier
+    ;
+
 methodCall
-    : 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
+    : 'throw'? new? '!'? (advancedIdentifier | type | new | specialMethodCallCaller) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
     | 'throw'? new type templateTypeName? ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 

@@ -1,77 +1,24 @@
-using System;
-using System.Collections.Immutable;
-
-namespace Domain.CodeInfo.MethodSystem
+namespace Domain.CodeInfo.InstanceDefinitions
 {
-    public class MethodIdentifier
+    /// <summary>
+    /// An instance is a variable, parameter or method return type that has a type which we need to know when a ClassEntity calls another ClassEntity
+    /// </summary>
+    public abstract class AbstractInstance
     {
-        public string methodBelongingNamespace;
-        public List<string> methodInstanceCandidateNamespaces;
-        public List<string> ownerClassNameAndInheritedClasses;
-        public string methodName;
-        public List<string> methodParameters;
-        public string methodReturnType;
-        /// <summary>
-        /// Boolean used to switch between rules for matching of methods
-        /// less strict
-        /// </summary>
-        private static bool _useLooseMatchingRules = false;
-
-        /// <summary>
-        /// When there is a moment where MethodInstances can't find all the data to fully know the 
-        /// Method signature, then we change the way how Method can be matched by MethodInstances 
-        /// with less data and higher chances of matching actual Methods, but also less accuracy and possible mismatch        
-        /// </summary>
-        public static void UseLooseMatchingRules()
+        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, List<AbstractBuilder<AbstractInstance>>? instanceAssignerBuilders)
         {
-            _useLooseMatchingRules = true;
-        }
-        public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
-        {
-            // After the code analysis of all files is complete, we start building the ClassEntities and Methods(which are built within the ClassEntityBuilder)
-            foreach (var builder in builders)
+            if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(assigner, out AbstractInstance knownAssignerInstance) && knownAssignerInstance is not MethodInstance)
             {
-                builder.Build();
+                var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build();
             }
         }
     }
-}
 
-namespace Infrastructure.Builders
-{
-    /// <summary>
-    /// Method builder used by the antlr visitor and be passed to another class which 
-    /// uses it as an abstract builder and get the finished ClassEntity alongside the Methods
-    /// </summary>
-    public class ClassEntityBuilder : AbstractBuilder<ClassEntity>
+    public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
     {
-        public ClassEntity Build()
+        foreach (var builder in builders)
         {
-        }
-        public ClassEntityBuilder SetName(string name)
-        {
-            this.name = name;
-            return this;
-        }
-        public ClassEntityBuilder SetNamespace(string belongingNamespace)
-        {
-            this.belongingNamespace = belongingNamespace;
-            return this;
-        }
-        public ClassEntityBuilder AddProperty(string type, string name)
-        {
-            this.properties.Add(new Property(type, name));
-            return this;
-        }
-        public ClassEntityBuilder AddMethod(MethodBuilder methodBuilder)
-        {
-            this.methodBuilders.Add(methodBuilder);
-            return this;
-        }
-        public ClassEntityBuilder SetTypename(List<Typename> typenameList)
-        {
-            typenames = typenameList;
-            return this;
+            builder.Build();
         }
     }
 }
@@ -92,8 +39,6 @@ namespace Infrastructure.Builders
         public T Build();
     }
 }
-
-
 
 namespace Infrastructure.Builders
 {

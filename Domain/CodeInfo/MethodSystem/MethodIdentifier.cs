@@ -31,7 +31,7 @@ namespace Domain.CodeInfo.MethodSystem
             _useLooseMatchingRules = true;
         }
         /// <summary>
-        /// This override is aimed to just contemplate the other parts of the 
+        /// This override is aimed to just contemplate the other parts of the
         /// method EXCEPT for the namespaces and owner class name, which if there are 2 methods that 
         /// are the same according to this, then we use the Equal method to dissambiguate
         /// </summary>

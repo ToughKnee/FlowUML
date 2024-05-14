@@ -46,6 +46,12 @@ namespace Domain.CodeInfo.MethodSystem
         /// if the class owner also has typenames
         /// </summary>
         public List<Typename>? typenames { get; set; }
+        /// <summary>
+        /// If the current Method is from an interface, abstract class or 
+        /// similar, then this Method may contain several implementations linked to it
+        /// </summary>
+        // TODO: Implement the feature of being able to link all the implementations of an abstract method here
+        // public List<Method>? implementations { get; set; }
 
         public Method(string belongingNamespace, string name, List<string> parameters, string retType, List<Callsite> callsites)
         {

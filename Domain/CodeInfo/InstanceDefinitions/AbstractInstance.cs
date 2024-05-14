@@ -100,9 +100,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
             {
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
-                if (returnFirstMethodInstance && nextInstance is MethodInstance) return nextInstance;
+                if (returnFirstMethodInstance && nextInstance is MethodInstance) 
+                    return nextInstance;
             }
-            if (returnFirstMethodInstance) return null;
+            if (returnFirstMethodInstance) 
+                return null;
             return previousInstance;
         }
         /// <summary>

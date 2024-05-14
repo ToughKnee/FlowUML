@@ -610,7 +610,7 @@ namespace Infrastructure.Antlr
             string completeFunctionString = context.GetText(), namespaceAndClass = "", methodName = "";
 
             // Removing the new keyword from the actual method call
-            if(isConstructor)
+            if(isConstructor && completeFunctionString.IndexOf("new") + 3 != completeFunctionString.IndexOf('('))
             {
                 completeFunctionString = completeFunctionString.Remove(completeFunctionString.IndexOf("new"), 3);
             }
