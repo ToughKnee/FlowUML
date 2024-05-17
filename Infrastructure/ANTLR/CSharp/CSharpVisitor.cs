@@ -640,6 +640,7 @@ namespace Infrastructure.Antlr
                 throw new NotImplementedException();
             }
             //=====
+
             // If the method name is the "new" keyword then get the type of the variable and set this method call as a constructor
             if(methodName == "new")
             {
@@ -670,6 +671,7 @@ namespace Infrastructure.Antlr
                     parameterList.Add(expressionString);
                 }
             }
+            // Link the methodBuilder to be able to place the callsites in the correct order
             methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
 
             // Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call

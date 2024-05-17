@@ -1,1 +1,8 @@
-((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build.prop.aeeeeeeeeeeeeee()
+if (true)
+{
+    var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilders[0])
+        .Build(((AAAAAAAAAAAAAAAAAAAAAAAAAAAA)MyVariable.VariableFunction()).AAAAAAAAAAAAAFunction(ase));
+    var callerClassVariable = ((MethodInstance)_ownedChainedMethodInstanceBuilder.Build()).callerClass;
+    var AAAAAAAAVariable = ((AAAAAAAAAAAAAAAAAAAAAAAAAAAA)MyVariable.VariableFunction()).AAAAAAAAAAAAAFunction(ase);
+    var propertyFromClassCasted = (object)(anotherVariable.originalProperty).castedProperty;
+}

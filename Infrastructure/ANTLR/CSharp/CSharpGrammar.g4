@@ -277,20 +277,22 @@ typeCaster
 expression
     :
     typeCaster?
-    '('?'('?'('?
+    // '('?'('?'('?
         typeCaster?
         (
-        ternaryOperatorExpression indexRetrieval?
-        | localVariableDefinition
-        | comparisonExpression
-        | methodCall
-        | advancedIdentifier ('--')? ('++')?
-        | advancedIdentifier indexRetrieval?
-        | string
-        | number
-        | returnExpression)
+            ternaryOperatorExpression indexRetrieval?
+            | localVariableDefinition
+            | comparisonExpression
+            | specialExpressionInParentheses
+            | methodCall
+            | advancedIdentifier ('--')? ('++')?
+            | advancedIdentifier indexRetrieval?
+            | string
+            | number
+            | returnExpression
+        )
         (arithmeticOperations)*
-    ')'?')'?')'?
+    // ')'?')'?')'?
     // TODO: Do the following features AND make sure to put the optional parentheses around them
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     ;
@@ -304,12 +306,13 @@ expressionMethodCall
     ;
 
 // This rule hereis made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
-specialMethodCallCaller
-    : '('?'('?'('? typeCaster? advancedIdentifier indexRetrieval? ')'?')'?')'? '.' advancedIdentifier
+
+specialExpressionInParentheses
+    : '('? '(' expression ')' ')'? expressionChain?  /*('.' expression)? */
     ;
 
 methodCall
-    : 'throw'? new? '!'? (advancedIdentifier | type | new | specialMethodCallCaller) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
+    : 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
     | 'throw'? new type templateTypeName? ('[' argumentList? ']')? indexRetrieval? expressionChain?
     ;
 

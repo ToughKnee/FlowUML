@@ -98,6 +98,7 @@ Whenever there is an "advancedIdentifier" in a node in the ANTLR Visitor, then t
         Responsibilities(+|-):
 +Measure the **"statefulness"** of this method to other components
         Measure that through checking where does this function is **WRITING TO**, which clearly means changes in state, rather than being purely functional
+++APPLY GROUPING OF RELATED CLASSES and such, in a way that the groupings are made accoring to a criteria(like their share of common types of properties, or even their OBJECTIVES to accomplish, kinda like structural security)
 +++Look how much data IS WRITTEN to other components to mark the **Influence** of this Method to other parts of the code(This will also enable **implicit changes**, when a method uses another method, where all the WRITES that other method has are trasnfered to the original method automatically)
 ++Look how much data IS READ from other components and mark the **Susceptibility** of this Method to changes from other places
 +Be able to know when there are 2 methods connected by accesing data, and remarking if we are adding complexity if both methods read AND WRITE, and it would be better to just make one READ and the other WRITE
