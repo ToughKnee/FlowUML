@@ -94,7 +94,7 @@ advancedIdentifier
     ;
 
 type
-    : advancedTypeName
+    : advancedTypeName '?'?
     ;
 
 //===========================  File grammar
@@ -252,7 +252,7 @@ methodContent
     ;
 
 localVariableDefinition
-    : type? (identifier | advancedIdentifier) assigner expression
+    : type? (identifier | advancedIdentifier| methodCall ) assigner expression
     ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
     (',' localVariableDefinition)?
     | type identifier
@@ -277,16 +277,16 @@ typeCaster
 expression
     :
     typeCaster?
-    // '('?'('?'('?
+    '('?'('?'('?
         typeCaster?
         (
             ternaryOperatorExpression indexRetrieval?
             | localVariableDefinition
             | comparisonExpression
-            | specialExpressionInParentheses
             | methodCall
             | advancedIdentifier ('--')? ('++')?
             | advancedIdentifier indexRetrieval?
+            | specialExpressionInParentheses
             | string
             | number
             | returnExpression
@@ -305,15 +305,26 @@ expressionMethodCall
     : AWAIT? methodCall
     ;
 
-// This rule hereis made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
 
-specialExpressionInParentheses
-    : '('? '(' expression ')' ')'? expressionChain?  /*('.' expression)? */
+
+callerInParentheses
+// advancedIdentifier indexRetrieval? | type | new | 
+    : (advancedIdentifier indexRetrieval? | type | new)
     ;
 
 methodCall
-    : 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
+    // The first 2 variations try to at least get a method call either after the parentheses or inside the parentheses -- made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
+    : 
+    '!'? '(' typeCaster? (callerInParentheses) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')') indexRetrieval? expressionChain?
+    | '!'? '(' typeCaster? (methodCall) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')')? indexRetrieval? expressionChain?
+
+    | 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
     | 'throw'? new type templateTypeName? ('[' argumentList? ']')? indexRetrieval? expressionChain?
+    ;
+
+// This rule catchs similar strings that look like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", but only if they do not contain ANY method call
+specialExpressionInParentheses
+    : '('? '(' advancedIdentifier ')' ')'? ('.' advancedIdentifier)?
     ;
 
 // This rule denotes the properties or methods from other complex expressions like methods or a value from a collection retrieved with indexers, simple properties chains like "myClass.myProp1.myProp2" are covered by the "advancedIdentifier" rule 
@@ -358,6 +369,7 @@ gibberish: ('<'
 
 arithmeticOperations
     : (gibberish (gibberish | expression))
+    ')'?')'?')'?
     ;
 
 // In order to implement a way to recognize nested rules, like the ternary operator, we must create 3 rules, the normal rule which captures the cases where the is NO  nesting(which usually does not have special characters like '()', which must be used when we want to nest values) -- After that we need a component rule which basically has everythig that will be in the rule normally, BUT it must not include the previous rule, which would be itself, but this alone would leave us without nesting, so we need the last rule -- Which represents the case where there IS nesting, it would look the same as the first rule structurally, but it will differ at being able to be composed of the second rule AND the first rule also, ONLY IF we start the rule with another rule that MUST be present, like 'nestedTernaryOperator' having a '(' without the question mark, while the 'ternaryOperatorExpression' starts with '('?, including the question mark, and if that quesiton mark wasn't there in the third rule then ANTLR marks it as left recursion which can't be handled

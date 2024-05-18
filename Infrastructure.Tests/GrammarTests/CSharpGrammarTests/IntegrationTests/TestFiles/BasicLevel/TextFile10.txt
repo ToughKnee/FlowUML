@@ -13,8 +13,8 @@ namespace MyNamespace
             var otherResultsVariable = calculatedThing.PrintOtherResults();
             OtherResult declaredVariable;
             declaredVariable.PrintOtherResults();
-            Result instanceBuilder = new(otherResultsVariable);
 
+            Result instanceBuilder = new(otherResultsVariable);
             var typeCastedVariable = (OtherResult) declaredVariable.PrintOtherResults();
             typeCastedVariable.PrintOtherResults();
         }

@@ -175,3 +175,25 @@ Then:
         -If there is no instance that matched the assigner or components of the methodCall, we must add the assigne and assigner, or just the methodCall, to the instancesDictionary, in order to later identify them
         -We check if the type is present(like "MyType Instance;") and set the type if so
 
+
+//===========================  
+//===========================  「 Feature 」     ※ Special rule in methodCall for expression inside parentheses
+        Responsibilities(+|-):
++Able to keep track of multiple special method inside parentheses
+-Major overhead
+
+「 Scenario 」     ※ Process "specialExpressionInParentheses"
+Given:
+        -ANTLR analysis ongoing
+        -Mediator building method instances
+When:
+        -ANTLR Visitor found a "specialExpressionInParentheses" from ANY PART of the code(local var declaration, in method argument list, etc)
+        -This expression may contain a **variable** or **method call** with an optional expressionChain
+Then(if we found a method call):
+        -Get the methodCall inside the parentheses and then get the methodCall outside of them ensuring they are treated just like a methodCall being the class caller of another method call would be
+Then(if we found a variable):
+        -Get the expression inside parentheses and mix it with the expression outside of the parenthesese connected by the '.'
+Then(if we found another kind of expression):
+        -Raise an error since that shouldn't be happening
+
+

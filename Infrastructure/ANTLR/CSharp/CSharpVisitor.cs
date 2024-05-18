@@ -479,6 +479,11 @@ namespace Infrastructure.Antlr
                 instanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
                 result = identifierNode.GetText() + separator + expressionChildNode.GetText();
             }
+            // TODO: CHECK this commentary if it remains coherent -- If the expression was a special expression inside parentheses, then visit it -- This results in cases where we have something like "((AAAAAAAAAAAAAAAAAAAAAAAAAAAA)MyVariable.VariableFunction()).AAAAAAAAAAAAAFunction(ase)", which is a expression inside parenhteses and after that we access a property from them, but this requires a way to communicate with other Visit methods to make them know who is the caller Instance(in this case the ".AAAAAAAAAAAAAFunction(ase)" part has as the caller instance the casted method call inside parentheses)
+            else if((expressionChildNode = GetRuleNodeInChildren("specialExpressionInParentheses", expressionNode)) is not null)
+            {
+                Visit(expressionChildNode);
+            }
             // TODO: Visit other localVariableDefinition nodes chained, the things like "var thing1 = 1, thing2 = 2"
 
             // Sending the info to the mediator
@@ -538,7 +543,13 @@ namespace Infrastructure.Antlr
 
             return assignmentText;
         }
-        private AbstractInstance? ProcessIndexRetrieval(IParseTree context, MethodInstanceBuilder ownerMethodInstanceBuilder = null)
+        /// <summary>
+        /// Processes the info from the indexRetrieval of an expression and returns an Instance
+        /// which represents the indexRetrieval, for the MethodInstance class to later use to define itself
+        /// </summary>
+        /// <param name="context">The node which contains a indexRetrieval(normally methodCalls or variables)</param>
+        /// <returns>An instance representing the indexRetrieval of the node that contains it</returns>
+        private AbstractInstance? ProcessIndexRetrieval(IParseTree context)
         {
             var indexRetrievalNode = GetRuleNodeInChildren("indexRetrieval", context);
             if (indexRetrievalNode is null) return null;
@@ -566,7 +577,14 @@ namespace Infrastructure.Antlr
             // TODO: At some point process also other IndexRetrieval nodes
             return indexRetrievalInstanceResult;
         }
-
+        /// <summary>
+        /// Processes the info contained in the chain of an expression(normally methodCalls), and
+        /// returns as an object 2 types, a MethodInstanceBuilder, or an Instance, which represent
+        /// the expression chain contained by the received node from the parameter
+        /// </summary>
+        /// <param name="context">The node which contains a expressionChain(normally methodCalls)</param>
+        /// <returns>An object which is actually one of 2 things, a MethodInstanceBuilder, or an Instance,
+        /// which represents the expressionChain</returns>
         private object? ProcessExpressionChain(IParseTree context)
         {
             var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
@@ -640,7 +658,6 @@ namespace Infrastructure.Antlr
                 throw new NotImplementedException();
             }
             //=====
-
             // If the method name is the "new" keyword then get the type of the variable and set this method call as a constructor
             if(methodName == "new")
             {

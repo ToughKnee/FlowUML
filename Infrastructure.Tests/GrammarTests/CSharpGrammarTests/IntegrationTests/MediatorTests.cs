@@ -710,7 +710,7 @@ Inherited Classes:
         }
 
         [Fact]
-        public void MediatorCreatedInstancesWithVeryDeepMethodCallsAndSpecialFeatures_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        public void MediatorCreatedInstancesWithVeryDeepMethodCallsAndTypeCasterAndSpecialNewConstructor_MethodInstancesTakeShortcutsToDiscoverInstancesTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
         {
             // Arrange
             var mediator = new AntlrMediator();

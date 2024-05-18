@@ -4,23 +4,24 @@ namespace Domain.CodeInfo.InstanceDefinitions
     {
         public void ReceiveLocalVariableDefinition(string assignee, string? assigner, List<AbstractBuilder<AbstractInstance>>? instanceAssignerBuilders)
         {
-            if (_knownInstancesDeclaredInCurrentMethodAnalysis.TryGetValue(assigner, out AbstractInstance knownAssignerInstance) && knownAssignerInstance is not MethodInstance)
+            var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilders[0])
+                .Build(((AAAAAAAAAAAAAAAAAAAAAAAAAAAA)MyVariable.VariableFunction()).AAAAAAAAAAAAAFunction(ase));
+            var callerClassVariable = ((MethodInstance)_ownedChainedMethodInstanceBuilder.Build()).callerClass;
+            var propertyFromClassCasted = (object)(anotherVariable.originalProperty).castedProperty;
+            if (true)
             {
-                var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilders[0])
-                    .Build(((AAAAAAAAAAAAAAAAAAAAAAAAAAAA)MyVariable.VariableFunction()).AAAAAAAAAAAAAFunction(ase));
-                var callerClassVariable = ((MethodInstance)_ownedChainedMethodInstanceBuilder.Build()).callerClass;
-                var propertyFromClassCasted = (object)(anotherVariable.originalProperty).castedProperty;
+            }
+        }
+        
+        public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
+        {
+            foreach (var builder in builders)
+            {
+                builder.Build();
             }
         }
     }
 
-    public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
-    {
-        foreach (var builder in builders)
-        {
-            builder.Build();
-        }
-    }
 }
 
 namespace Infrastructure.Builders
