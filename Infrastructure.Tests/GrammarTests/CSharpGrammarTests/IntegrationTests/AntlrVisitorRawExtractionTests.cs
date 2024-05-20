@@ -32,7 +32,7 @@ namespace Infrastructure.Tests.GrammarTests.CSharpGrammarTests.IntegrationTests
                    "CleanArchitectureWorkshop.Application.UseCases",
                    new List<string> { "AddPlayerToTeamAsync", "CreateTeamAsync", "GetAllTeamsAsync", "GetTeamByIdAsync", "RemovePlayerFromTeamAsync", "GetTeamsByNameAsync" },
                    new List<string> { "string,string", "string", "", "string", "string,string", "string" },
-                   new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team?>", "Task<Team>", "Task<List<Team>>" }
+                   new List<string> { "Task<Team>", "Task<Team>", "Task<List<Team>>", "Task<Team>", "Task<Team>", "Task<List<Team>>" }
                };
            }
        }

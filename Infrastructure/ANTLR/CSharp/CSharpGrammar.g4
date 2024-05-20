@@ -253,8 +253,8 @@ methodContent
 
 localVariableDefinition
     : type? (identifier | advancedIdentifier| methodCall ) assigner expression
-    ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
-    (',' localVariableDefinition)?
+        ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+        (',' localVariableDefinition)*
     | type identifier
     ;
 
@@ -305,26 +305,24 @@ expressionMethodCall
     : AWAIT? methodCall
     ;
 
+// This rule hereis made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
 
+specialExpressionInParentheses
+    : '('? '(' advancedIdentifier ')' ')'? ('.' advancedIdentifier)?
+    ;
 
 callerInParentheses
-// advancedIdentifier indexRetrieval? | type | new | 
     : (advancedIdentifier indexRetrieval? | type | new)
     ;
 
 methodCall
-    // The first 2 variations try to at least get a method call either after the parentheses or inside the parentheses -- made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
+    // The first 2 variations try to at least get a method call either after the parentheses or inside the parentheses when there are extra parentheses
     : 
     '!'? '(' typeCaster? (callerInParentheses) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')') indexRetrieval? expressionChain?
-    | '!'? '(' typeCaster? (methodCall) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')')? indexRetrieval? expressionChain?
+    | '!'? '(' typeCaster? (methodCall) templateTypeName? ')' expressionChain?
 
     | 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
     | 'throw'? new type templateTypeName? ('[' argumentList? ']')? indexRetrieval? expressionChain?
-    ;
-
-// This rule catchs similar strings that look like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", but only if they do not contain ANY method call
-specialExpressionInParentheses
-    : '('? '(' advancedIdentifier ')' ')'? ('.' advancedIdentifier)?
     ;
 
 // This rule denotes the properties or methods from other complex expressions like methods or a value from a collection retrieved with indexers, simple properties chains like "myClass.myProp1.myProp2" are covered by the "advancedIdentifier" rule 

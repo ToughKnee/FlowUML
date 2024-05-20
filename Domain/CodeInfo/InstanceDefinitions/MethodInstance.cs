@@ -79,7 +79,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
             this.kind = kind;
             RegisterToTheMethodInstancesList(this);
             this.candidateNamespaces = usedNamespaces;
-
         }
         public MethodInstance(Method method)
         {

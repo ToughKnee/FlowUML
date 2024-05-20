@@ -316,7 +316,7 @@ namespace Infrastructure.Antlr
                         _currentMethodBuilder.SetName(methodIdentifierText);
                         if (returnTypeNode != null)
                         {
-                            returnTypeText = returnTypeNode.GetText();
+                            returnTypeText = returnTypeNode.GetText().Replace("?", "");
                             _currentMethodBuilder.SetReturnType(returnTypeText);
                         }
                         // If the return type is null(meaning also it isn't "void"), then use the identifier of this method as the return type since this is a constructor method
@@ -423,10 +423,24 @@ namespace Infrastructure.Antlr
         /// <returns></returns>
         public override string VisitLocalVariableDefinition([NotNull] CSharpGrammarParser.LocalVariableDefinitionContext context)
         {
-            var expressionNode = GetRuleNodeInChildren("expression", context);
-
-            // "Left side" of an assignment
+            // "Left side" of the assignment
             var identifierNode = GetRuleNodeInChildren("identifier", context);
+
+            // If we have a methodCall node, then it means that node is the left side of this assignment, and we must send the methodCall info to the mediator
+            if(GetRuleNodeInChildren("methodCall", context) != null)
+            {
+                Visit(GetRuleNodeInChildren("methodCall", context));
+                var lisWithAssignerMethodCall = _methodInstanceBuildersStack.Cast<AbstractBuilder<AbstractInstance>>().ToList();
+                _methodInstanceBuildersStack.Clear();
+
+                // Send the info of this methodCall to the mediator right away
+                _mediator.ReceiveLocalVariableDefinition("", "a", lisWithAssignerMethodCall);
+
+                // TODO: Process the info WRITTEN of another class
+            }
+
+            // "Right side" of the assignment
+            var expressionNode = GetRuleNodeInChildren("expression", context);
 
             string assignerExpression = "";
             string result = "";
@@ -438,7 +452,7 @@ namespace Infrastructure.Antlr
             if(expressionNode == null)
             {
                 instanceBuilder.SetCallerClassName(identifierNode.GetText());
-                instanceBuilder.SetType(GetRuleNodeInChildren("type", context).GetText());
+                instanceBuilder.SetType(GetRuleNodeInChildren("type", context).GetText().Replace("?", ""));
                 listWithBuilders.Add(instanceBuilder);
                 _mediator.ReceiveLocalVariableDefinition(identifierNode.GetText(), "", listWithBuilders);
                 return assignerExpression;
@@ -450,7 +464,7 @@ namespace Infrastructure.Antlr
                 if (expressionNode.GetText().Contains("new("))
                 {
                     new MethodActualTypeContainer((GetRuleNodeInChildren("type", context) is not null && GetRuleNodeInChildren("type", context).GetText() != "var") 
-                        ? (GetRuleNodeInChildren("type", context).GetText()) : (null), expressionChildNode.GetText());
+                        ? (GetRuleNodeInChildren("type", context).GetText().Replace("?", "")) : (null), expressionChildNode.GetText());
                 }
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
@@ -465,17 +479,18 @@ namespace Infrastructure.Antlr
             else if((expressionChildNode = GetRuleNodeInChildren("advancedIdentifier", expressionNode)) is not null)
             {
                 // If the assignee is not a simple variable(and instead is a property of a class) then do nothing
-                if (identifierNode == null) return "";
+                if (identifierNode == null) 
+                    return "";
 
                 var typeNode = GetRuleNodeInChildren("type", context);
                 // If the type of the variable isn't "var", then we set the type
                 if (typeNode is not null && typeNode.GetText() != "var")
                 {
-                    instanceBuilder.SetType(typeNode.GetText());
+                    instanceBuilder.SetType(typeNode.GetText().Replace("?", ""));
                 }
                 listWithBuilders.Add(instanceBuilder);
                 instanceBuilder.SetCallerClassName(expressionChildNode.GetText());
-                var indexRetrievalInstance = ProcessIndexRetrieval(expressionNode);
+                var indexRetrievalInstance = CreateIndexRetrievalFromNode(expressionNode);
                 instanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
                 result = identifierNode.GetText() + separator + expressionChildNode.GetText();
             }
@@ -484,6 +499,7 @@ namespace Infrastructure.Antlr
             {
                 Visit(expressionChildNode);
             }
+
             // TODO: Visit other localVariableDefinition nodes chained, the things like "var thing1 = 1, thing2 = 2"
 
             // Sending the info to the mediator
@@ -549,7 +565,7 @@ namespace Infrastructure.Antlr
         /// </summary>
         /// <param name="context">The node which contains a indexRetrieval(normally methodCalls or variables)</param>
         /// <returns>An instance representing the indexRetrieval of the node that contains it</returns>
-        private AbstractInstance? ProcessIndexRetrieval(IParseTree context)
+        public AbstractInstance? CreateIndexRetrievalFromNode(IParseTree context)
         {
             var indexRetrievalNode = GetRuleNodeInChildren("indexRetrieval", context);
             if (indexRetrievalNode is null) return null;
@@ -564,7 +580,7 @@ namespace Infrastructure.Antlr
             if (expressionChainNode != null)
             {
                 // Get the chained instance to later add it to the generated result instance
-                var chainedInstanceObject = ProcessExpressionChain(indexRetrievalNode);
+                var chainedInstanceObject = CreateExpressionChainFromNode(indexRetrievalNode);
                 if(chainedInstanceObject is MethodInstanceBuilder)
                 {
                     var chainedInstanceBuilder = (MethodInstanceBuilder)chainedInstanceObject;
@@ -585,13 +601,13 @@ namespace Infrastructure.Antlr
         /// <param name="context">The node which contains a expressionChain(normally methodCalls)</param>
         /// <returns>An object which is actually one of 2 things, a MethodInstanceBuilder, or an Instance,
         /// which represents the expressionChain</returns>
-        private object? ProcessExpressionChain(IParseTree context)
+        public object? CreateExpressionChainFromNode(IParseTree context)
         {
             var expressionChainNode = GetRuleNodeInChildren("expressionChain", context);
             if(expressionChainNode == null) return null; 
 
             // Process the index retrieval if there is any
-            var indexRetrievalInstance = ProcessIndexRetrieval(expressionChainNode);
+            var indexRetrievalInstance = CreateIndexRetrievalFromNode(expressionChainNode);
 
             // If there is another methodCall chained, then visit that too, which will put the chained methodCall into the Stack of MethodInstanceBuilders and be retrieved after the visited chained methodCall finishes being processed and then set it to the methodInstanceBuilder
             if (expressionChainNode != null && ChildRuleNameIs("methodCall", expressionChainNode, 1))
@@ -628,7 +644,7 @@ namespace Infrastructure.Antlr
             string completeFunctionString = context.GetText(), namespaceAndClass = "", methodName = "";
 
             // Removing the new keyword from the actual method call
-            if(isConstructor && completeFunctionString.IndexOf("new") + 3 != completeFunctionString.IndexOf('('))
+            if (isConstructor && completeFunctionString.IndexOf("new") + 3 != completeFunctionString.IndexOf('('))
             {
                 completeFunctionString = completeFunctionString.Remove(completeFunctionString.IndexOf("new"), 3);
             }
@@ -646,9 +662,43 @@ namespace Infrastructure.Antlr
                     (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
                     );
                 namespaceAndClass = (lastPeriodIndex != -1) ? (completeFunctionString.Substring(0, lastPeriodIndex)) : ("");
+                methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
                 var openParenIndex = methodName.IndexOf('(');
                 var closeParenIndex = methodName.LastIndexOf(')');
                 methodName = methodName.Substring(0, openParenIndex);
+            }
+            // If this is true, then we have a complex method to process
+            else if(GetRuleNodeInChildren("callerInParentheses", context) != null || GetRuleNodeInChildren("methodCall", context) != null)
+            {
+                // If there is a typeCaster node, then this node only applies to the caller class in this case, NOT the whole method
+                string? callerClassType = GetRuleNodeInChildren("typeCaster", context) != null ? GetRuleNodeInChildren("typeCaster", context).GetChild(1).GetText() : "";
+
+                var callerClassNodeTEST = GetRuleNodeInChildren("callerInParentheses", context);
+                var methodCallCallerNode = GetRuleNodeInChildren("methodCall", context);
+                // We process first the caller class which can be the node "callerInParentheses", or another methodCall
+                if (callerClassNodeTEST != null)
+                {
+                    var callerClassNodeStringTEST = GetRuleNodeInChildren("callerInParentheses", context) != null ? GetRuleNodeInChildren("callerInParentheses", context).GetText() : "";
+                    methodInstanceBuilder.SetCallerClassName(callerClassNodeStringTEST, callerClassNodeTEST, this, callerClassType);
+                }
+                // If the caller class is a method call, then set it
+                else if (methodCallCallerNode != null)
+                {
+                    if(!String.IsNullOrEmpty(callerClassType))
+                        new MethodActualTypeContainer(callerClassType, methodCallCallerNode.GetText());
+                    Visit(methodCallCallerNode);
+
+                    var visitedMethod = _methodInstanceBuildersStack.Peek();
+                    // Visit the "expressionChain" but make the method just visited be the owner of this expressionChain because that is how it actually is
+                    var visitedMethodChainedInstance = CreateExpressionChainFromNode(context);
+                    if (visitedMethodChainedInstance is Instance) visitedMethod.SetNormalInstanceChainedInstance((Instance)visitedMethodChainedInstance);
+                    else if (visitedMethodChainedInstance is MethodInstanceBuilder) visitedMethod.SetMethodCallChainedInstance((MethodInstanceBuilder)visitedMethodChainedInstance);
+
+                    return completeFunctionString;
+                }
+
+                methodName = GetRuleNodeInChildren("advancedIdentifier", context) != null ? GetRuleNodeInChildren("advancedIdentifier", context).GetText() : "";
+
             }
             // If there are no parentheses, then this must be a custom constructor of a class or a collection data initializer
             else
@@ -664,8 +714,8 @@ namespace Infrastructure.Antlr
                 methodName = MethodActualTypeContainer.PopActualType();
                 isConstructor = true;
             }
-            // If this wasn't the "new()" constructor but the property containing the type of the method call isn't null, then there is a type caster and we make the methodInstanceBuilder set this type
-            else if(MethodActualTypeContainer.CheckForActualMethodType(context.GetText()))
+            // If this wasn't the "new()" constructor and there is an entry in the MethodActualTypeContainer stack for this method, then there is a type caster and we make the methodInstanceBuilder set this type
+            else if (MethodActualTypeContainer.CheckForActualMethodType(context.GetText()))
             {
                 methodInstanceBuilder.SetType(MethodActualTypeContainer.PopActualType());
             }
@@ -692,16 +742,15 @@ namespace Infrastructure.Antlr
             methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
 
             // Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call
-            var chainedInstance = ProcessExpressionChain(context);
+            var chainedInstance = CreateExpressionChainFromNode(context);
             if(chainedInstance is Instance) methodInstanceBuilder.SetNormalInstanceChainedInstance((Instance) chainedInstance);
             else if(chainedInstance is MethodInstanceBuilder) methodInstanceBuilder.SetMethodCallChainedInstance((MethodInstanceBuilder)chainedInstance);
 
-            var indexRetrievalInstance = ProcessIndexRetrieval(context);
+            var indexRetrievalInstance = CreateIndexRetrievalFromNode(context);
             methodInstanceBuilder.SetIndexRetrievalInstance(indexRetrievalInstance);
 
             // Set the remaining data of the methodCall to be managed by the methodInstanceBuilder
             methodInstanceBuilder.SetMethodName(methodName);
-            methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
             methodInstanceBuilder.SetParameters(parameterList);
             if(isConstructor) methodInstanceBuilder.SetMethodKind(KindOfInstance.IsConstructor);
             _methodInstanceBuildersStack.Push(methodInstanceBuilder);

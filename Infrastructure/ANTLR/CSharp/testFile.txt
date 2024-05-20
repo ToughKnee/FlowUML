@@ -1,43 +1,51 @@
-using System;
-
-namespace MyNamespace
+namespace Domain.CodeInfo.InstanceDefinitions
 {
-    public class MyClass
-    {
-        public static Vector3 AimChange()
+    public class Program
+    {AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
+        public static void Main(List<myClass1>? myClass1List)
         {
-            var calculatedThing = CalculateNumbers((63f - 3f * weapon_Stats.Range - FPSCamera.FoV) * ((888 / 1) + 0)
-            , FPSCamera.FoV / 100000f
-            , 1f)
-            .PrintResults(((FPSCamera.FoV < 15f) ? 15f : FPSCamera.FoV), "myString");
-            var otherResultsVariable = calculatedThing.PrintOtherResults();
-            OtherResult declaredVariable;
-            declaredVariable.PrintOtherResults();
-
-            Result instanceBuilder = new(otherResultsVariable);
-            var typeCastedVariable = (OtherResult) declaredVariable.PrintOtherResults();
-            typeCastedVariable.PrintOtherResults();
+            var variable1 = ((MyClass2)myClass1List[0])
+                .Build(((MyClass3)CreateClass2()).Class3Function());
+            var myVariable2 = ((MyClass4)variable1.Class1Function()).class4Property;
+            var myVariable3 = (MyClass3)(myVariable2.class2Property).class3Property;
+            // myVariable3.Class3Function();
         }
-        public Result CalculateNumbers(int num1, float num2, double num3)
-        {
-
-        }
-    }
-
-    public class Result
-    {
-        public Result(Result previousResult)
-        {
-
-        }
-        public OtherResult PrintResults(double value, string stringValue)
+        
+        // public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
+        // {
+        //     foreach (var builder in GetList())
+        //     {
+        //         builder.Build();
+        //     }
+        // }
+        public MyClass2 CreateClass2()
         {
         }
     }
-    public class OtherResult
+
+    public class MyClass1
     {
-        public Result PrintOtherResults()
+        public MyClass2 Class1Function()
         {
         }
+    }
+    public class MyClass2
+    {
+        public MyClass3 class2Property;
+        public MyClass1 Build(MyClass4 class4Param)
+        {
+        }
+    }
+    public class MyClass3
+    {
+        public MyClass3 class3Property;
+        public MyClass4 Class3Function()
+        {
+        }
+    }
+    public class MyClass4
+    {
+        public MyClass2 class4Property;
     }
 }
+

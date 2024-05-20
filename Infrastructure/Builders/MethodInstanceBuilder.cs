@@ -122,7 +122,7 @@ namespace Infrastructure.Builders
                 chainedMethodCall._callerClass.refType.data = "";
             }
             // If the chained caller class has a name(which means that the caller class is actually a property from this MethodCall), then remove the "IsFromLinkedMethodInstance" kind and replace it with "IsPropertyFromInheritanceOrInThisClass", to let the true type of the property be discovered by the MethodInstance
-            else
+            else if(!String.IsNullOrEmpty(chainedMethodCall._callerClass.name))
                 chainedMethodCall._callerClass.kind = KindOfInstance.IsPropertyFromInheritanceOrInThisClass;
             return this;
         }

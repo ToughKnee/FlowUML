@@ -1,69 +1,51 @@
 namespace Domain.CodeInfo.InstanceDefinitions
 {
-    public abstract class AbstractInstance
+    public class Program
     {
-        public void ReceiveLocalVariableDefinition(string assignee, string? assigner, List<AbstractBuilder<AbstractInstance>>? instanceAssignerBuilders)
+        public static void Main(List<myClass1>? myClass1List)
         {
-            var methodInstanceAssigner = ((MethodInstanceBuilder)instanceAssignerBuilders[0])
-                .Build(((AAAAAAAAAAAAAAAAAAAAAAAAAAAA)MyVariable.VariableFunction()).AAAAAAAAAAAAAFunction(ase));
-            var callerClassVariable = ((MethodInstance)_ownedChainedMethodInstanceBuilder.Build()).callerClass;
-            var propertyFromClassCasted = (object)(anotherVariable.originalProperty).castedProperty;
-            if (true)
-            {
-            }
+            var variable1 = ((MyClass2)myClass1List[0])
+                .Build(((MyClass3)CreateClass2()).Class3Function());
+            var myVariable2 = ((MyClass4)variable1.Class1Function()).class4Property;
+            var myVariable3 = (MyClass3)(myVariable2.class2Property).class3Property;
+            // myVariable3.Class3Function();
         }
         
-        public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
+        // public void ReceiveClassEntityBuilders(List<AbstractBuilder<ClassEntity>> builders)
+        // {
+        //     foreach (var builder in GetList())
+        //     {
+        //         builder.Build();
+        //     }
+        // }
+        public MyClass2 CreateClass2()
         {
-            foreach (var builder in builders)
-            {
-                builder.Build();
-            }
         }
     }
 
-}
-
-namespace Infrastructure.Builders
-{
-    public interface AbstractBuilder<T>
+    public class MyClass1
     {
-        public T Build();
+        public MyClass2 Class1Function()
+        {
+        }
     }
-}
-
-namespace Infrastructure.Builders
-{
-    public class InstanceBuilder : AbstractBuilder<AbstractInstance>
+    public class MyClass2
     {
-        protected AbstractInstance? _callerClass = null;
-        protected AbstractInstance? _callerClassChainedInstance = null;
-        protected AbstractInstance? _indexRetrievalInstance = null;
-        protected string? _type = null;
-        protected KindOfInstance _methodInstanceKind = KindOfInstance.Normal;
-        protected readonly string _paramIdentifier = "<p>";
-        protected IMediator _mediator;
-        protected IReadOnlyDictionary<string, AbstractInstance> _knownInstancesDeclaredInCurrentMethodAnalysis = new Dictionary<string, AbstractInstance>();
-
-        public InstanceBuilder(IMediator mediator)
+        public MyClass3 class2Property;
+        public MyClass1 Build(MyClass4 class4Param)
         {
-            _mediator = mediator;
-            _knownInstancesDeclaredInCurrentMethodAnalysis = mediator.GetKnownInstancesDeclaredInCurrentMethodAnalysis();
-        }
-        public InstanceBuilder()
-        {
-        }
-
-        public AbstractInstance Build()
-        {
-            _callerClass.chainedInstance = _callerClassChainedInstance;
-            if(_type != null)
-            {
-                _callerClass.kind = KindOfInstance.Normal;
-                _callerClass.refType.data = _type;
-            }
-            AbstractInstance.GetLastChainedInstance(_callerClass).indexRetrievedInstance = _indexRetrievalInstance;
-            return _callerClass;
         }
     }
+    public class MyClass3
+    {
+        public MyClass3 class3Property;
+        public MyClass4 Class3Function()
+        {
+        }
+    }
+    public class MyClass4
+    {
+        public MyClass2 class4Property;
+    }
 }
+

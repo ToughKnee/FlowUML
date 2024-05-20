@@ -1,6 +1,7 @@
 ﻿using Antlr4.Runtime.Tree;
 using Domain.CodeInfo.InstanceDefinitions;
 using Domain.CodeInfo.MethodSystem;
+using Infrastructure.Antlr;
 using Infrastructure.Mediators;
 
 namespace Infrastructure.Builders
@@ -125,7 +126,7 @@ namespace Infrastructure.Builders
             }
             return processedInstance;
         }
-        public InstanceBuilder SetCallerClassName(string callerClassName)
+        public InstanceBuilder SetCallerClassName(string callerClassName, IParseTree? callerClassNode = null, CSharpVisitor? visitor = null, string? type = "")
         {
             if(callerClassName == null)
             {
@@ -142,7 +143,18 @@ namespace Infrastructure.Builders
                 callerClassName = classOwner;
             }
 
+            // If the node containing this method component contains brakcets, then it has an indexRetrieval and we must process that
+            AbstractInstance indexRetrievalNode = null;
+            if (callerClassName.Contains('['))
+            {
+                callerClassName = callerClassName.Split("[")[0];
+                indexRetrievalNode = visitor.CreateIndexRetrievalFromNode(callerClassNode);
+            }
+
             this._callerClass = ProcessInstanceInformation(callerClassName, _mediator.GetCurrentAnalyzedClassName());
+            this._callerClass.indexRetrievedInstance = indexRetrievalNode;
+            if(!String.IsNullOrEmpty(type))
+                this._callerClass.refType.data = type;
             return this;
         }
         public InstanceBuilder SetIndexRetrievalInstance(AbstractInstance indexRetrievalInstance)
