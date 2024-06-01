@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using Domain.CodeInfo.MethodSystem;
 
@@ -226,30 +226,6 @@ namespace Domain.CodeInfo.InstanceDefinitions
                 }
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
-            }
-        }
-        private void ResolveIndexRetrievalInstanceType(AbstractInstance instanceWithIndexRetrieval)
-        {
-            // Now with the indexRetrieval type solved, we move that from being the property of the chainedInstance.indexRetrievalInstance to chainedInstance.chainedInstance
-            var nextInstancePlaceholder = instanceWithIndexRetrieval.chainedInstance;
-            // Moving all the other chainedProperties after the indexRetrieval
-            while (nextInstancePlaceholder != null)
-            {
-                instanceWithIndexRetrieval.chainedInstance = instanceWithIndexRetrieval.indexRetrievedInstance;
-                nextInstancePlaceholder = nextInstancePlaceholder.chainedInstance;
-                instanceWithIndexRetrieval.indexRetrievedInstance.chainedInstance = nextInstancePlaceholder;
-            }
-            instanceWithIndexRetrieval.chainedInstance = instanceWithIndexRetrieval.indexRetrievedInstance;
-            instanceWithIndexRetrieval.indexRetrievedInstance = null;
-
-            // After setting the chainedInstance as the indexRetrieval, we get the type of the nextInstance, and get the string between diamonds, which represents the type of the elements from the collection, the "Last()" method is used because the last typename from the collection is most likely the type of the elements
-            instanceWithIndexRetrieval.chainedInstance.refType.data = Typename.GetTypenameList(instanceWithIndexRetrieval.type).Last().name;
-
-            // Then we get the first methodInstance chained to this indexRetrieval, and we set the type of the callerClass of that chained MethodInstaance to the type of the indexRetrieval, because the indexRetrieval is the actual caller class, and also remove the chainedInstance from the indexRetrieval to avoid infinite references to each other
-            var firstMethodInstanceChained = AbstractInstance.GetLastChainedInstance(instanceWithIndexRetrieval, true);
-            if (firstMethodInstanceChained != null)
-            {
-                ((MethodInstance)firstMethodInstanceChained).callerClass = instanceWithIndexRetrieval.chainedInstance;
             }
         }
         /// <summary>

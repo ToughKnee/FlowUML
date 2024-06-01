@@ -851,5 +851,46 @@ Inherited Classes:
             Program_Main.callsites[2].calledMethod.Should().Be(BuildMethod);
             Program_Main.callsites[3].calledMethod.Should().Be(Class1FunctionMethod);
         }
+        [Fact]
+        public void MediatorCreatedInstancesWithMethodCallsFromRealWorldExample_MethodInstancesResolveTheirTypes_ResolutionOfMethodInstancesAndTheirLinkedCallsitesDoneSuccesfully()
+        {
+            // Arrange
+            var mediator = new AntlrMediator();
+            _antlrService = new ANTLRService(mediator);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\RealAdvTextFile6.txt", true);
+
+            // Act
+            _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");
+
+            // Assert
+            var classStrings = new List<string>();
+            foreach (var classEntity in ClassEntityManager.instance.classEntities.Values)
+            {
+                classStrings.Add(classEntity.ToString());
+            }
+            //===========================  Checking the information about the ClassEntities and their Methods
+            //            classStrings[0].Should().Be(@"Name: SNode
+            //Inherited Classes:
+            //");
+
+            //===========================  Checking the Callsites of each Method from the ClassEntities poiting to the respective Methods of other ClassEntities
+            //ClassEntityManager.instance.classEntities.Count.Should().Be(2);
+
+            var classEntitiesList = ClassEntityManager.instance.classEntities.Values.ToList();
+
+            // Creating the references to the methods to be checked
+            var Program_Main = classEntitiesList[0].methods[0];
+            var CreateClass2Method = classEntitiesList[0].methods[1];
+            var Class1FunctionMethod = classEntitiesList[1].methods[0];
+            var BuildMethod = classEntitiesList[2].methods[0];
+            var Class3FunctionMethod = classEntitiesList[3].methods[0];
+
+            // Checking the callsites of the Program class
+            Program_Main.callsites.Count.Should().Be(4);
+            Program_Main.callsites[0].calledMethod.Should().Be(CreateClass2Method);
+            Program_Main.callsites[1].calledMethod.Should().Be(Class3FunctionMethod);
+            Program_Main.callsites[2].calledMethod.Should().Be(BuildMethod);
+            Program_Main.callsites[3].calledMethod.Should().Be(Class1FunctionMethod);
+        }
     }
 }

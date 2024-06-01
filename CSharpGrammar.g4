@@ -197,7 +197,7 @@ attributes
 methodBodyContent
     :
     '{'
-    methodContent*
+    (methodContent|ACCESS_MODIFIER)*
     '}'
     ;
 
@@ -252,8 +252,8 @@ methodContent
     ;
 
 localVariableDefinition
-    : type? (identifier | advancedIdentifier| methodCall ) assigner expression
-        ('{' gibberish* '}')? // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
+    : type? (identifier | advancedIdentifier| methodCall | specialExpressionInParentheses) assigner (expression 
+        | ('{' (gibberish* | identifier) '}')?)  // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
         (',' localVariableDefinition)*
     | type identifier
     ;
@@ -267,7 +267,7 @@ assigner
     ;
 
 returnExpression
-    : RETURN (identifier | expression)
+    : RETURN (identifier | expression)?
     ;
 
 typeCaster
@@ -305,24 +305,25 @@ expressionMethodCall
     : AWAIT? methodCall
     ;
 
-// This rule hereis made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses
-
-specialExpressionInParentheses
-    : '('? '(' advancedIdentifier ')' ')'? ('.' advancedIdentifier)?
-    ;
-
 callerInParentheses
     : (advancedIdentifier indexRetrieval? | type | new)
     ;
 
 methodCall
+    :
+    // These rules here are made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses and also a methodCall somewhere, but having at least ONE
     // The first 2 variations try to at least get a method call either after the parentheses or inside the parentheses when there are extra parentheses
-    : 
     '!'? '(' typeCaster? (callerInParentheses) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')') indexRetrieval? expressionChain?
     | '!'? '(' typeCaster? (methodCall) templateTypeName? ')' expressionChain?
 
     | 'throw'? new? '!'? (advancedIdentifier | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
     | 'throw'? new type templateTypeName? ('[' argumentList? ']')? indexRetrieval? expressionChain?
+    ;
+
+// This rule is complimentary to the last 2 rules from methodCall, this rule only catches complex propeties access, like "(MyClass3)(myVariable2.class2Property).class3Property", which do NOT contain any methodCall
+specialExpressionInParentheses
+    : '('? advancedIdentifier ')'? ('.' advancedIdentifier)?
+    ')'?')'?')'?
     ;
 
 // This rule denotes the properties or methods from other complex expressions like methods or a value from a collection retrieved with indexers, simple properties chains like "myClass.myProp1.myProp2" are covered by the "advancedIdentifier" rule 
