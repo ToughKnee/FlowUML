@@ -1,5 +1,6 @@
 .antlr/
 .vscode/
+.sonarqube/
 
 
 
