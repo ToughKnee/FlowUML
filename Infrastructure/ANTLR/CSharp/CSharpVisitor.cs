@@ -165,7 +165,7 @@ namespace Infrastructure.Antlr
             string usedNamespaces = "";
             for (int j = 0; j < context.ChildCount; j++)
             {
-                var namespaceIdentifierNode = GetRuleNodeInChildren("namespaceIdentifier", context.GetChild(0), j);
+                var namespaceIdentifierNode = GetRuleNodeInChildren("namespaceIdentifier", context.GetChild(j), 1);
                 usedNamespaces += namespaceIdentifierNode.GetText() + "-";
             }
             usedNamespaces = usedNamespaces.Substring(0, usedNamespaces.Length - 1);
