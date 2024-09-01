@@ -301,7 +301,7 @@ expression
     // TODO: Do the following features AND make sure to put the optional parentheses around them
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     ;
-
+// TODO: REMOVEME DELETEME
 indexRetrieval
     : ('[' (string | number | advancedIdentifier) ']')+ expressionChain?
     ;
@@ -331,14 +331,14 @@ methodCall
     ;
 
 methodCallALT
-    : new? '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') methodCallChain?
-    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') ')' methodCallChain?
-    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') methodCallChain? ')' methodCallChain? // this rule is designed to handle cases like ((MyType)function.troublesomeMethodCallChain).troublesomeMethodCallChainMethodCall(), where this thing contains 2 method call chains, and this rule catches that case
+    : new? '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') advancedChainedInstance?
+    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') ')' advancedChainedInstance?
+    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') advancedChainedInstance? ')' advancedChainedInstance? // this rule is designed to handle cases like ((MyType)function.troublesomeMethodCallChain).troublesomeMethodCallChainMethodCall(), where this thing contains 2 method call chains, and this rule catches that case
     // | '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') ('.' (wholeInstance | methodCallALT))?
     ;
 
-methodCallChain
-    : ('.' (wholeInstance | methodCallALT)) | indexRetrieval
+advancedChainedInstance
+    : ('.' (wholeInstance | methodCallALT)) | singleIndexRetrieval
     ;
 
 // This rule is complimentary to the last 2 rules from methodCall, this rule only catches complex propeties access, like "(MyClass3)(myVariable2.class2Property).class3Property", which do NOT contain any methodCall
@@ -366,13 +366,17 @@ methodCallCaller2
     ;
 
 wholeInstance
-    : typeCaster? advancedIdentifier (singleIndexRetrieval)?
+    : typeCaster? '!'? identifier basicChainedInstance?
     // (singleIndexRetrieval | '.' advancedIdentifier)? MOVED DOWN to singleIndexRetrieval
     |'(' wholeInstance ')' ('.' wholeInstance)?
     ;
 
+basicChainedInstance
+    : '.' wholeInstance | singleIndexRetrieval
+    ;
+
 singleIndexRetrieval
-    : '[' (string | number | advancedIdentifier) ']' ('.' (advancedIdentifier | methodCallALT) singleIndexRetrieval? | singleIndexRetrieval)?
+    : '[' (string | number | advancedIdentifier) ']' advancedChainedInstance?
     ;
 
 // This wholeInstance follows the philosophy to have many subrules for each index retireval and other chained properties, instead of the new wholeInstance which will now contain all the stuff in it without any sub rules nesting
