@@ -1,4 +1,3 @@
-// TODO: Cover the Constructors methods AND the 'new' keyword when called inside a methodBody
 grammar CSharpGrammar;
 WS  :   [ \t\n\r]+ -> skip ;
 COMMENT: '/*' .*? '*/' -> skip;
@@ -252,8 +251,8 @@ methodContent
     ;
 
 localVariableDefinition
-    // TODO: Change the methodCall inside the parenthses before the "assigner" rule with the new methodCallALT
-    : type? (identifier | advancedIdentifier| methodCall | specialExpressionInParentheses) assigner (expression 
+    // TODO: Change the methodCall inside the parenthses before the "assigner" rule with the new methodCall
+    : type? (wholeInstance | methodCall) assigner (expression 
         | ('{' (gibberish | advancedIdentifier)* '}')?)  // This parentheses captures the info we don't need like data initializers of collections like "new List() {1,2,1}"
         (',' localVariableDefinition)*
     | type identifier
@@ -278,20 +277,16 @@ typeCaster
 expression
     :
     // typeCaster?
-    '('?'('?'('?
+    // '('?'('?'('?
         // typeCaster?
         (
             ternaryOperatorExpression indexRetrieval?
             | localVariableDefinition
             | comparisonExpression
-            // | methodCall
-            // | advancedIdentifier ('--')? ('++')?
-            // | advancedIdentifier indexRetrieval?
             | wholeInstance ('--')? ('++')?
             | wholeInstance
-            | methodCallALT // IF this rule is moved above the 'wholeInstance' rule, then the indexRetrieval rule will break when trying to catch methodCalls when there is a methodCall after some property and indexRetrieval classDeclarations
+            | methodCall // IF this rule is moved above the 'wholeInstance' rule, then the indexRetrieval rule will break when trying to catch methodCalls when there is a methodCall after some property and indexRetrieval classDeclarations
             // | specialExpressionInParentheses
-            | specialExpressionInParenthesesALT
             | string
             | number
             | returnExpression
@@ -302,83 +297,42 @@ expression
     // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     ;
 
-indexRetrieval
-    : ('[' (string | number | advancedIdentifier) ']')+ expressionChain?
-    ;
+// methodCall
+//     :
+//     // These rules here are made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses and also a methodCall somewhere, but having at least ONE
+//     // The first 2 variations try to at least get a method call either after the parentheses or inside the parentheses when there are extra parentheses
+//     '!'? '(' typeCaster? (methodCallCaller) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')') indexRetrieval? expressionChain?
+//     | '!'? '(' typeCaster? (methodCall) templateTypeName? ')' expressionChain?
 
-// This rule must be just like the original rule but needs to be different since it is 
-indexRetrievalForMethodCaller
-    : ('[' (string | number | advancedIdentifier) ']') ('.' wholeInstance)? 
-    ;
-
-expressionMethodCall
-    : AWAIT? methodCall
-    ;
-
-methodCallCaller
-    : (identifier | type | new) expressionChainForMethodCaller?
-    ;
+//     | 'throw'? new? '!'? (methodCallCaller2 | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
+//     | 'throw'? new type templateTypeName? ('[' argumentList? ']') indexRetrieval? expressionChain?
+//     ;
 
 methodCall
-    :
-    // These rules here are made to catch things like "((MethodInstanceBuilder)instanceAssignerBuilders[0]).Build()", which contain expressions inside parentheses and also a methodCall somewhere, but having at least ONE
-    // The first 2 variations try to at least get a method call either after the parentheses or inside the parentheses when there are extra parentheses
-    '!'? '(' typeCaster? (methodCallCaller) templateTypeName? ')' ('.' advancedIdentifier) ('(' argumentList? ')') indexRetrieval? expressionChain?
-    | '!'? '(' typeCaster? (methodCall) templateTypeName? ')' expressionChain?
-
-    | 'throw'? new? '!'? (methodCallCaller2 | type | new) templateTypeName? ('(' argumentList? ')') indexRetrieval? expressionChain?
-    | 'throw'? new type templateTypeName? ('[' argumentList? ']') indexRetrieval? expressionChain?
+    : new? /*'('?*/ wholeInstance /*')'?*/ templateTypeName? ('(' argumentList? ')') advancedChainedInstance?
+    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') ')' advancedChainedInstance?
+    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') advancedChainedInstance? ')' advancedChainedInstance? // this rule is designed to handle cases like ((MyType)function.troublesomeMethodCallChain).troublesomeMethodCallChainMethodCall(), where this thing contains 2 method call chains, and this rule catches that case
+    // | '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') ('.' (wholeInstance | methodCall))?
     ;
 
-methodCallALT
-    : new? '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') methodCallChain?
-    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') ')' methodCallChain?
-    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') methodCallChain? ')' methodCallChain? // this rule is designed to handle cases like ((MyType)function.troublesomeMethodCallChain).troublesomeMethodCallChainMethodCall(), where this thing contains 2 method call chains, and this rule catches that case
-    // | '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') ('.' (wholeInstance | methodCallALT))?
-    ;
-
-methodCallChain
-    : ('.' (wholeInstance | methodCallALT)) | indexRetrieval
-    ;
-
-// This rule is complimentary to the last 2 rules from methodCall, this rule only catches complex propeties access, like "(MyClass3)(myVariable2.class2Property).class3Property", which do NOT contain any methodCall
-specialExpressionInParentheses
-    : '('? advancedIdentifier ')' ('.' advancedIdentifier)?
-    ')'?')'?')'?
-    ;
-specialExpressionInParenthesesALT
-    : 'DELETEME' '(' (wholeInstance | methodCallALT) ')' ('.' wholeInstance)?
-    ')'?')'?')'?
-    ;
-
-// This rule denotes the properties or methods from other complex expressions like methods or a value from a collection retrieved with indexers, simple properties chains like "myClass.myProp1.myProp2" are covered by the "advancedIdentifier" rule 
-expressionChain
-    : ('.' methodCall | '.' advancedIdentifier)+ indexRetrieval?
-    ;
-
-expressionChainForMethodCaller
-    : ( '.' advancedIdentifier)+ indexRetrieval?
-    ;
-
-methodCallCaller2
-    : identifier ('.' identifier | indexRetrievalForMethodCaller)* 
-//    : ( '.' advancedIdentifier)+ indexRetrieval?
+advancedChainedInstance
+    : ('.' (wholeInstance | methodCall)) | indexRetrieval
     ;
 
 wholeInstance
-    : typeCaster? advancedIdentifier (singleIndexRetrieval)?
-    // (singleIndexRetrieval | '.' advancedIdentifier)? MOVED DOWN to singleIndexRetrieval
-    |'(' wholeInstance ')' ('.' wholeInstance)?
+    : typeCaster? '!'? identifier basicChainedInstance?
+    // (indexRetrieval | '.' advancedIdentifier)? MOVED DOWN to indexRetrieval
+    // This rule is complimentary to the last 2 rules from methodCall, this rule only catches complex propeties access, like "(MyClass3)(myVariable2.class2Property).class3Property", which do NOT contain any methodCall
+    | typeCaster? '(' wholeInstance ')' ('.' wholeInstance)? 
     ;
 
-singleIndexRetrieval
-    : '[' (string | number | advancedIdentifier) ']' ('.' (advancedIdentifier | methodCallALT) singleIndexRetrieval? | singleIndexRetrieval)?
+basicChainedInstance
+    : '.' wholeInstance | indexRetrieval
     ;
 
-// This wholeInstance follows the philosophy to have many subrules for each index retireval and other chained properties, instead of the new wholeInstance which will now contain all the stuff in it without any sub rules nesting
-// wholeInstance
-//     : typeCaster? advancedIdentifier indexRetrievalForMethodCaller?
-//     ;
+indexRetrieval
+    : '[' (string | number | advancedIdentifier) ']' advancedChainedInstance?
+    ;
 
 argumentList
     : (outParameter | expression) ( ',' (outParameter | expression) )*
@@ -431,7 +385,7 @@ ternaryOperatorExpression
 ternaryOperatorComponent
     : (nestedTernaryOperator
     | comparisonExpression
-    | expressionMethodCall
+    | methodCall
     | advancedIdentifier
     | number
     | string) arithmeticOperations*
@@ -453,7 +407,7 @@ comparisonExpression
 comparisonExpressionComponent
     : (nestedTernaryOperator
     | nestedComparisonExpression
-    | expressionMethodCall
+    | methodCall
     | advancedIdentifier
     | number
     | string) arithmeticOperations*

@@ -4,10 +4,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
     {
         public static void Main(List<myClass1>? myClass1List)
         {
-            var variable1 = ((MyClass2)myClass1List[0])
+            var variable1 = ((MyClass2)myClass1List().troublesomeMethodCallChain) // the 'troublesomeMethodCallChain' may break the methodCall ANTLR rule if it isn't handled correctly, and this must require an special case designed to support a methodCall which has 2 MethodCallChains
                 .Build(((MyClass3)CreateClass2()).Class3Function());
             var myVariable2 = ((MyClass4)variable1.Class1Function()).class4Property;
             var myVariable3 = (MyClass3)(myVariable2.class2Property).class3Property;
+            // var myVariable4 = ((MethodInstance)firstMethodInstanceChained).callerClass;
             // myVariable3.Class3Function();
         }
         

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 class Program
 {
-    static void Main(string[] args)
-    {
+     static void Main(string[] args)
+     {
           var myth = new myClass();
           var thing3 = myth.otherThing().myList[0].differentOtherThing();
           thing3.myOtherClassFunction();
@@ -18,19 +18,21 @@ class Program
           var myClassFromCollectionEasy = myth.otherThing().myList[0];
           myClassFromCollectionEasy.myFuncCall();
           myClassFromCollectionHard.normalThing();
-          var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction();
+          var thing = myth.otherThing().myList[0].myOtherList[1].myOtherClassFunction2();
           thing.myFuncCall();
 
           var myOtherClassElementVar = myth.myOtherClass.ElementAt(1);
           myOtherClassElementVar.myOtherClassFunction();
-   }
-   static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
-   {
-   }
-   static List<myClass> GetMynewList()
-   {
+          // myOtherClassElementVar.myOtherClassFunction3(myth.myOtherList[0]);
+          myth.myOtherList[789].myOtherClassFunction3();
+     }
+     static void Assign(myClass myClass, myOtherClass myOtherClass, List<myClass> classes)
+     {
+     }
+     static List<myClass> GetMynewList()
+     {
      return new List<myClass>();
-   }
+     }
 
 }
 
@@ -56,6 +58,13 @@ class myOtherClass
 {
      public List<myClass> myList;
      public myClass myOtherClassFunction()
+     {
+     }
+     public myClass myOtherClassFunction2()
+     {
+     }
+     // public void myOtherClassFunction3(myOtherClass myOtherClassParameter)
+     public void myOtherClassFunction3()
      {
      }
 }

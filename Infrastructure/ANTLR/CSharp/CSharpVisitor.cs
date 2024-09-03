@@ -43,15 +43,41 @@ namespace Infrastructure.Antlr
             }
             public static bool CheckForActualMethodType(string methodSignature)
             {
-                if(_previousActualInstance.Count == 0) 
+                if (_previousActualInstance.Count == 0)
                     return false;
                 var currentMethodType = _previousActualInstance.Peek();
-                if(currentMethodType._methodNameIdentifier == methodSignature)
+                if (currentMethodType._methodNameIdentifier == methodSignature)
                     return true;
                 else
                     return false;
             }
         }
+        /// <summary>
+        /// Class to store the type of a variable defined for cases like 
+        /// "typeInstance = new();" and when we previously read "MyType typeInstance;", because we need the type for those cases,
+        /// then we store the type of this variable using its name to be retrieved back when this variable is assigned
+        /// </summary>
+        private class VariableActualTypeContainer
+        {
+            /// <summary>
+            /// This is the method's signature which this type is intended to
+            /// when the methodCall node is looking for its actual type
+            /// </summary>
+            private string _variableIdentifier;
+            public static Dictionary<string, string> _variableTypes = new();
+
+            public VariableActualTypeContainer(string actualType, string variableName)
+            {
+                _variableTypes.Add(variableName, actualType);
+            }
+            public static string? GetVariableTypeFor(string variableName)
+            {
+                //if (_variableTypes.TryGetValue(variableName, out string variableType))
+                //    return variableType;
+                return _variableTypes[variableName];
+            }
+        }
+
         /// <summary>
         /// Mediator that receives the data from the localVariables and such to manage them
         /// and define the Domain classes
@@ -327,7 +353,6 @@ namespace Infrastructure.Antlr
                         if (parameterListNode != null)
                         {
                             parameters = Visit(parameterListNode);
-                            _currentMethodBuilder.SetParameters(parameters);
                         }
                         // And after filling the available info at this Node, we go to another Node to get more info for the current Method
                         Visit(classContentChild);
@@ -398,16 +423,22 @@ namespace Infrastructure.Antlr
         public override string VisitParameterList([NotNull] CSharpGrammarParser.ParameterListContext context)
         {
             string result = "";
+            int optionalParameters = 0;
             // Getting the parameters type and returning them separated by comma
             if (context.ChildCount > 0)
             {
+                // Getting the types of each parameter and checking if there are optional parameters
                 for (int j = 0; j < context.ChildCount; j += 2)
                 {
-                    string[] parameters = Visit(context.GetChild(j)).Split("-");
-                    result += parameters[0] + ",";
+                    var currentParameter = context.GetChild(j);
+                    result += currentParameter.GetChild(0).GetText() + ",";
+                    optionalParameters += (GetRuleNodeInChildren("parameterInitializer", currentParameter) != null) ? 1 : 0;
+                    //string[] parameters = Visit(currentParameter.GetChild(0)).Split("-");
+                    //result += parameters[0] + ",";
                 }
                 result = result.Substring(0, result.Length - 1);
             }
+            _currentMethodBuilder.SetParameters(result, optionalParameters);
             return result;
         }
 
@@ -436,7 +467,7 @@ namespace Infrastructure.Antlr
                 // Send the info of this methodCall to the mediator right away
                 _mediator.ReceiveLocalVariableDefinition("", "a", lisWithAssignerMethodCall);
 
-                // TODO: Process the info WRITTEN of another class
+                // TODO: Process the info that has been just WRITTEN of the other class
             }
 
             // "Right side" of the assignment
@@ -451,8 +482,10 @@ namespace Infrastructure.Antlr
             // If the expressionNode is null, then this is just a variable declaration, and we can get the type
             if(expressionNode == null)
             {
+                string variableType = GetRuleNodeInChildren("type", context).GetText().Replace("?", "");
                 instanceBuilder.SetCallerClassName(identifierNode.GetText());
-                instanceBuilder.SetType(GetRuleNodeInChildren("type", context).GetText().Replace("?", ""));
+                instanceBuilder.SetType(variableType);
+                new VariableActualTypeContainer(variableType, identifierNode.GetText());
                 listWithBuilders.Add(instanceBuilder);
                 _mediator.ReceiveLocalVariableDefinition(identifierNode.GetText(), "", listWithBuilders);
                 return assignerExpression;
@@ -460,11 +493,25 @@ namespace Infrastructure.Antlr
             // If the expression is a methodCall, visit it and get the info of the assignment
             else if ((expressionChildNode = GetRuleNodeInChildren("methodCall", expressionNode)) != null)
             {
-                // If the variable declaration looks like "MyType typeInstance = new();", then we store the type in the property for the methodCall node to set the methodInstance
+                // If the variable declaration looks like "MyType typeInstance = new();" OR "typeInstance = new();"(when we previously read "MyType typeInstance;"), then we store the type in the property for the methodCall node to set the methodInstance
                 if (expressionNode.GetText().Contains("new("))
                 {
-                    new MethodActualTypeContainer((GetRuleNodeInChildren("type", context) is not null && GetRuleNodeInChildren("type", context).GetText() != "var") 
-                        ? (GetRuleNodeInChildren("type", context).GetText().Replace("?", "")) : (null), expressionChildNode.GetText());
+                    // Getting the type of this variable
+                    string actualType = null;
+                    if (GetRuleNodeInChildren("type", context) is not null && GetRuleNodeInChildren("type", context).GetText() != "var")
+                        actualType = (GetRuleNodeInChildren("type", context).GetText().Replace("?", ""));
+                    if (actualType == null && identifierNode != null)
+                        actualType = VariableActualTypeContainer.GetVariableTypeFor(identifierNode.GetText());
+                    // If this is true, then we are dealing with something like this "previouslyDefinedVariable.property = new()", so we must set information so that the MethodInstance to be built resolves its type??????
+                    // TODO: HANDLE CORRECTLY this case when the MethodInstance is created and must look for the type of the property from the other class, AND ALSO remove the advancedIdentifier and replace it with the whole instance, but also making sure the whole instance is accesing its properties
+                    else if(GetRuleNodeInChildren("advancedIdentifier", context) != null)
+                    {
+                        // var advancedIdentifierText = GetRuleNodeInChildren("advancedIdentifier", context).GetText();
+                        // string propertyAssigned = advancedIdentifierText.Split(".").Last();
+                        // actualType = propertyAssigned;
+                    }
+
+                    new MethodActualTypeContainer(actualType, expressionChildNode.GetText());
                 }
                 // "Right side" of the assignment
                 assignerExpression = Visit(expressionNode);
@@ -515,6 +562,16 @@ namespace Infrastructure.Antlr
             return assignerExpression;
         }
         /// <summary>
+        /// Whole instance means a unit of a used instance inside the program, we process the data of it and its context, 
+        /// and send a builder of this to the mediator, to then be resolved and make new data out of it
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override string VisitWholeInstance([NotNull] CSharpGrammarParser.WholeInstanceContext context)
+        {
+            return base.VisitWholeInstance(context);
+        }
+        /// <summary>
         /// Represents the logic that results in a given value of any type, like a methodCall or a simple math procedure
         /// This normally gets the "right side" of an assignment, which is something that gives a type of something to a variable
         /// </summary>
@@ -529,13 +586,13 @@ namespace Infrastructure.Antlr
             // Get the full text of the assignment 
             if(methodCallNode != null)
             {
-                var typeCasterNode = GetRuleNodeInChildren("typeCaster", context);
-
-                // Check if there are explicit type casters in this method call, and set the data for the method call node to receive it
-                if (typeCasterNode is not null)
-                {
-                    new MethodActualTypeContainer(typeCasterNode.GetChild(1).GetText(), methodCallNode.GetText());
-                }
+                // // TODO: REMOVEME, there are no "typeCasters" anymore in this rule, they are now ONLY on the "wholeInstance" rule
+                // // Check if there are explicit type casters in this method call, and set the data for the method call node to receive it
+                // var typeCasterNode = GetRuleNodeInChildren("typeCaster", context);
+                // if (typeCasterNode is not null)
+                // {
+                //     new MethodActualTypeContainer(typeCasterNode.GetChild(1).GetText(), methodCallNode.GetText());
+                // }
 
                 assignmentText = Visit(methodCallNode);
             }
@@ -662,23 +719,28 @@ namespace Infrastructure.Antlr
                     (lastPeriodIndex != -1) ? (lastPeriodIndex + 1) : (0)
                     );
                 namespaceAndClass = (lastPeriodIndex != -1) ? (completeFunctionString.Substring(0, lastPeriodIndex)) : ("");
-                methodInstanceBuilder.SetCallerClassName(namespaceAndClass);
+                var callerClassNode = GetRuleNodeInChildren("methodCallCaller", context);
+                methodInstanceBuilder.SetCallerClassName(namespaceAndClass, callerClassNode, this);
                 var openParenIndex = methodName.IndexOf('(');
                 var closeParenIndex = methodName.LastIndexOf(')');
                 methodName = methodName.Substring(0, openParenIndex);
+
+                // IF the methodName is equal to the last chainedInstance.name of the callerClass that was set in the methodInstanceBuilder, then we must remove that last chainedInstance because that is the methodName and not another property
+                methodInstanceBuilder.CheckRemovalOfLastChainedInstanceFromCallerClass(methodName);
             }
+            // TODO: REMOVEME, the rules in this part do not axist anymore
             // If this is true, then we have a complex method to process
-            else if(GetRuleNodeInChildren("callerInParentheses", context) != null || GetRuleNodeInChildren("methodCall", context) != null)
+            else if(GetRuleNodeInChildren("methodCallCaller", context) != null || GetRuleNodeInChildren("methodCall", context) != null)
             {
                 // If there is a typeCaster node, then this node only applies to the caller class in this case, NOT the whole method
                 string? callerClassType = GetRuleNodeInChildren("typeCaster", context) != null ? GetRuleNodeInChildren("typeCaster", context).GetChild(1).GetText() : "";
 
-                var callerClassNodeTEST = GetRuleNodeInChildren("callerInParentheses", context);
+                var callerClassNodeTEST = GetRuleNodeInChildren("methodCallCaller", context);
                 var methodCallCallerNode = GetRuleNodeInChildren("methodCall", context);
-                // We process first the caller class which can be the node "callerInParentheses", or another methodCall
+                // We process first the caller class which can be the node "methodCallCaller", or another methodCall
                 if (callerClassNodeTEST != null)
                 {
-                    var callerClassNodeStringTEST = GetRuleNodeInChildren("callerInParentheses", context) != null ? GetRuleNodeInChildren("callerInParentheses", context).GetText() : "";
+                    var callerClassNodeStringTEST = GetRuleNodeInChildren("methodCallCaller", context) != null ? GetRuleNodeInChildren("methodCallCaller", context).GetText() : "";
                     methodInstanceBuilder.SetCallerClassName(callerClassNodeStringTEST, callerClassNodeTEST, this, callerClassType);
                 }
                 // If the caller class is a method call, then set it
@@ -708,6 +770,7 @@ namespace Infrastructure.Antlr
                 throw new NotImplementedException();
             }
             //=====
+
             // If the method name is the "new" keyword then get the type of the variable and set this method call as a constructor
             if(methodName == "new")
             {
@@ -738,7 +801,7 @@ namespace Infrastructure.Antlr
                     parameterList.Add(expressionString);
                 }
             }
-            // Link the methodBuilder to be able to place the callsites in the correct order
+            // Link the methodBuilder to be able to place the callsites in the CORRECT ORDER according to their time being called
             methodInstanceBuilder.SetLinkedMethodBuilder(_currentMethodBuilder);
 
             // Visit the "expressionChain" to get the properties or method calls that are chained to the result of this method call

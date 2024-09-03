@@ -92,18 +92,25 @@ namespace Domain.CodeInfo.InstanceDefinitions
         public AbstractInstance()
         {
         }
-        public static AbstractInstance? GetLastChainedInstance(AbstractInstance instance, bool returnFirstMethodInstance = false)
+        public static AbstractInstance? GetLastChainedInstance(AbstractInstance instance, bool returnFirstMethodInstance = false, bool includeIndexRetrievalInstances = false, bool removeLastChainedInstance = false)
         {
             AbstractInstance nextInstance = instance;
             AbstractInstance previousInstance = nextInstance;
             while (nextInstance is not null)
             {
+                if(removeLastChainedInstance && nextInstance.chainedInstance != null)
+                {
+                    nextInstance.chainedInstance = null;
+                    break;
+                }
                 previousInstance = nextInstance;
                 nextInstance = nextInstance.chainedInstance;
                 if (returnFirstMethodInstance && nextInstance is MethodInstance) 
                     return nextInstance;
+                if (includeIndexRetrievalInstances && nextInstance is null)
+                    nextInstance = previousInstance.indexRetrievedInstance;
             }
-            if (returnFirstMethodInstance) 
+            if (returnFirstMethodInstance)
                 return null;
             return previousInstance;
         }

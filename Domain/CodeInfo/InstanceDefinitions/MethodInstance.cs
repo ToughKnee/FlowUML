@@ -76,6 +76,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             this.methodName = methodName;
             this.calledParameters = aliasParams;
             this.linkedCallsite = linkedCallsite;
+            linkedCallsite.linkedMethodInstance = this;
             this.kind = kind;
             RegisterToTheMethodInstancesList(this);
             this.candidateNamespaces = usedNamespaces;
@@ -150,10 +151,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
         /// <summary>
         /// This method resolves the type of a given component of this MethodInstance
         /// It also takes an extra parameter if we want to look for the type of this Instance
-        /// with the inheritance classes AND the owner class name
+        /// with the inheritance classes AND the owner class name, for cases when defining 
+        /// the type of chained Instances
         /// </summary>
         /// <param name="component">Target Instance to look for its type</param>
-        /// <param name="ownerClass">Extra parameter that add another class to look for 
+        /// <param name="ownerClass">Extra parameter that adds another class to look for 
         /// alognside the inherited classes</param>
         private void ResolveComponentType(AbstractInstance component, string ownerClass = "")
         {
@@ -246,6 +248,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             instanceWithIndexRetrieval.chainedInstance.refType.data = Typename.GetTypenameList(instanceWithIndexRetrieval.type).Last().name;
 
             // Then we get the first methodInstance chained to this indexRetrieval, and we set the type of the callerClass of that chained MethodInstaance to the type of the indexRetrieval, because the indexRetrieval is the actual caller class, and also remove the chainedInstance from the indexRetrieval to avoid infinite references to each other
+            // TODO: CHANGE -- We are modifying the type of the caller class of another MethodInstance WHEN it should be done in the HandleActualMethod method
             var firstMethodInstanceChained = AbstractInstance.GetLastChainedInstance(instanceWithIndexRetrieval, true);
             if (firstMethodInstanceChained != null)
             {
@@ -253,7 +256,7 @@ namespace Domain.CodeInfo.InstanceDefinitions
             }
         }
         /// <summary>
-        /// This method checks the types of the components it has(className, parameters, and 
+        /// This method checks the types of the components it has(className, parameters, and
         /// with their respective property chains, including this MethodInstance)
         /// and if we found all the types, then this MethodInstance is ready to look for the actual Method, and then 
         /// remove itself from the methodInstancesWithUndefinedCallsite, and start defining the remaning classes with
@@ -350,6 +353,11 @@ namespace Domain.CodeInfo.InstanceDefinitions
                         methodInstancesWithUndefinedCallsite.Remove(this);
                     }
                 }
+            }
+            // If this is a constructor but we couldn't find the actual Method of this class, then just put the method name of this method as its type for other MethodInstances to use, but NOT removing this from the list of undefined method instances because the actual Method remains to be found
+            if(kind == KindOfInstance.IsConstructor && String.IsNullOrEmpty(this.refType.data))
+            {
+                this.refType.data = methodName;
             }
         }
 

@@ -55,7 +55,6 @@ namespace Domain.CodeInfo
         public void AddMethod(Method method)
         {
             this.methods.Add(method);
-            method.SetOwnerClass(this);
         }
 
         public override string ToString()

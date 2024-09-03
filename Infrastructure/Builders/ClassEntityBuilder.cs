@@ -39,9 +39,9 @@ namespace Infrastructure.Builders
             // Building all the Methods from this ClassEntity
             foreach (var methodBuilder in methodBuilders)
             {
+                methodBuilder.SetOwnerClass(builtClass);
                 var method = methodBuilder.Build();
                 builtClass.AddMethod(method);
-                MethodDictionaryManager.instance.AddMethod(method);
             }
 
             ClassEntityManager.instance.AddClassEntityInstance(builtClass);

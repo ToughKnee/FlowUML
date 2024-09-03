@@ -857,7 +857,7 @@ Inherited Classes:
             // Arrange
             var mediator = new AntlrMediator();
             _antlrService = new ANTLRService(mediator);
-            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\RealAdvTextFile6.txt", true);
+            _antlrService.InitializeAntlr(currentDirectoryPath + pathToTestFiles + "AdvancedLevel\\AdvTextFileReal6.txt", true);
 
             // Act
             _antlrService.RunVisitorWithSpecificStartingRule("cSharpFile");

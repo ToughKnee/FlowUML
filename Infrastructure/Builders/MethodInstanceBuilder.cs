@@ -160,5 +160,19 @@ namespace Infrastructure.Builders
             this._methodInstanceKind = kind;
             return this;
         }
+        /// <summary>
+        /// If the last chainedInstance of the caller class of this method instance is the same as the 
+        /// actual name of the MethodInstance, then we must remove that chained instance to avoid conflicts
+        /// when MethodInstances start solving their types
+        /// </summary>
+        /// <param name="methodName"></param>
+        /// <returns></returns>
+        public MethodInstanceBuilder CheckRemovalOfLastChainedInstanceFromCallerClass(string methodName)
+        {
+            var lastChainedInstance = AbstractInstance.GetLastChainedInstance(this._callerClass, false, true);
+            if (methodName == lastChainedInstance.name)
+                AbstractInstance.GetLastChainedInstance(this._callerClass, false, true, true);
+            return this;
+        }
     }
 }

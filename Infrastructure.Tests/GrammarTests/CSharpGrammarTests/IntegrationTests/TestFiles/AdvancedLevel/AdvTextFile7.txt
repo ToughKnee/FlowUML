@@ -1,0 +1,81 @@
+namespace Domain.CodeInfo.InstanceDefinitions
+{
+    public class Program
+    {
+        public static void Main(List<myClass1>? myClass1List)
+        {
+            switch (true) 
+            {
+                case value1:
+                    break;
+                case value2:
+                    break;
+                default:
+                    break;
+            }
+
+            switch (command)
+            {
+                case AddCommand add:
+                    provider.GetRequiredService<IHandler<AddCommand>>().Run(add);
+                    break;
+                case DeleteCommand delete:
+                    provider.GetRequiredService<IHandler<DeleteCommand>>().Run(delete);
+                    break;
+                case DoneCommand done:
+                    provider.GetRequiredService<IHandler<DoneCommand>>().Run(done);
+                    break;
+                case NextCommand next:
+                    provider.GetRequiredService<IHandler<NextCommand>>().Run(next);
+                    break;
+                case ReadCommand read:
+                    provider.GetRequiredService<IHandler<ReadCommand>>().Run(read);
+                    break;
+                default:
+                    throw new Exception($"Unknown command type {command.GetType().FullName} sent to HandleCommand!");
+            }
+
+            var example1 = operation switch
+            {
+                1 => "Case 1",
+                2 => "Case 2",
+                3 => "Case 3",
+                4 => "Case 4",
+                _ => "No case availabe"
+            };
+
+            var example2 = cal.Operation switch
+            {
+                "+" => cal.FirstNumber + cal.SecondNumber,
+                "-" => cal.FirstNumber - cal.SecondNumber,
+                _ => cal.FirstNumber * cal.SecondNumber,
+            };
+
+            int example3 = value switch
+            {
+                _ when value > 10 => 0,
+                _ when value <= 10 => 1
+            };
+
+            var example4 = dic.TryGetValue(key, out string val) switch
+            {
+                false => defaultValue,
+                _ => val
+            };
+
+            var point = (1, 2);
+            string example5 = point switch
+            {
+                (x, y) when x > 0 && y > 0 => "Quadrant 1",
+                (x, y) when x < 0 && y > 0 => "Quadrant 2",
+                (x, y) when x < 0 && y < 0 => "Quadrant 3",
+                (x, y) when x > 0 && y < 0 => "Quadrant 4",
+                _ => "On an axis"
+            };
+
+
+        }
+    }
+
+}
+

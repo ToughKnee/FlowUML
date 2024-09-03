@@ -15,8 +15,10 @@ namespace Infrastructure.Builders
         public string? returnType { get; private set; } = null;
         public string? belongingNamespace { get; private set; } = null;
         public List<string> parameters { get; private set; } = new List<string>();
+        public int optionalParametersCount = 0;
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
         public List<Typename>? typenames { get; private set; } = null;
+        public ClassEntity ownerClass { get; set; }
 
         /// <summary>
         /// This Build method must NOT be used because this is called when the ClassEntityBuilder Build method is called
@@ -25,9 +27,18 @@ namespace Infrastructure.Builders
         /// <returns></returns>
         public Method Build()
         {
-            Method method = new Method(belongingNamespace, name, parameters, returnType, callsites);
-            // Setting the typenames if any
-            method.typenames = this.typenames;
+            Method method = new Method(belongingNamespace, ownerClass, name, parameters, returnType, callsites, this.typenames);
+
+            MethodDictionaryManager.instance.AddMethod(method);
+
+            // If there are optional parameters, then we must create a new Method for each "variation" of this Method signature according to the amount of optional parameters(where "func(int p1, int p2 = 0)" would let us use it either like "func(1)" or "func(1, 2)") -- The reason we are doing this is to be able to match the actual Method signature with the MethodInstance signature which can be varied because of these optional parameters
+            for (int j = parameters.Count - 1; optionalParametersCount > 0; j--, optionalParametersCount--)
+            {
+                var newParameters = new List<string>(parameters);
+                newParameters.RemoveAt(j);
+                method = new Method(belongingNamespace, ownerClass, name, newParameters, returnType, callsites, this.typenames);
+                MethodDictionaryManager.instance.AddMethod(method);
+            }
 
             return method;
         }
@@ -46,7 +57,7 @@ namespace Infrastructure.Builders
             this.belongingNamespace = belongingNamespace;
             return this;
         }
-        public MethodBuilder SetParameters(string parameters)
+        public MethodBuilder SetParameters(string parameters, int optionalParameters)
         {
             List<string> result = new List<string>();
 
@@ -57,6 +68,7 @@ namespace Infrastructure.Builders
                 result.Add(match.Value);
             }
             this.parameters = result;
+            this.optionalParametersCount = optionalParameters;
             return this;
         }
         public MethodBuilder AddCallsite(Callsite callsite)
@@ -67,6 +79,11 @@ namespace Infrastructure.Builders
         public MethodBuilder SetTypename(List<Typename> typenameList)
         {
             typenames = typenameList;
+            return this;
+        }
+        public MethodBuilder SetOwnerClass(ClassEntity owner)
+        {
+            this.ownerClass = owner;
             return this;
         }
     }

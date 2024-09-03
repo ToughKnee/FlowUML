@@ -1,0 +1,246 @@
+using BusyList.Commands;
+using BusyList.Handlers;
+using BusyList.Parsing;
+using Microsoft.Extensions.DependencyInjection;
+using Sprache;
+using System;
+
+namespace BusyList
+{
+    public static class Program
+    {
+        const string PROMPT = "> ";
+
+        private static void Main()
+        {
+            // Set up the DependencyInjection collection and provider
+            var services = ConfigureServices();
+            var provider = services.BuildServiceProvider();
+
+            var parser = CommandGrammar.Source;
+
+            InteractiveMode(provider, parser);
+        }
+
+        private static void InteractiveMode(ServiceProvider provider, Parser<Command> parser)
+        {
+            string line;
+            do
+            {
+                Console.Write(PROMPT);
+                line = Console.ReadLine();
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    try
+                    {
+                        var result = parser.Parse(line);
+
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine(result);
+
+                        Console.ResetColor();
+                        HandleCommand(provider, result);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(ex.Message);
+                    }
+
+                    Console.ResetColor();
+                    Console.WriteLine();
+                }
+            }
+            while (line != null);
+        }
+
+        private static IServiceCollection ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            services.AddSingleton<ITaskRepository, TaskRepository>();
+            services.AddTransient<IHandler<AddCommand>, AddHandler>();
+            services.AddTransient<IHandler<DeleteCommand>, DeleteHandler>();
+            services.AddTransient<IHandler<DoneCommand>, DoneHandler>();
+            services.AddTransient<IHandler<NextCommand>, NextHandler>();
+            services.AddTransient<IHandler<ReadCommand>, ReadHandler>();
+
+            return services;
+        }
+
+        private static void HandleCommand(ServiceProvider provider, Command command)
+        {
+            switch (command)
+            {
+                case AddCommand add:
+                    provider.GetRequiredService<IHandler<AddCommand>>().Run(add);
+                    break;
+                case DeleteCommand delete:
+                    provider.GetRequiredService<IHandler<DeleteCommand>>().Run(delete);
+                    break;
+                case DoneCommand done:
+                    provider.GetRequiredService<IHandler<DoneCommand>>().Run(done);
+                    break;
+                case NextCommand next:
+                    provider.GetRequiredService<IHandler<NextCommand>>().Run(next);
+                    break;
+                case ReadCommand read:
+                    provider.GetRequiredService<IHandler<ReadCommand>>().Run(read);
+                    break;
+                default:
+                    throw new Exception($"Unknown command type {command.GetType().FullName} sent to HandleCommand!");
+            }
+        }
+    }
+}
+
+//===========================  AddHandler.cs
+using BusyList.Commands;
+using System;
+
+
+namespace BusyList.Handlers
+{
+    public class AddHandler : IHandler<AddCommand>
+    {
+        private readonly ITaskRepository _taskRepository;
+
+        public AddHandler(ITaskRepository taskRepository)
+        {
+            _taskRepository = taskRepository;
+        }
+        public void Run(AddCommand command)
+        {
+            var item = new AddTaskData(command.Description, command.Priority);
+
+            var currentTask = _taskRepository.AddTask(item);
+
+            Console.WriteLine($"Added {currentTask.Print()}");
+        }
+
+    }
+}
+
+//===========================  TaskRepository files
+using System.Collections.Generic;
+
+namespace BusyList
+{
+    public enum TaskStatus
+    {
+        NotStarted,
+        InProgress,
+        Done
+    }
+
+    // TODO: Reognize records while adding in the ClassEntity their properties
+    public record AddTaskData(string Description, PriorityEnum Priority);
+
+
+    public interface ITaskRepository
+    {
+        /// <summary>
+        /// Get a task from the repository that matches the id parameter. 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>The first task that matches the id parameter.</returns>
+        TaskItem GetTaskById(int id);
+
+        /// <summary>
+        /// Add a new task to the repository.
+        /// </summary>
+        /// <param name="data">Input data for the new task.</param>
+        /// <returns>The newly created task in the repository.</returns>
+        TaskItem AddTask(AddTaskData data);
+
+        /// <summary>
+        /// Marks the task as deleted in the repository.
+        /// </summary>
+        /// <param name="task"></param>
+        /// <returns>The updated task.</returns>
+        void DeleteTask(TaskItem task);
+
+        /// <summary>
+        /// Gets all the tasks in the repository.
+        /// </summary>
+        /// <returns>All tasks in the repository.</returns>
+        IEnumerable<TaskItem> GetAll();
+
+        /// <summary>
+        /// Update an existing task in the repository.
+        /// </summary>
+        /// <param name="task"></param>
+        /// <returns>The updated task.</returns>
+        TaskItem UpdateTask(TaskItem task);
+    }
+}
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace BusyList
+{
+    public class TaskRepository : ITaskRepository
+    {
+        private const string PATH = "database.json";
+
+        private readonly List<TaskItem> _items = new List<TaskItem>();
+
+        private int _idCounter = 1;
+
+        public TaskRepository()
+        {
+            if (File.Exists(PATH))
+            {
+                var text = File.ReadAllText(PATH);
+
+                _items = JsonConvert.DeserializeObject<List<TaskItem>>(text);
+
+                _idCounter = _items.Max(task => task.Id) + 1;
+            }
+        }
+        public TaskItem AddTask(AddTaskData data)
+        {
+            var item = new TaskItem(_idCounter++, data.Description, data.Priority);
+
+            _items.Add(item);
+
+            Save();
+
+            return item;
+        }
+
+        public void DeleteTask(TaskItem task)
+        {
+            _items.Remove(task);
+
+            Save();
+        }
+
+        public IEnumerable<TaskItem> GetAll()
+        {
+            return _items;
+        }
+
+        public TaskItem GetTaskById(int id)
+        {
+            return _items.SingleOrDefault(x => x.Id == id);
+        }
+
+        public TaskItem UpdateTask(TaskItem task)
+        {
+
+            Save();
+
+            return task;
+        }
+        private void Save()
+        {
+            var text = JsonConvert.SerializeObject(_items);
+
+            File.WriteAllText(PATH, text);
+        }
+    }
+}

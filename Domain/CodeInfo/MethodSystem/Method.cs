@@ -40,6 +40,14 @@ namespace Domain.CodeInfo.MethodSystem
         /// This way we will create an entire flow from a class to all other places of the code, regardless of the depth of the calls
         /// </summary>
         public List<Callsite> callsites { get; private set; } = new List<Callsite>();
+        // TODO: Take into account that a call of a function from another class like "class.function()" would mean that this class is the INDIRECT cause of the changes that the called method does(this means that this method will inherit the WRITE opertations ALL its callsites made)
+        public List<Property> readProperties { get; private set; } = new List<Property>();
+        public List<Property> writtenProperties { get; private set; } = new List<Property>();
+        // TODO: Make this function while ensuring there is only ONE entrypoint when adding properties to this Method(Maybe it is better to replace these 2 properties and make a brand new class with those properties, leaving that class to handle with more ease that kind of thing)
+        public void ENTRYPOINTForReadOrWrittenProperties()
+        {
+
+        }
         /// <summary>
         /// This list represents the typenames this method has, where a method like "public SNodeMyMethod<T, R>()"
         /// would mean a List with T and R respectively, this property may be assigned or modified by the class owner 
@@ -53,13 +61,15 @@ namespace Domain.CodeInfo.MethodSystem
         // TODO: Implement the feature of being able to link all the implementations of an abstract method here
         // public List<Method>? implementations { get; set; }
 
-        public Method(string belongingNamespace, string name, List<string> parameters, string retType, List<Callsite> callsites)
+        public Method(string belongingNamespace, ClassEntity owner, string name, List<string> parameters, string retType, List<Callsite> callsites, List<Typename>? typenames)
         {
             this.belongingNamespace = belongingNamespace;
+            this.ownerClass = owner;
             this.name = name;
             this.parameters = parameters;
             returnType = retType;
             this.callsites = callsites;
+            this.typenames = typenames;
 
         }
         public Method(string belongingNamespace, ClassEntity owner, string name, List<string> parameters, string retType)
@@ -69,12 +79,6 @@ namespace Domain.CodeInfo.MethodSystem
             this.name = name;
             this.parameters = parameters;
             returnType = retType;
-        }
-
-        public Method SetOwnerClass(ClassEntity ownerClass)
-        {
-            this.ownerClass = ownerClass;
-            return this;
         }
         public string GetParamsAsString()
         {

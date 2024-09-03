@@ -32,7 +32,7 @@ namespace Infrastructure.Builders
         /// Reado only dictionary from the mediator, used to know when there are instances with their defined type used 
         /// in a method and we must identify it
         /// </summary>
-        protected IReadOnlyDictionary<string, AbstractInstance> _knownInstancesDeclaredInCurrentMethodAnalysis = new Dictionary<string, AbstractInstance>();
+        protected IReadOnlyDictionary<string, AbstractInstance> _knownInstancesDeclaredInCurrentMethodAnalysis;
 
         public InstanceBuilder(IMediator mediator)
         {
@@ -133,6 +133,7 @@ namespace Infrastructure.Builders
                 return this;
             }
             // If the callerClassName has ".", then this caller class has a property chain and we must separate it from the starting class and all the other components in this chain, and for each component we create an Instance of kind PropertyFromInheritanceOrThisClass
+            // THIS part is cutting off all the rest of things after the dots, and we of course NEED all of that, we must stop using this and start using the CreateExpressionsChain and CreateIndexRetrieval from the CSharpVisitor
             if ((callerClassName != null && callerClassName.Contains(".")))
             {
                 // If there is a callerMethodInstance, then the calledClass is part of the propertyChain and it must be specified to the GeneratePropertyChain function, otherwise then it is not part of the chain
@@ -143,7 +144,7 @@ namespace Infrastructure.Builders
                 callerClassName = classOwner;
             }
 
-            // If the node containing this method component contains brakcets, then it has an indexRetrieval and we must process that
+            // If the node containing this method component contains brackets, then it has an indexRetrieval and we must process that
             AbstractInstance indexRetrievalNode = null;
             if (callerClassName.Contains('['))
             {
@@ -166,6 +167,10 @@ namespace Infrastructure.Builders
         {
             this._type = type;
             return this;
+        }
+        public InstanceBuilder SetKind(AbstractInstance.KindOfInstance kind)
+        {
+            // TODO: Complete this method and use it in the local variable definition visit AND delete the line in the Build method, the line that overrides the kind of the instance to Normal when we know the Type
         }
     }
 }

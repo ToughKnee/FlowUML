@@ -1,6 +1,9 @@
-﻿namespace Domain.CodeInfo.MethodSystem
+﻿using Domain.CodeInfo.InstanceDefinitions;
+
+namespace Domain.CodeInfo.MethodSystem
 {
     /// <summary>
+    // TODO: Rewrite definition to be more accurate
     /// This is used to store calls that a method does to another place in the code, 
     /// BUT we don't know the entire method identification(which needs the Class 
     /// it comes from, its name and its parameters), so this will be listening 
@@ -14,6 +17,7 @@
         /// This method is considered as complete when we know its 'returnType'
         /// </summary>
         public Method? calledMethod;
+        public MethodInstance linkedMethodInstance;
         public Callsite(Method? called)
         {
             calledMethod = called;

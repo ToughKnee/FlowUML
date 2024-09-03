@@ -42,7 +42,8 @@ namespace Infrastructure.Mediators
                     j = -1;
                     maxTries++;
 
-                    if(maxTries > 10)
+                    // If we are still trying to find out the types of the MethodInstances and we are stuck, then apply more loose rules to match to be able to find out more MethodInstances types
+                    if(maxTries > 20)
                     {
                         _useLooseMatchingRules = true;
                         MethodIdentifier.UseLooseMatchingRules();
@@ -134,7 +135,10 @@ namespace Infrastructure.Mediators
             // If the asignee is nothing then just build the methodInstance and return
             else if (String.IsNullOrEmpty(assignee))
             {
-                instanceAssignerBuilders[0].Build();
+                for (int j = 0; j < instanceAssignerBuilders.Count; j++)
+                {
+                    ((MethodInstanceBuilder)instanceAssignerBuilders[j]).Build();
+                }
                 return;
             }
             // If the declaration is simple
@@ -153,7 +157,7 @@ namespace Infrastructure.Mediators
             }
 
             // Add the new instance to the known instances dictionary
-            if(!_knownInstancesDeclaredInCurrentMethodAnalysis.ContainsKey(assignee))
+            if(!String.IsNullOrEmpty(assignee) && !_knownInstancesDeclaredInCurrentMethodAnalysis.ContainsKey(assignee))
                 _knownInstancesDeclaredInCurrentMethodAnalysis.Add(assignee, instanceAssignee);
 
             return;
