@@ -277,6 +277,7 @@ typeCaster
 expression
     :
     // typeCaster?
+    // These ')'? rules cover the optional parentheses expressions may have around them, since we don't care about any order of operations, we do this
     '('?'('?'('?
         // typeCaster?
         (
@@ -293,8 +294,6 @@ expression
         )
         (arithmeticOperations)*
     ')'?')'?')'?
-    // TODO: Do the following features AND make sure to put the optional parentheses around them
-    // Do the rule that will capture comparisons which return booleans like "vector == Vector3.zero"
     ;
 
 // methodCall
@@ -309,9 +308,9 @@ expression
 //     ;
 
 methodCall
-    : new? /*'('?*/ wholeInstance /*')'?*/ templateTypeName? ('(' argumentList? ')') advancedChainedInstance?
-    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') ')' advancedChainedInstance?
-    | new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') advancedChainedInstance? ')' advancedChainedInstance? // this rule is designed to handle cases like ((MyType)function.troublesomeMethodCallChain).troublesomeMethodCallChainMethodCall(), where this thing contains 2 method call chains, and this rule catches that case
+    : typeCaster? new? /*'('?*/ wholeInstance /*')'?*/ templateTypeName? ('(' argumentList? ')') advancedChainedInstance?
+    | typeCaster? new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') ')' advancedChainedInstance?
+    | typeCaster? new? '(' wholeInstance templateTypeName? ('(' argumentList? ')') advancedChainedInstance? ')' advancedChainedInstance? // this rule is designed to handle cases like ((MyType)function.troublesomeMethodCallChain).troublesomeMethodCallChainMethodCall(), where this thing contains 2 method call chains, and this rule catches that case
     // | '('? wholeInstance ')'? templateTypeName? ('(' argumentList? ')') ('.' (wholeInstance | methodCall))?
     ;
 
